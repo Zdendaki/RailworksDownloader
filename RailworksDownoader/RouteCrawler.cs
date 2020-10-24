@@ -26,8 +26,6 @@ namespace RailworksDownoader
         private int PercentProgress = 0;
         private LoadedRoute SavedRoute;
         private SqLiteAdapter Adapter;
-        private int Tasks = 0;
-        private int TasksCompleted = 0;
 
         internal bool IsAP { get => File.Exists(Path.Combine(RoutePath, "RouteProperties.xml")); }
 
@@ -125,12 +123,12 @@ namespace RailworksDownoader
             }
         }
 
-        private void GetScenariosDependencies(string path)
+        private async Task GetScenariosDependencies(string path)
         {
             //TODO: implement scenarios
         }
 
-        private void ParseNetworkDependencies(string path)
+        private async Task ParseNetworkDependencies(string path)
         {
             foreach (string dir in Directory.GetDirectories(path))
             {
@@ -138,7 +136,7 @@ namespace RailworksDownoader
                 {
                     string xml = Path.ChangeExtension(file, ".xml");
 
-                    RunSERZ(file);
+                    await Task.Run(() => RunSERZ(file));
                     try
                     {
                         lock (DependenciesLock)
@@ -153,13 +151,13 @@ namespace RailworksDownoader
             }
         }
 
-        private void ParseSceneryDependencies(string path)
+        private async Task ParseSceneryDependencies(string path)
         {
             foreach (string file in Directory.GetFiles(path, "*.*bin"))
             {
                 string xml = Path.ChangeExtension(file, ".xml");
 
-                RunSERZ(file);
+                await Task.Run(() => RunSERZ(file));
                 try
                 {
                     lock (DependenciesLock)
@@ -214,19 +212,15 @@ namespace RailworksDownoader
             if (SavedRoute.Dependencies != null)
                 Dependencies.UnionWith(SavedRoute.Dependencies);
 
-            Tasks = TasksCompleted = 0;
-
             if (loftsChanged || roadsChanged || tracksChanged || sceneryChanged || rpChanged || scenariosChanged)
             {
-                
+                Task n = null;
+                Task s = null;
+                Task t = null;
                 Task<IEnumerable<string>> prop = null;
 
                 if (rpChanged)
                     prop = GetRoutePropertiesDependencies(Path.Combine(routePath, "RouteProperties.xml"));
-
-                Action<string> networks = ParseNetworkDependencies;
-                Action<string> scenarios = GetScenariosDependencies;
-                Action<string> scenery = ParseSceneryDependencies;
 
                 foreach (string dir in Directory.GetDirectories(routePath))
                 {
@@ -234,27 +228,25 @@ namespace RailworksDownoader
                     {
                         case "Networks":
                             if (loftsChanged || roadsChanged || tracksChanged)
-                            {
-                                networks.BeginInvoke(dir, WorkComplete, networks);
-                                Tasks++;
-                            }
+                                n = ParseNetworkDependencies(dir);
                             break;
                         case "Scenarios":
                             if (scenariosChanged)
-                            {
-                                scenarios.BeginInvoke(dir, WorkComplete, scenarios);
-                                Tasks++;
-                            }
+                                s = GetScenariosDependencies(dir);
                             break;
                         case "Scenery":
                             if (sceneryChanged)
-                            {
-                                scenery.BeginInvoke(dir, WorkComplete, scenery);
-                                Tasks++;
-                            }
+                                t = ParseSceneryDependencies(dir);
                             break;
                     }
                 }
+
+                if (n != null)
+                    await n;
+                if (s != null)
+                    await s;
+                if (t != null)
+                    await t;
 
                 IEnumerable<string> routeProperties = new List<string>();
                 if (prop != null)
@@ -266,24 +258,18 @@ namespace RailworksDownoader
                     ReportProgress(Path.Combine(routePath, "RouteProperties.xml"));
                 }
 
-                await md5;
-
-                WorkComplete(null);
-            }
-        }
-
-        private void WorkComplete(IAsyncResult result)
-        {
-            TasksCompleted++;
-
-            if (TasksCompleted == Tasks + 1)
-            {
                 Dependencies.RemoveWhere(x => string.IsNullOrWhiteSpace(x));
+
+                await md5;
 
                 SavedRoute.Dependencies = Dependencies.ToList();
 
+                //await Adapter.SaveRoute(SavedRoute).ConfigureAwait(false);
+
                 Thread tt = new Thread(() => Adapter.SaveRoute(SavedRoute));
                 tt.Start();
+
+                //Adapter.SaveRoute(SavedRoute);
             }
         }
 

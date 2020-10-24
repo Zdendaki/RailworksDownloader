@@ -43,7 +43,7 @@ namespace RailworksDownoader
             RouteCrawler rc = new RouteCrawler(Path.Combine(rw.RWPath, "Content", "Routes", "bd4aae03-09b5-4149-a133-297420197356"), rw.RWPath);
 
 
-            rc.ProgressUpdated += (perc) => { PB.Dispatcher.Invoke(() => { PB.Value = perc; }); };
+            rc.ProgressUpdated += (perc) => { PB.Value = perc; };
             rc.Complete += () => 
             { 
                 sw.Stop();
