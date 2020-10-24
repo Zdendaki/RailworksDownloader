@@ -18,17 +18,20 @@ namespace RailworksDownoader
 
         public string RoutePropertiesChecksum { get; set; }
 
+        public string ScenariosChecksum { get; set; }
+
         public string APChecksum { get; set; }
 
         public List<string> Dependencies { get; set; }
 
-        public LoadedRoute(string loftChecksum, string roadChecksum, string trackChecksum, string sceneryChecksum, string routePropertiesChecksum, string apChecksum, List<string> dependencies)
+        public LoadedRoute(string loftChecksum, string roadChecksum, string trackChecksum, string sceneryChecksum, string routePropertiesChecksum, string apChecksum, string scenariosChecksum, List<string> dependencies)
         {
             LoftChecksum = loftChecksum;
             RoadChecksum = roadChecksum;
             TrackChecksum = trackChecksum;
             SceneryChecksum = sceneryChecksum;
             RoutePropertiesChecksum = routePropertiesChecksum;
+            ScenariosChecksum =  scenariosChecksum;
             APChecksum = apChecksum;
             Dependencies = dependencies;
         }

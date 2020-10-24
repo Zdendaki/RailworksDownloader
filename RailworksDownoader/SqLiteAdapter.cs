@@ -25,7 +25,7 @@ namespace RailworksDownoader
             SQLiteConnection con = new SQLiteConnection(ConnectionString);
             con.Open();
             SQLiteCommand cmd = new SQLiteCommand("INSERT INTO checksums (id, folder, chcksum) VALUES (@id,@folder,@chcksum) ON CONFLICT(id) DO UPDATE SET id = @id, folder = @folder, chcksum = @chcksum;", con);
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 7; i++)
             {
                 cmd.Parameters.AddWithValue("@id", i);
                 switch (i)
@@ -53,6 +53,10 @@ namespace RailworksDownoader
                     case 5:
                         cmd.Parameters.AddWithValue("@folder", "routeProperties");
                         cmd.Parameters.AddWithValue("@chcksum", route.RoutePropertiesChecksum);
+                        break;
+                    case 6:
+                        cmd.Parameters.AddWithValue("@folder", "scenarios");
+                        cmd.Parameters.AddWithValue("@chcksum", route.ScenariosChecksum);
                         break;
                 }
                 cmd.ExecuteNonQuery();
@@ -99,7 +103,7 @@ namespace RailworksDownoader
                             loadedRoute.TrackChecksum = Convert.ToString(reader["chcksum"]);
                             break;
                         case "scenarios":
-                            //TODO: implement scenarios
+                            loadedRoute.ScenariosChecksum = Convert.ToString(reader["chcksum"]);
                             break;
                         case "scenery":
                             loadedRoute.SceneryChecksum = Convert.ToString(reader["chcksum"]);
