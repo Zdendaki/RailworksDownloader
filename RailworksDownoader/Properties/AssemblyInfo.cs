@@ -7,12 +7,12 @@ using System.Windows;
 // Obecné informace o sestavení se řídí přes následující 
 // sadu atributů. Změnou hodnot těchto atributů se upraví informace
 // přidružené k sestavení.
-[assembly: AssemblyTitle("RailworksDownoader")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Railworks Download Station Client")]
+[assembly: AssemblyDescription("Railworks Download Station Client")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("RailworksDownoader")]
-[assembly: AssemblyCopyright("Copyright ©  2020")]
+[assembly: AssemblyProduct("Railworks Download Station Client")]
+[assembly: AssemblyCopyright("Copyright © Zdendaki.net 2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
