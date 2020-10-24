@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -14,7 +15,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace RailworksDownoader
 {
@@ -23,10 +23,6 @@ namespace RailworksDownoader
     /// </summary>
     public partial class MainWindow : Window
     {
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool DeleteFileW([MarshalAs(UnmanagedType.LPWStr)] string lpFileName);
-
         public MainWindow()
         {
             InitializeComponent();
@@ -44,10 +40,10 @@ namespace RailworksDownoader
             Stopwatch sw = new Stopwatch();
 
             //RouteCrawler rc = new RouteCrawler(@"D:\Hry\Steam\steamapps\common\RailWorks\Content\Routes\bd4aae03-09b5-4149-a133-297420197356", rw.RWPath);
-            RouteCrawler rc = new RouteCrawler(@"g:\Steam\steamapps\common\RailWorks\Content\Routes\646c816a-11f3-42cd-b1e9-3cdac7b23dc8", rw.RWPath);
+            RouteCrawler rc = new RouteCrawler(Path.Combine(rw.RWPath, "Content", "Routes", "bd4aae03-09b5-4149-a133-297420197356"), rw.RWPath);
 
 
-            rc.ProgressUpdated += (perc) => { PB.Value = perc; };
+            rc.ProgressUpdated += (perc) => { PB.Dispatcher.Invoke(() => { PB.Value = perc; }); };
             rc.Complete += () => 
             { 
                 sw.Stop();

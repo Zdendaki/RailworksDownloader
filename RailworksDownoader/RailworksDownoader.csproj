@@ -60,11 +60,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="LoadedRoute.cs" />
     <Compile Include="Railworks.cs" />
     <Compile Include="FindPath.xaml.cs">
       <DependentUpon>FindPath.xaml</DependentUpon>
     </Compile>
     <Compile Include="RouteCrawler.cs" />
+    <Compile Include="RuntimeData.cs" />
+    <Compile Include="SqLiteAdapter.cs" />
     <Compile Include="StartupWindow.xaml.cs">
       <DependentUpon>StartupWindow.xaml</DependentUpon>
     </Compile>
