@@ -68,7 +68,7 @@ namespace RailworksDownoader
                 Progress += GetFileSize(file);
             }
 
-            Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize);
+            Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize+"\nRoute: "+RoutePath);
 
             Progress = Math.Min(Progress, AllFilesSize);
 
@@ -251,13 +251,13 @@ namespace RailworksDownoader
             serz.WaitForExit();
         }
 
-        private async Task _GetDependencies(string routePath)
+        private async Task _GetDependencies()
         {
             bool apChanged = false;
 
             if (IsAP)
             {
-                apChanged = GetDirectoryMD5(RoutePath) != SavedRoute.APChecksum;
+                apChanged = GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum;
             }
 
             bool loftsChanged = (GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Loft Tiles")) != SavedRoute.LoftChecksum) || apChanged;
@@ -274,48 +274,97 @@ namespace RailworksDownoader
 
             if (loftsChanged || roadsChanged || tracksChanged || sceneryChanged || rpChanged || scenariosChanged)
             {
-                Task n = null;
-                Task s = null;
-                Task t = null;
-                Task<IEnumerable<string>> prop = null;
+                Task n1 = null;
+                Task s1 = null;
+                Task t1 = null;
+                Task n2 = null;
+                Task s2 = null;
+                Task t2 = null;
+                Task<IEnumerable<string>> prop1 = null;
+                Task<IEnumerable<string>> prop2 = null;
 
                 if (rpChanged)
-                    prop = GetRoutePropertiesDependencies(Path.Combine(routePath, "RouteProperties.xml"));
+                    prop1 = GetRoutePropertiesDependencies(Path.Combine(RoutePath, "RouteProperties.xml"));
+                if (IsAP)
+                    prop2 = GetRoutePropertiesDependencies(Path.Combine(RoutePath, "temp", "RouteProperties.xml"));
 
-                foreach (string dir in Directory.GetDirectories(routePath))
+                foreach (string dir in Directory.GetDirectories(RoutePath))
                 {
                     switch (Path.GetFileName(dir))
                     {
                         case "Networks":
                             if (loftsChanged || roadsChanged || tracksChanged)
-                                n = GetNetworkDependencies(dir);
+                                n1 = GetNetworkDependencies(dir);
                             break;
                         case "Scenarios":
                             if (scenariosChanged)
-                                s = GetScenariosDependencies(dir);
+                                s1 = GetScenariosDependencies(dir);
                             break;
                         case "Scenery":
                             if (sceneryChanged)
-                                t = GetSceneryDependencies(dir);
+                                t1 = GetSceneryDependencies(dir);
                             break;
                     }
                 }
 
-                if (n != null)
-                    await n;
-                if (s != null)
-                    await s;
-                if (t != null)
-                    await t;
+                if (IsAP)
+                {
 
-                IEnumerable<string> routeProperties = new List<string>();
-                if (prop != null)
-                    routeProperties = await prop;
+                    foreach (string dir in Directory.GetDirectories(Path.Combine(RoutePath, "temp")))
+                    {
+                        switch (Path.GetFileName(dir))
+                        {
+                            case "Networks":
+                                if (loftsChanged || roadsChanged || tracksChanged)
+                                    n2 = GetNetworkDependencies(dir);
+                                break;
+                            case "Scenarios":
+                                if (scenariosChanged)
+                                    s2 = GetScenariosDependencies(dir);
+                                break;
+                            case "Scenery":
+                                if (sceneryChanged)
+                                    t2 = GetSceneryDependencies(dir);
+                                break;
+                        }
+                    }
+                }
+
+                if (n1 != null)
+                    await n1;
+                if (s1 != null)
+                    await s1;
+                if (t1 != null)
+                    await t1;
+
+                if (n2 != null)
+                    await n2;
+                if (s2 != null)
+                    await s2;
+                if (t2 != null)
+                    await t2;
+
+                IEnumerable<string> routeProperties1 = new List<string>();
+                if (prop1 != null)
+                    routeProperties1 = await prop1;
 
                 lock (DependenciesLock)
                 {
-                    Dependencies.UnionWith(routeProperties);
-                    ReportProgress(Path.Combine(routePath, "RouteProperties.xml"));
+                    Dependencies.UnionWith(routeProperties1);
+                    ReportProgress(Path.Combine(RoutePath, "RouteProperties.xml"));
+                }
+
+                if (IsAP)
+                {
+                    IEnumerable<string> routeProperties2 = new List<string>();
+                    if (prop2 != null)
+                        routeProperties2 = await prop2;
+
+                    lock (DependenciesLock)
+                    {
+                        Dependencies.UnionWith(routeProperties2);
+                        ReportProgress(Path.Combine(RoutePath, "temp", "RouteProperties.xml"));
+                    }
                 }
 
                 Dependencies.RemoveWhere(x => string.IsNullOrWhiteSpace(x));
@@ -335,7 +384,7 @@ namespace RailworksDownoader
             {
                 if (IsAP)
                 {
-                    SavedRoute.APChecksum = GetDirectoryMD5(RoutePath);
+                    SavedRoute.APChecksum = GetDirectoryMD5(RoutePath, true);
                 }
                 else
                 {
@@ -353,27 +402,27 @@ namespace RailworksDownoader
         {
             if (File.Exists(Path.Combine(RoutePath, "RouteProperties.xml")))
             {
-                await _GetDependencies(RoutePath);
+                await _GetDependencies();
             }
-            else
+            else if (IsAP && GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum)
             {
                 int count = 0;
                 foreach (string file in Directory.GetFiles(RoutePath, "*.ap"))
                 {
-                    try
+                    /*try
                     {
                         ZipFile.ExtractToDirectory(Path.Combine(RoutePath, file), Path.Combine(RoutePath, "temp"));
                     }
                     catch { }
                     finally
-                    {
+                    {*/
                         count++;
-                    }
+                    //}
                 }
 
                 if (count > 0)
                 {
-                    await _GetDependencies(Path.Combine(RoutePath, "temp"));
+                    await _GetDependencies();
 
                     await Task.Run(() => { DeleteDirectory(Path.Combine(RoutePath, "temp")); });
                 }
@@ -388,7 +437,7 @@ namespace RailworksDownoader
 
             if (IsAP)
             {
-                apChanged = GetDirectoryMD5(RoutePath) != SavedRoute.APChecksum;
+                apChanged = GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum;
             }
 
             bool loftsChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Loft Tiles")) != SavedRoute.LoftChecksum;
@@ -408,21 +457,22 @@ namespace RailworksDownoader
                     switch (Path.GetFileName(dir))
                     {
                         case "Networks":
-                            if (loftsChanged)
+                            if (loftsChanged || roadsChanged || tracksChanged)
+                            {
                                 size += GetDirectorySize(Path.Combine(dir, "Loft Tiles"), "*.*bin");
-
-                            if (roadsChanged)
                                 size += GetDirectorySize(Path.Combine(dir, "Road Tiles"), "*.*bin");
-
-                            if (tracksChanged)
                                 size += GetDirectorySize(Path.Combine(dir, "Track Tiles"), "*.*bin");
+                            }
 
                             break;
                         case "Scenarios":
                             if (scenariosChanged)
                             {
-                                size += GetDirectorySize(dir, "*.*bin");
-                                size += GetFileSize(Path.Combine(dir, "ScenarioProperties.xml"));
+                                foreach (string dir2 in Directory.GetDirectories(dir))
+                                {
+                                    size += GetDirectorySize(dir2, "*.*bin");
+                                    size += GetFileSize(Path.Combine(dir2, "ScenarioProperties.xml"));
+                                }
                             }
                             break;
                         case "Scenery":
@@ -434,6 +484,16 @@ namespace RailworksDownoader
             } 
             else if (apChanged)
             {
+                foreach (string file in Directory.GetFiles(RoutePath, "*.ap"))
+                {
+                    try
+                    {
+                        ZipFile.ExtractToDirectory(Path.Combine(RoutePath, file), Path.Combine(RoutePath, "temp"));
+                    }
+                    catch { }
+                }
+
+                size += GetFileSize(Path.Combine(RoutePath, "temp", "RouteProperties.xml"));
                 foreach (string dir in Directory.GetDirectories(Path.Combine(RoutePath, "temp")))
                 {
                     switch (Path.GetFileName(dir))
@@ -445,8 +505,35 @@ namespace RailworksDownoader
                             }
                             break;
                         case "Scenarios":
+                            foreach (string dir2 in Directory.GetDirectories(dir))
+                            {
+                                size += GetDirectorySize(dir2, "*.*bin");
+                                size += GetFileSize(Path.Combine(dir2, "ScenarioProperties.xml"));
+                            }
+                            break;
+                        case "Scenery":
                             size += GetDirectorySize(dir, "*.*bin");
-                            size += GetFileSize(Path.Combine(dir, "ScenarioProperties.xml"));
+                            break;
+                    }
+                }
+
+                size += GetFileSize(Path.Combine(RoutePath, "RouteProperties.xml"));
+                foreach (string dir in Directory.GetDirectories(RoutePath))
+                {
+                    switch (Path.GetFileName(dir))
+                    {
+                        case "Networks":
+                            foreach (string dir2 in Directory.GetDirectories(dir))
+                            {
+                                size += GetDirectorySize(dir2, "*.*bin");
+                            }
+                            break;
+                        case "Scenarios":
+                            foreach (string dir2 in Directory.GetDirectories(dir))
+                            {
+                                size += GetDirectorySize(dir2, "*.*bin");
+                                size += GetFileSize(Path.Combine(dir2, "ScenarioProperties.xml"));
+                            }
                             break;
                         case "Scenery":
                             size += GetDirectorySize(dir, "*.*bin");
@@ -474,14 +561,14 @@ namespace RailworksDownoader
                 DeleteDirectory(dir);
             }
 
-            Directory.Delete(directory, false);
+            Directory.Delete(directory, true);
         }
 
         private long GetDirectorySize(string directory, string mask)
         {
             long size = 0;
             
-            foreach (var file in Directory.GetFiles(directory, mask))
+            foreach (var file in Directory.GetFiles(directory, mask, SearchOption.AllDirectories))
             {
                 size += GetFileSize(file);
             }
@@ -520,12 +607,12 @@ namespace RailworksDownoader
             }
         }
 
-        private string GetDirectoryMD5(string path)
+        private string GetDirectoryMD5(string path, bool isAP = false)
         {
             if (!Directory.Exists(path))
                 return null;
             
-            var filePaths = Directory.GetFiles(path, "*.*bin").OrderBy(p => p).ToArray();
+            var filePaths = isAP ? Directory.GetFiles(path, "*.ap").OrderBy(p => p).ToArray() : Directory.GetFiles(path, "*.*bin").OrderBy(p => p).ToArray();
 
             using (var md5 = MD5.Create())
             {
