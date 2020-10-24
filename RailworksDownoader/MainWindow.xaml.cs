@@ -39,8 +39,12 @@ namespace RailworksDownoader
 
             Stopwatch sw = new Stopwatch();
 
+            var a = rw.GetRoutes().ToList();
+
+            a = a;
+
             //RouteCrawler rc = new RouteCrawler(@"D:\Hry\Steam\steamapps\common\RailWorks\Content\Routes\bd4aae03-09b5-4149-a133-297420197356", rw.RWPath);
-            RouteCrawler rc = new RouteCrawler(Path.Combine(rw.RWPath, "Content", "Routes", "bd4aae03-09b5-4149-a133-297420197356"), rw.RWPath);
+            /*RouteCrawler rc = new RouteCrawler(Path.Combine(rw.RWPath, "Content", "Routes", "bd4aae03-09b5-4149-a133-297420197356"), rw.RWPath);
 
 
             rc.ProgressUpdated += (perc) => { PB.Value = perc; };
@@ -51,7 +55,7 @@ namespace RailworksDownoader
             };
 
             sw.Start();
-            await rc.Start();
+            await rc.Start();*/
         }
     }
 }

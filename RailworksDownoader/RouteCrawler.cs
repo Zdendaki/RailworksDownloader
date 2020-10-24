@@ -27,7 +27,7 @@ namespace RailworksDownoader
         private LoadedRoute SavedRoute;
         private SqLiteAdapter Adapter;
 
-        internal bool IsAP { get => File.Exists(Path.Combine(RoutePath, "RouteProperties.xml")); }
+        internal bool IsAP { get => !File.Exists(Path.Combine(RoutePath, "RouteProperties.xml")); }
 
         public delegate void ProgressUpdatedEventHandler(int percent);
         public event ProgressUpdatedEventHandler ProgressUpdated;
@@ -53,6 +53,9 @@ namespace RailworksDownoader
                 AllFilesSize = CountAllFiles();
 
                 await GetDependencies();
+
+                if (PercentProgress != 100)
+                    PercentProgress = 100;
 
                 Complete?.Invoke();
             }
@@ -203,9 +206,8 @@ namespace RailworksDownoader
             bool roadsChanged = (GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Road Tiles")) != SavedRoute.RoadChecksum) || apChanged;
             bool tracksChanged = (GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Track Tiles")) != SavedRoute.TrackChecksum) || apChanged;
             bool sceneryChanged = (GetDirectoryMD5(Path.Combine(RoutePath, "Scenery")) != SavedRoute.SceneryChecksum) || apChanged;
-            //bool rpChanged = (CreateDirectoryMd5(Path.Combine(RoutePath, "Networks", "Loft Tiles")) != SavedRoute.LoftChcksum) || apChanged;
-            bool rpChanged = true;
-            bool scenariosChanged = false;
+            bool rpChanged = (GetFileMD5(Path.Combine(RoutePath, "RouteProperties.xml")) != SavedRoute.RoutePropertiesChecksum) || apChanged;
+            bool scenariosChanged = false; //TODO: implement scenarios
 
             var md5 = ComputeChecksums();
 
@@ -264,12 +266,8 @@ namespace RailworksDownoader
 
                 SavedRoute.Dependencies = Dependencies.ToList();
 
-                //await Adapter.SaveRoute(SavedRoute).ConfigureAwait(false);
-
                 Thread tt = new Thread(() => Adapter.SaveRoute(SavedRoute));
                 tt.Start();
-
-                //Adapter.SaveRoute(SavedRoute);
             }
         }
 

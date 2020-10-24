@@ -66,6 +66,7 @@
       <DependentUpon>FindPath.xaml</DependentUpon>
     </Compile>
     <Compile Include="RouteCrawler.cs" />
+    <Compile Include="RouteInfo.cs" />
     <Compile Include="RuntimeData.cs" />
     <Compile Include="SqLiteAdapter.cs" />
     <Compile Include="StartupWindow.xaml.cs">
