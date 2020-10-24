@@ -53,8 +53,7 @@ namespace RailworksDownoader
                 Progress += GetFileSize(file);
             }
 
-            if (Progress > AllFilesSize)
-                Progress = AllFilesSize;
+            Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! "+Progress+":"+AllFilesSize);
 
             PercentProgress = (int)(Progress * 100 / AllFilesSize);
 
@@ -256,7 +255,7 @@ namespace RailworksDownoader
                     case "Networks":
                         foreach (string dir2 in Directory.GetDirectories(dir))
                         {
-                            size += GetDirectorySize(dir, "*.*bin");
+                            size += GetDirectorySize(dir2, "*.*bin");
                         }
                         break;
                     case "Scenarios":
