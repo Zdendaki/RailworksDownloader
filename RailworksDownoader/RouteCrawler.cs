@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,7 +24,7 @@ namespace RailworksDownloader
         private long Progress = 0;
         private object DependenciesLock = new object();
         private object ProgressLock = new object();
-        private float PercentProgress = 0f;
+        internal float PercentProgress = 0f;
         private LoadedRoute SavedRoute;
         private SqLiteAdapter Adapter;
 
@@ -35,6 +36,9 @@ namespace RailworksDownloader
 
         public delegate void CrawlingCompleteEventHandler();
         public event CrawlingCompleteEventHandler Complete;
+
+        public delegate void RouteSavingEventHandler(bool saved);
+        public event RouteSavingEventHandler RouteSaving;
 
         public HashSet<string> Dependencies { get; private set; }
 
@@ -405,7 +409,13 @@ namespace RailworksDownloader
 
                 SavedRoute.Dependencies = Dependencies.ToList();
 
-                Thread tt = new Thread(() => Adapter.SaveRoute(SavedRoute));
+                Thread tt = new Thread(() => 
+                {
+                    RouteSaving?.Invoke(false);
+                    Adapter.SaveRoute(SavedRoute);
+                    RouteSaving?.Invoke(true);
+                });
+
                 tt.Start();
             }
         }

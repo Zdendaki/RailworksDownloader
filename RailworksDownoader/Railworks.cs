@@ -14,27 +14,40 @@ namespace RailworksDownloader
 {
     class Railworks
     {
-        public string RWPath;
-        List<RouteInfo> Routes;
-        HashSet<string> AllDependencies;
+        public string RWPath { get; set; }
+
+        public List<RouteInfo> Routes { get; set; }
+
+        public HashSet<string> AllDependencies { get; set; }
+        
         List<RouteCrawler> Crawlers;
         int Total = 0;
         float Elapsed = 0f;
         int Completed = 0;
         object PercentLock = new object();
         object CompleteLock = new object();
+        object SavingLock = new object();
+        int Saving = 0;
 
         public delegate void ProgressUpdatedEventHandler(int percent);
         public event ProgressUpdatedEventHandler ProgressUpdated;
+
+        public delegate void RouteSavingEventHandler(bool saved);
+        public event RouteSavingEventHandler RouteSaving;
 
         public Railworks() : this (null) { }
 
         public Railworks(string path)
         {
             RWPath = string.IsNullOrWhiteSpace(path) ? GetRWPath() : path;
-            Routes = GetRoutes().ToList();
             AllDependencies = new HashSet<string>();
             Crawlers = new List<RouteCrawler>();
+            Routes = new List<RouteInfo>();
+        }
+
+        public void InitRoutes()
+        {
+            Routes = GetRoutes().ToList();
         }
         
         public static string GetRWPath()
@@ -108,19 +121,35 @@ namespace RailworksDownloader
             Total = 0;
             foreach (RouteInfo ri in Routes)
             {
-                Crawlers.Add(new RouteCrawler(ri.Path, RWPath));
+                ri.Crawler = new RouteCrawler(ri.Path, RWPath);
+                ri.Crawler.DeltaProgress += OnProgress;
+                ri.Crawler.ProgressUpdated += ri.ProgressUpdated;
+                ri.Crawler.Complete += Complete;
+                ri.Crawler.RouteSaving += Crawler_RouteSaving;
                 Total += 100;
             }
         }
 
+        private void Crawler_RouteSaving(bool saved)
+        {
+            lock (SavingLock)
+            {
+                if (saved)
+                    Saving--;
+                else
+                    Saving++;
+            }
+
+            RouteSaving?.Invoke(Saving == 0);
+        }
+
         internal void RunAllCrawlers()
         {
-            foreach (RouteCrawler rc in Crawlers)
+            InitCrawlers();
+            
+            foreach (RouteInfo ri in Routes)
             {
-                rc.DeltaProgress += OnProgress;
-                rc.Complete += Complete;
-
-                var t = Task.Run(() => rc.Start());
+                var t = Task.Run(() => ri.Crawler.Start());
             }
         }
 

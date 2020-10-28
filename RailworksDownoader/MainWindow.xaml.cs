@@ -32,6 +32,8 @@ namespace RailworksDownloader
             InitializeComponent();
 
             RW = new Railworks(Settings.Default.RailworksLocation);
+            RW.ProgressUpdated += RW_ProgressUpdated;
+            RW.RouteSaving += RW_RouteSaving;
 
             if (string.IsNullOrWhiteSpace(RW.RWPath))
             {
@@ -49,26 +51,21 @@ namespace RailworksDownloader
 
             Settings.Default.PropertyChanged += PropertyChanged;
 
-            RoutesList.Items.Add(new RouteItemData("TEST", 24));
-            RoutesList.Items.Add(new RouteItemData("TEST", 100));
-            RoutesList.Items.Add(new RouteItemData("TEST", 100));
-            RoutesList.Items.Add(new RouteItemData("TEST", 2));
-            RoutesList.Items.Add(new RouteItemData("TEST", 24));
-            RoutesList.Items.Add(new RouteItemData("TEST", 100));
-            RoutesList.Items.Add(new RouteItemData("TEST", 100));
-            RoutesList.Items.Add(new RouteItemData("TEST", 2));
-            RoutesList.Items.Add(new RouteItemData("TEST", 24));
-            RoutesList.Items.Add(new RouteItemData("TEST", 100));
-            RoutesList.Items.Add(new RouteItemData("TEST", 100));
-            RoutesList.Items.Add(new RouteItemData("TEST", 2));
-            RoutesList.Items.Add(new RouteItemData("TEST", 24));
-            RoutesList.Items.Add(new RouteItemData("TEST", 100));
-            RoutesList.Items.Add(new RouteItemData("TEST", 100));
-            RoutesList.Items.Add(new RouteItemData("TEST", 2));
-            RoutesList.Items.Add(new RouteItemData("TEST", 24));
-            RoutesList.Items.Add(new RouteItemData("TEST", 100));
-            RoutesList.Items.Add(new RouteItemData("TEST", 100));
-            RoutesList.Items.Add(new RouteItemData("TEST", 2));
+            //RoutesList.Items.Add(new RouteInfo("TEST", ""));
+
+
+        }
+
+        private void RW_RouteSaving(bool saved)
+        {
+            SavingGrid.Dispatcher.Invoke(() => { SavingGrid.Visibility = saved ? Visibility.Hidden : Visibility.Visible; });
+        }
+
+        private void RW_ProgressUpdated(int percent)
+        {
+            TotalProgress.Dispatcher.Invoke(() => { TotalProgress.Value = percent; });
+
+            //Dispatcher.Invoke(() => { UpdateLayout(); });
         }
 
         private void PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -83,6 +80,21 @@ namespace RailworksDownloader
         private void PathChanged()
         {
             PathSelected.IsChecked = ScanRailworks.IsEnabled = !string.IsNullOrWhiteSpace(RW.RWPath);
+
+            LoadRoutes();
+        }
+
+        private void LoadRoutes()
+        {
+            if (string.IsNullOrWhiteSpace(RW.RWPath))
+                return;
+
+            RW.InitRoutes();
+
+            foreach (var r in RW.Routes.OrderBy(x => x.Name))
+            {
+                RoutesList.Items.Add(r);
+            }
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -116,6 +128,11 @@ namespace RailworksDownloader
         {
             RailworksPathDialog rpd = new RailworksPathDialog();
             rpd.ShowAsync();
+        }
+
+        private void ScanRailworks_Click(object sender, RoutedEventArgs e)
+        {
+            RW.RunAllCrawlers();
         }
     }
 }
