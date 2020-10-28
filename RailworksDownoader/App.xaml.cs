@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace RailworksDownoader
+namespace RailworksDownloader
 {
     /// <summary>
     /// Interakční logika pro App.xaml

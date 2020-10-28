@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Xml;
 
-namespace RailworksDownoader
+namespace RailworksDownloader
 {
     class Railworks
     {
@@ -19,8 +19,10 @@ namespace RailworksDownoader
         HashSet<string> AllDependencies;
         List<RouteCrawler> Crawlers;
         int Total = 0;
-        int Elapsed = 0;
+        float Elapsed = 0f;
+        int Completed = 0;
         object PercentLock = new object();
+        object CompleteLock = new object();
 
         public delegate void ProgressUpdatedEventHandler(int percent);
         public event ProgressUpdatedEventHandler ProgressUpdated;
@@ -115,22 +117,32 @@ namespace RailworksDownoader
         {
             foreach (RouteCrawler rc in Crawlers)
             {
-                rc.ProgressUpdated += OnProgress;
+                rc.DeltaProgress += OnProgress;
+                rc.Complete += Complete;
 
                 var t = Task.Run(() => rc.Start());
             }
         }
 
-        private void OnProgress(int percent)
+        private void Complete()
+        {
+            lock (CompleteLock)
+            {
+                Completed++;
+
+                if (Completed == Routes.Count)
+                    MessageBox.Show("DONE!!");
+            }
+        }
+
+        private void OnProgress(float percent)
         {
             lock (PercentLock)
             {
                 Elapsed += percent;
 
-                ProgressUpdated?.Invoke(Elapsed * 100 / Total);
+                ProgressUpdated?.Invoke((int)(Elapsed * 100 / Total));
             }
-
-            
         }
     }
 }

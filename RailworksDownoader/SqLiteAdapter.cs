@@ -6,7 +6,7 @@ using System.Data.SQLite;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace RailworksDownoader
+namespace RailworksDownloader
 {
     internal class SqLiteAdapter
     {

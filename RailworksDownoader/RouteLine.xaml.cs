@@ -1,9 +1,6 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,27 +10,34 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace RailworksDownloader
 {
     /// <summary>
-    /// Interakční logika pro FindPath.xaml
+    /// Interakční logika pro RouteLine.xaml
     /// </summary>
-    public partial class FindPath : Window
+    public partial class RouteLine : UserControl
     {
-        public FindPath()
+        public string RouteName { get; set; }
+
+        public int RouteProgress { get; set; }
+        
+        public RouteLine(string name, int progress)
         {
             InitializeComponent();
 
+            RouteName = name;
+            RouteProgress = progress;
         }
 
-        private void PathSelect_Click(object sender, RoutedEventArgs e)
+        public RouteLine()
         {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.FileName = "RailWorks.exe";
-            ofd.Filter = "RailWorks.exe|RailWorks.exe";
-            
+            InitializeComponent();
+
+            RouteName = "";
+            RouteProgress = 0;
         }
     }
 }

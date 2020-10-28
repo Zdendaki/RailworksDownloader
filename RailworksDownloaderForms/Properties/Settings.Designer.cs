@@ -22,17 +22,5 @@ namespace RailworksDownloader.Properties {
                 return defaultInstance;
             }
         }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string RailworksLocation {
-            get {
-                return ((string)(this["RailworksLocation"]));
-            }
-            set {
-                this["RailworksLocation"] = value;
-            }
-        }
     }
 }

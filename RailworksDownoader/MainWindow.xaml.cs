@@ -16,24 +16,29 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 
-namespace RailworksDownoader
+namespace RailworksDownloader
 {
     /// <summary>
     /// Interakční logika pro MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
+        Railworks RW = new Railworks();
+        
         public MainWindow()
         {
             InitializeComponent();
 
-            ContentDialog cd = new ContentDialog()
-            {
+            RoutesList.Items.Add(new RouteItemData("TEST", 24));
+            RoutesList.Items.Add(new RouteItemData("TEST", 100));
+            RoutesList.Items.Add(new RouteItemData("TEST", 100));
+            RoutesList.Items.Add(new RouteItemData("TEST", 2));
 
-            };
+            RailworksPathDialog rpd = new RailworksPathDialog();
+            rpd.ShowAsync();
         }
 
-        private async void Button_Click(object sender, RoutedEventArgs e)
+        private void Button_Click(object sender, RoutedEventArgs e)
         {
             Railworks rw = new Railworks();
 
@@ -41,7 +46,7 @@ namespace RailworksDownoader
 
             rw.InitCrawlers();
 
-            rw.ProgressUpdated += (perc) => { PB.Dispatcher.Invoke(() => { PB.Value = perc; }); };
+            //rw.ProgressUpdated += (perc) => { PB.Dispatcher.Invoke(() => { PB.Value = perc; }); };
 
             rw.RunAllCrawlers();
 
@@ -58,6 +63,19 @@ namespace RailworksDownoader
 
             sw.Start();
             await rc.Start();*/
+        }
+
+        private void SelectRailworksLocation_Click(object sender, RoutedEventArgs e)
+        {
+            string path = Railworks.GetRWPath();
+
+            if (path == null)
+            {
+                RailworksPathDialog rpd = new RailworksPathDialog();
+                rpd.ShowAsync();
+            }
+
+            Properties.Settings.Default.RailworksLocation = path;
         }
     }
 }

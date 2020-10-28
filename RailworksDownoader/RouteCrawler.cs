@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Xml;
 
-namespace RailworksDownoader
+namespace RailworksDownloader
 {
     class RouteCrawler
     {
@@ -23,14 +23,15 @@ namespace RailworksDownoader
         private long Progress = 0;
         private object DependenciesLock = new object();
         private object ProgressLock = new object();
-        private int PercentProgress = 0;
+        private float PercentProgress = 0f;
         private LoadedRoute SavedRoute;
         private SqLiteAdapter Adapter;
 
         internal bool IsAP { get => !File.Exists(Path.Combine(RoutePath, "RouteProperties.xml")); }
 
-        public delegate void ProgressUpdatedEventHandler(int percent);
+        public delegate void ProgressUpdatedEventHandler(float percent);
         public event ProgressUpdatedEventHandler ProgressUpdated;
+        public event ProgressUpdatedEventHandler DeltaProgress;
 
         public delegate void CrawlingCompleteEventHandler();
         public event CrawlingCompleteEventHandler Complete;
@@ -55,7 +56,11 @@ namespace RailworksDownoader
                 await GetDependencies();
 
                 if (PercentProgress != 100)
+                {
+                    DeltaProgress?.Invoke(100f - PercentProgress);
                     PercentProgress = 100;
+                    ProgressUpdated?.Invoke(PercentProgress);
+                }
 
                 Complete?.Invoke();
             }
@@ -63,21 +68,29 @@ namespace RailworksDownoader
 
         private void ReportProgress(string file)
         {
+            float delta = 0;
+            
             lock (ProgressLock)
             {
                 Progress += GetFileSize(file);
+                Progress = Math.Min(Progress, AllFilesSize);
             }
 
-            Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize+"\nRoute: "+RoutePath);
-
-            Progress = Math.Min(Progress, AllFilesSize);
+            //Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize+"\nRoute: "+RoutePath);
 
             if (AllFilesSize > 0)
-                PercentProgress = (int)(Progress * 100 / AllFilesSize);
+            {
+                PercentProgress = Progress * 100f / AllFilesSize;
+                delta = (float)(GetFileSize(file) * 100.0f / AllFilesSize);
+            }
             else
-                PercentProgress = 100;
+            {
+                PercentProgress = 100f;
+                delta = 100f;
+            }
 
             ProgressUpdated?.Invoke(PercentProgress);
+            DeltaProgress?.Invoke(delta);
         }
 
         private string ParseAbsoluteBlueprintIDNode(XmlNode blueprintIDNode)
@@ -97,10 +110,21 @@ namespace RailworksDownoader
 
         private async Task<IEnumerable<string>> GetRoutePropertiesDependencies(string propertiesPath)
         {
+            if (!File.Exists(propertiesPath))
+                return new List<string>();
+            
             var dependencies = new List<string>();
 
             XmlDocument doc = new XmlDocument();
-            doc.Load(propertiesPath);
+
+            try
+            {
+                doc.Load(propertiesPath);
+            }
+            catch
+            {
+                return new List<string>();
+            }
 
             var root = doc.DocumentElement;
 
@@ -119,7 +143,15 @@ namespace RailworksDownoader
         private IEnumerable<string> ParseBlueprint(string blueprintPath)
         {
             XmlDocument doc = new XmlDocument();
-            doc.Load(blueprintPath);
+
+            try
+            {
+                doc.Load(blueprintPath);
+            }
+            catch
+            {
+                yield break;
+            }
 
             foreach (XmlNode node in doc.SelectNodes("//Provider"))
             {

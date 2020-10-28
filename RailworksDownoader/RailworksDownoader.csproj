@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{98F41F75-FB1A-4053-B6F1-2166D31E080A}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>RailworksDownoader</RootNamespace>
-    <AssemblyName>RailworksDownoader</AssemblyName>
+    <RootNamespace>RailworksDownloader</RootNamespace>
+    <AssemblyName>RailworksDownloader</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -65,8 +65,15 @@
     <Compile Include="FindPath.xaml.cs">
       <DependentUpon>FindPath.xaml</DependentUpon>
     </Compile>
+    <Compile Include="RailworksPathDialog.xaml.cs">
+      <DependentUpon>RailworksPathDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="RouteCrawler.cs" />
     <Compile Include="RouteInfo.cs" />
+    <Compile Include="RouteItemData.cs" />
+    <Compile Include="RouteLine.xaml.cs">
+      <DependentUpon>RouteLine.xaml</DependentUpon>
+    </Compile>
     <Compile Include="RuntimeData.cs" />
     <Compile Include="SqLiteAdapter.cs" />
     <Compile Include="StartupWindow.xaml.cs">
@@ -88,6 +95,14 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="RailworksPathDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="RouteLine.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="StartupWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

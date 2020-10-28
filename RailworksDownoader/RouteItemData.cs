@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace RailworksDownloader
 {
-    class RouteInfo
+    public class RouteItemData
     {
         public string Name { get; set; }
 
-        public string Path { get; set; }
+        public int Progress { get; set; }
 
-        internal RouteInfo(string name, string path)
+        public RouteItemData(string routeName, int routeProgress)
         {
-            Name = name;
-            Path = path;
+            Name = routeName;
+            Progress = routeProgress;
         }
     }
 }
