@@ -19,8 +19,8 @@ namespace RailworksDownloader
         public List<RouteInfo> Routes { get; set; }
 
         public HashSet<string> AllDependencies { get; set; }
-        
-        List<RouteCrawler> Crawlers;
+        public HashSet<string> MissingDependencies { get; set; }
+
         int Total = 0;
         float Elapsed = 0f;
         int Completed = 0;
@@ -41,7 +41,6 @@ namespace RailworksDownloader
         {
             RWPath = string.IsNullOrWhiteSpace(path) ? GetRWPath() : path;
             AllDependencies = new HashSet<string>();
-            Crawlers = new List<RouteCrawler>();
             Routes = new List<RouteInfo>();
         }
 
@@ -171,6 +170,41 @@ namespace RailworksDownloader
                 Elapsed += percent;
 
                 ProgressUpdated?.Invoke((int)(Elapsed * 100 / Total));
+            }
+        }
+
+        private bool CheckForFileInAP(string directory, string fileToFind)
+        {
+            foreach (var file in Directory.GetFiles(directory, "*.ap"))
+            {
+                var zipFile = ZipFile.OpenRead(file);
+                bool hRes = zipFile.Entries.Any(entry => entry.FullName.EndsWith(fileToFind));
+
+                if (!hRes)
+                {
+                    string parDir = Directory.GetParent(directory).FullName;
+                    if (Directory.GetParent(parDir).FullName.EndsWith("Assets"))
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return CheckForFileInAP(parDir, fileToFind);
+                    }
+                }
+            }
+            return false;
+        }
+
+        public void GetMissing()
+        {
+            foreach (string dependency in AllDependencies)
+            {
+                if (File.Exists(dependency) || CheckForFileInAP(Directory.GetParent(dependency).FullName, Path.GetFileName(dependency)))
+                {
+                    continue;
+                }
+                MissingDependencies.Add(dependency);
             }
         }
     }

@@ -16,32 +16,72 @@ using System.Xml;
 
 namespace RailworksDownloader
 {
+    /// <summary>
+    /// Crawles specific route
+    /// </summary>
     class RouteCrawler
     {
+        // Route path
         private string RoutePath;
+        // Railworks path
         private string RailworksPath;
+        // Size of all route files
         private long AllFilesSize = 0;
+        // Size of processed route files
         private long Progress = 0;
+        // Thread locks
         private object DependenciesLock = new object();
         private object ProgressLock = new object();
+        // Total crawling process (%)
         internal float PercentProgress = 0f;
+        // Loaded route data
         private LoadedRoute SavedRoute;
+        // Database adapter
         private SqLiteAdapter Adapter;
 
+        /// <summary>
+        /// Is route from asset pack
+        /// </summary>
         internal bool IsAP { get => !File.Exists(Path.Combine(RoutePath, "RouteProperties.xml")); }
 
+        // Progress updated
         public delegate void ProgressUpdatedEventHandler(float percent);
+        /// <summary>
+        /// Total absolute progress updated
+        /// </summary>
         public event ProgressUpdatedEventHandler ProgressUpdated;
+        /// <summary>
+        /// Total relative progress updated
+        /// </summary>
         public event ProgressUpdatedEventHandler DeltaProgress;
 
         public delegate void CrawlingCompleteEventHandler();
+        /// <summary>
+        /// Crawling complete
+        /// </summary>
         public event CrawlingCompleteEventHandler Complete;
 
         public delegate void RouteSavingEventHandler(bool saved);
+        /// <summary>
+        /// Is route saving
+        /// </summary>
         public event RouteSavingEventHandler RouteSaving;
 
+        /// <summary>
+        /// All route dependencies
+        /// </summary>
         public HashSet<string> Dependencies { get; private set; }
 
+        /// <summary>
+        /// All route missing dependencies
+        /// </summary>
+        public List<string> MissingDependencies { get; private set; }
+
+        /// <summary>
+        /// Initializes route crawler
+        /// </summary>
+        /// <param name="path">Route path</param>
+        /// <param name="railworksPath">RailWorks path</param>
         public RouteCrawler(string path, string railworksPath)
         {
             RoutePath = path;
@@ -51,14 +91,22 @@ namespace RailworksDownloader
             SavedRoute = Adapter.LoadSavedRoute(IsAP);
         }
 
+        /// <summary>
+        /// Start route crawling
+        /// </summary>
+        /// <returns></returns>
         public async Task Start()
         {
+            // If route directory exists
             if (Directory.Exists(RoutePath))
             {
+                // Counts size of all files
                 AllFilesSize = CountAllFiles();
 
+                // Find all dependencies
                 await GetDependencies();
 
+                // If crawling skipped because cache or inaccuracy, adds to 100 %
                 if (PercentProgress != 100)
                 {
                     DeltaProgress?.Invoke(100f - PercentProgress);
@@ -66,13 +114,18 @@ namespace RailworksDownloader
                     ProgressUpdated?.Invoke(PercentProgress);
                 }
 
+                // Crawling complete event
                 Complete?.Invoke();
             }
         }
 
+        /// <summary>
+        /// Report route progress
+        /// </summary>
+        /// <param name="file"></param>
         private void ReportProgress(string file)
         {
-            float delta = 0;
+            float delta;
             
             lock (ProgressLock)
             {
@@ -93,10 +146,16 @@ namespace RailworksDownloader
                 delta = 100f;
             }
 
+            // Invoke progress events
             ProgressUpdated?.Invoke(PercentProgress);
             DeltaProgress?.Invoke(delta);
         }
 
+        /// <summary>
+        /// Parse blueprint ID node
+        /// </summary>
+        /// <param name="blueprintIDNode">Blueprint node</param>
+        /// <returns>Parsed node</returns>
         private string ParseAbsoluteBlueprintIDNode(XmlNode blueprintIDNode)
         {
             var absoluteBlueprintID = blueprintIDNode.FirstChild;
@@ -104,6 +163,11 @@ namespace RailworksDownloader
             return Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText);
         }
 
+        /// <summary>
+        /// Parse skies node
+        /// </summary>
+        /// <param name="skiesNode">Skies node</param>
+        /// <returns>Parsed node</returns>
         private IEnumerable<string> ParseSkiesNode(XmlNode skiesNode)
         {
             foreach (XmlNode n in skiesNode.FirstChild)
@@ -112,13 +176,20 @@ namespace RailworksDownloader
             }
         }
 
+        /// <summary>
+        /// Get all route properties dependencies
+        /// </summary>
+        /// <param name="propertiesPath">Route properties path</param>
+        /// <returns>All route properties dependencies</returns>
         private async Task<IEnumerable<string>> GetRoutePropertiesDependencies(string propertiesPath)
         {
+            // Check if route properties exists
             if (!File.Exists(propertiesPath))
                 return new List<string>();
             
             var dependencies = new List<string>();
 
+            // Load route properties file
             XmlDocument doc = new XmlDocument();
 
             try
@@ -132,6 +203,7 @@ namespace RailworksDownloader
 
             var root = doc.DocumentElement;
 
+            // Parse route properties entries
             await Task.Run(() =>
             {
                 dependencies.Add(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("BlueprintID")));
@@ -144,8 +216,14 @@ namespace RailworksDownloader
             return dependencies;
         }
 
+        /// <summary>
+        /// Parse blueprint file
+        /// </summary>
+        /// <param name="blueprintPath">Blueprint file path</param>
+        /// <returns>Parsed file</returns>
         private IEnumerable<string> ParseBlueprint(string blueprintPath)
         {
+            // Load blueprint file
             XmlDocument doc = new XmlDocument();
 
             try
@@ -157,6 +235,7 @@ namespace RailworksDownloader
                 yield break;
             }
 
+            // Parse blueprint file
             foreach (XmlNode node in doc.SelectNodes("//Provider"))
             {
                 var blueprintSetID = node.ParentNode;
@@ -165,15 +244,23 @@ namespace RailworksDownloader
             }
         }
 
+        /// <summary>
+        /// Get scenario dependencies
+        /// </summary>
+        /// <param name="scenarioDir">Scenario direcory</param>
+        /// <returns></returns>
         private async Task _GetScenariosDependencies(string scenarioDir)
         {
+            // Foreach all scenario files
             foreach (string file in Directory.GetFiles(scenarioDir, "*.*bin", SearchOption.AllDirectories))
             {
                 string xml = Path.ChangeExtension(file, ".xml");
 
+                // Parse .bin to .xml
                 await Task.Run(() => RunSERZ(file));
                 try
                 {
+                    // Report progress
                     lock (DependenciesLock)
                     {
                         Dependencies.UnionWith(ParseBlueprint(xml));
@@ -181,9 +268,11 @@ namespace RailworksDownloader
                     }
                 }
                 catch { }
+                // Delete temporary .xml file
                 File.Delete(xml);
             }
 
+            // Read scenario properties file
             string scenarioProperties = Path.Combine(scenarioDir, "ScenarioProperties.xml");
             if (File.Exists(scenarioProperties))
             {
@@ -195,10 +284,17 @@ namespace RailworksDownloader
             }
         }
 
+        /// <summary>
+        /// Get scenarios dependencies
+        /// </summary>
+        /// <param name="scenariosDir">Scenarios dir</param>
+        /// <returns></returns>
         private async Task GetScenariosDependencies(string scenariosDir)
         {
+            // Foreach all scenarios
             foreach (string scenarioDir in Directory.GetDirectories(scenariosDir))
             {
+                // Unpack all .ap files if present
                 int APs_count = 0;
                 foreach (string file in Directory.GetFiles(scenarioDir, "*.ap"))
                 {
@@ -217,6 +313,7 @@ namespace RailworksDownloader
                 {
                     await _GetScenariosDependencies(Path.Combine(scenarioDir, "temp"));
 
+                    // Delete all unpacked .ap files
                     await Task.Run(() => { DeleteDirectory(Path.Combine(scenarioDir, "temp")); });
                 } else
                 {
@@ -225,14 +322,22 @@ namespace RailworksDownloader
             }
         }
 
+        /// <summary>
+        /// Get network dependencies
+        /// </summary>
+        /// <param name="path">Network directory path</param>
+        /// <returns></returns>
         private async Task GetNetworkDependencies(string path)
         {
+            // Foreach all network directories
             foreach (string dir in Directory.GetDirectories(path))
             {
+                // Foreach all network .bin files
                 foreach (string file in Directory.GetFiles(dir, "*.*bin"))
                 {
                     string xml = Path.ChangeExtension(file, ".xml");
 
+                    // Parse .bin file to .xml
                     await Task.Run(() => RunSERZ(file));
                     try
                     {
@@ -243,17 +348,25 @@ namespace RailworksDownloader
                         }
                     }
                     catch { }
+                    // Deletes temporary .xml file
                     File.Delete(xml);
                 }
             }
         }
 
+        /// <summary>
+        /// Get scenery depencencies
+        /// </summary>
+        /// <param name="path">Route scenery directory</param>
+        /// <returns></returns>
         private async Task GetSceneryDependencies(string path)
         {
+            // Foreach all scenery .bin files
             foreach (string file in Directory.GetFiles(path, "*.*bin"))
             {
                 string xml = Path.ChangeExtension(file, ".xml");
 
+                // Parse .bin file to .xml
                 await Task.Run(() => RunSERZ(file));
                 try
                 {
@@ -264,6 +377,7 @@ namespace RailworksDownloader
                     }
                 }
                 catch { }
+                // Delete temporary .xml file
                 File.Delete(xml);
             }
         }
@@ -670,6 +784,11 @@ namespace RailworksDownloader
                 md5.TransformFinalBlock(new byte[0], 0, 0);
                 return BitConverter.ToString(md5.Hash).Replace("-", "").ToLower();
             }
+        }
+
+        private void ParseRouteMissingAssets(HashSet<string> missingAll)
+        {
+            MissingDependencies = Dependencies.Intersect(missingAll).ToList();
         }
     }
 }

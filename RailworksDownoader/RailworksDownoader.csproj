@@ -70,11 +70,6 @@
     </Compile>
     <Compile Include="RouteCrawler.cs" />
     <Compile Include="RouteInfo.cs" />
-    <Compile Include="RouteItemData.cs" />
-    <Compile Include="RouteLine.xaml.cs">
-      <DependentUpon>RouteLine.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="RuntimeData.cs" />
     <Compile Include="SqLiteAdapter.cs" />
     <Compile Include="StartupWindow.xaml.cs">
       <DependentUpon>StartupWindow.xaml</DependentUpon>
@@ -96,10 +91,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="RailworksPathDialog.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="RouteLine.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
