@@ -27,11 +27,11 @@ namespace RailworksDownloader
         public delegate void ProgressUpdatedEventHandler(int percent);
         public event ProgressUpdatedEventHandler ProgressUpdated;
 
-        public Railworks() : this (GetRWPath()) { }
+        public Railworks() : this (null) { }
 
         public Railworks(string path)
         {
-            RWPath = path;
+            RWPath = string.IsNullOrWhiteSpace(path) ? GetRWPath() : path;
             Routes = GetRoutes().ToList();
             AllDependencies = new HashSet<string>();
             Crawlers = new List<RouteCrawler>();

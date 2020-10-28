@@ -1,6 +1,7 @@
 ﻿using ModernWpf.Controls;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -15,6 +16,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using RailworksDownloader.Properties;
 
 namespace RailworksDownloader
 {
@@ -23,19 +25,64 @@ namespace RailworksDownloader
     /// </summary>
     public partial class MainWindow : Window
     {
-        Railworks RW = new Railworks();
+        Railworks RW;
         
         public MainWindow()
         {
             InitializeComponent();
 
+            RW = new Railworks(Settings.Default.RailworksLocation);
+
+            if (string.IsNullOrWhiteSpace(RW.RWPath))
+            {
+                RailworksPathDialog rpd = new RailworksPathDialog();
+                rpd.ShowAsync();
+            }
+
+            if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+            {
+                Settings.Default.RailworksLocation = RW.RWPath;
+                Settings.Default.Save();
+            }
+
+            PathChanged();
+
+            Settings.Default.PropertyChanged += PropertyChanged;
+
             RoutesList.Items.Add(new RouteItemData("TEST", 24));
             RoutesList.Items.Add(new RouteItemData("TEST", 100));
             RoutesList.Items.Add(new RouteItemData("TEST", 100));
             RoutesList.Items.Add(new RouteItemData("TEST", 2));
+            RoutesList.Items.Add(new RouteItemData("TEST", 24));
+            RoutesList.Items.Add(new RouteItemData("TEST", 100));
+            RoutesList.Items.Add(new RouteItemData("TEST", 100));
+            RoutesList.Items.Add(new RouteItemData("TEST", 2));
+            RoutesList.Items.Add(new RouteItemData("TEST", 24));
+            RoutesList.Items.Add(new RouteItemData("TEST", 100));
+            RoutesList.Items.Add(new RouteItemData("TEST", 100));
+            RoutesList.Items.Add(new RouteItemData("TEST", 2));
+            RoutesList.Items.Add(new RouteItemData("TEST", 24));
+            RoutesList.Items.Add(new RouteItemData("TEST", 100));
+            RoutesList.Items.Add(new RouteItemData("TEST", 100));
+            RoutesList.Items.Add(new RouteItemData("TEST", 2));
+            RoutesList.Items.Add(new RouteItemData("TEST", 24));
+            RoutesList.Items.Add(new RouteItemData("TEST", 100));
+            RoutesList.Items.Add(new RouteItemData("TEST", 100));
+            RoutesList.Items.Add(new RouteItemData("TEST", 2));
+        }
 
-            RailworksPathDialog rpd = new RailworksPathDialog();
-            rpd.ShowAsync();
+        private void PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "RailworksLocation")
+            {
+                RW.RWPath = Settings.Default.RailworksLocation;
+                PathChanged();
+            }
+        }
+
+        private void PathChanged()
+        {
+            PathSelected.IsChecked = ScanRailworks.IsEnabled = !string.IsNullOrWhiteSpace(RW.RWPath);
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -67,15 +114,8 @@ namespace RailworksDownloader
 
         private void SelectRailworksLocation_Click(object sender, RoutedEventArgs e)
         {
-            string path = Railworks.GetRWPath();
-
-            if (path == null)
-            {
-                RailworksPathDialog rpd = new RailworksPathDialog();
-                rpd.ShowAsync();
-            }
-
-            Properties.Settings.Default.RailworksLocation = path;
+            RailworksPathDialog rpd = new RailworksPathDialog();
+            rpd.ShowAsync();
         }
     }
 }
