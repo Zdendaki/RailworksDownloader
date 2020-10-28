@@ -99,7 +99,7 @@ namespace RailworksDownloader
 
                 if (File.Exists(rp_path)) 
                 {
-                    yield return new RouteInfo(ParseRouteProperties(rp_path), dir);
+                    yield return new RouteInfo(ParseRouteProperties(rp_path).Trim(), dir);
                 }
                 else
                 {
@@ -113,7 +113,7 @@ namespace RailworksDownloader
                                     Directory.CreateDirectory(Path.Combine(path, dir, "temp"));
 
                                 entry.ExtractToFile(Path.Combine(path, dir, "temp", entry.FullName), true);
-                                yield return new RouteInfo(ParseRouteProperties(Path.Combine(path, dir, "temp", entry.FullName)), dir);
+                                yield return new RouteInfo(ParseRouteProperties(Path.Combine(path, dir, "temp", entry.FullName)).Trim(), dir);
                             }
                         }
                     }
