@@ -27,6 +27,7 @@ namespace RailworksDownloader
         object PercentLock = new object();
         object CompleteLock = new object();
         object SavingLock = new object();
+        object MissingLock = new object();
         int Saving = 0;
 
         public delegate void ProgressUpdatedEventHandler(int percent);
@@ -35,6 +36,10 @@ namespace RailworksDownloader
         public delegate void RouteSavingEventHandler(bool saved);
         public event RouteSavingEventHandler RouteSaving;
 
+        public delegate void CompleteEventHandler();
+        public event CompleteEventHandler CrawlingComplete;
+        
+
         public Railworks() : this (null) { }
 
         public Railworks(string path)
@@ -42,6 +47,7 @@ namespace RailworksDownloader
             RWPath = string.IsNullOrWhiteSpace(path) ? GetRWPath() : path;
             AllDependencies = new HashSet<string>();
             Routes = new List<RouteInfo>();
+            MissingDependencies = new HashSet<string>();
         }
 
         public void InitRoutes()
@@ -159,7 +165,7 @@ namespace RailworksDownloader
                 Completed++;
 
                 if (Completed == Routes.Count)
-                    MessageBox.Show("DONE!!");
+                    CrawlingComplete?.Invoke();
             }
         }
 
@@ -175,37 +181,45 @@ namespace RailworksDownloader
 
         private bool CheckForFileInAP(string directory, string fileToFind)
         {
-            foreach (var file in Directory.GetFiles(directory, "*.ap"))
-            {
-                var zipFile = ZipFile.OpenRead(file);
-                bool hRes = zipFile.Entries.Any(entry => entry.FullName.EndsWith(fileToFind));
+            string parDir = Directory.GetParent(directory).FullName;
 
-                if (!hRes)
+            if (Directory.GetParent(parDir).FullName.EndsWith("Assets") || new DirectoryInfo(directory).FullName.EndsWith("Assets"))
+            {
+                return false;
+            }
+            else
+            {
+                if (Directory.Exists(directory))
                 {
-                    string parDir = Directory.GetParent(directory).FullName;
-                    if (Directory.GetParent(parDir).FullName.EndsWith("Assets"))
+                    foreach (var file in Directory.GetFiles(directory, "*.ap"))
                     {
-                        return false;
-                    }
-                    else
-                    {
-                        return CheckForFileInAP(parDir, fileToFind);
+                        var zipFile = ZipFile.OpenRead(file);
+                        bool hRes = zipFile.Entries.Any(entry => entry.FullName.EndsWith(fileToFind));
+
+                        return hRes;
                     }
                 }
+                return CheckForFileInAP(parDir, fileToFind);
             }
-            return false;
         }
 
-        public void GetMissing()
+        public async Task GetMissing()
         {
-            foreach (string dependency in AllDependencies)
+            await Task.Run(() =>
             {
-                if (File.Exists(dependency) || CheckForFileInAP(Directory.GetParent(dependency).FullName, Path.GetFileName(dependency)))
+                foreach (string dependency in AllDependencies)
                 {
-                    continue;
+                    string path = Path.Combine(RWPath, "Assets", dependency);
+                    
+                    if (File.Exists(path) || CheckForFileInAP(Directory.GetParent(path).FullName, Path.GetFileName(path)))
+                    {
+                        continue;
+                    }
+
+                    lock (MissingLock)
+                        MissingDependencies.Add(dependency);
                 }
-                MissingDependencies.Add(dependency);
-            }
+            });
         }
     }
 }

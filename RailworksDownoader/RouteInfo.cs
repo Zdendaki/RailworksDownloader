@@ -5,6 +5,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
+using Windows.UI;
 
 namespace RailworksDownloader
 {
@@ -31,6 +33,36 @@ namespace RailworksDownloader
             }
         }
 
+        
+
+        public Brush ProgressBackground
+        {
+            get
+            {
+                return FromInput(MissingCount);
+            }
+        }
+
+        int count;
+
+        public int MissingCount
+        {
+            get
+            {
+                return count;
+            }
+            set
+            {
+                if (count != value)
+                {
+                    OnPropertyChanged<Brush>("ProgressBackground");
+                    OnPropertyChanged<int>();
+                }
+
+                count = value;
+            }
+        }
+
         public RouteCrawler Crawler { get; set; }
 
         internal RouteInfo(string name, string path)
@@ -38,6 +70,7 @@ namespace RailworksDownloader
             Name = name;
             Path = path;
             Crawler = null;
+            count = -1;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -50,6 +83,16 @@ namespace RailworksDownloader
         public void ProgressUpdated(float progress)
         {
             Progress = progress;
+        }
+
+        public Brush FromInput(int input)
+        {
+            if (input > 0)
+                return MainWindow.Yellow;
+            else if (input == -1)
+                return MainWindow.Blue;
+            else
+                return MainWindow.Green;
         }
     }
 }

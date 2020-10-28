@@ -13,5 +13,8 @@ namespace RailworksDownloader
     /// </summary>
     public partial class App : Application
     {
+        internal static MainWindow Window { get; set; }
+
+        internal static Railworks Railworks { get; set; }
     }
 }

@@ -89,6 +89,7 @@ namespace RailworksDownloader
             Dependencies = new HashSet<string>();
             Adapter = new SqLiteAdapter(Path.Combine(RoutePath, "cache.dls"));
             SavedRoute = Adapter.LoadSavedRoute(IsAP);
+            MissingDependencies = new List<string>();
         }
 
         /// <summary>
@@ -113,6 +114,8 @@ namespace RailworksDownloader
                     PercentProgress = 100;
                     ProgressUpdated?.Invoke(PercentProgress);
                 }
+
+                App.Railworks.AllDependencies.UnionWith(Dependencies);
 
                 // Crawling complete event
                 Complete?.Invoke();
@@ -786,7 +789,7 @@ namespace RailworksDownloader
             }
         }
 
-        private void ParseRouteMissingAssets(HashSet<string> missingAll)
+        public void ParseRouteMissingAssets(HashSet<string> missingAll)
         {
             MissingDependencies = Dependencies.Intersect(missingAll).ToList();
         }

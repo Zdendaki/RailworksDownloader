@@ -25,15 +25,25 @@ namespace RailworksDownloader
     /// </summary>
     public partial class MainWindow : Window
     {
+        internal static Brush Blue = new SolidColorBrush(Color.FromArgb(255, 0, 151, 230));
+        internal static Brush Green = new SolidColorBrush(Color.FromArgb(255, 76, 209, 55));
+        internal static Brush Yellow = new SolidColorBrush(Color.FromArgb(255, 251, 197, 49));
+
         Railworks RW;
         
         public MainWindow()
         {
             InitializeComponent();
 
-            RW = new Railworks(Settings.Default.RailworksLocation);
-            RW.ProgressUpdated += RW_ProgressUpdated;
-            RW.RouteSaving += RW_RouteSaving;
+            App.Window = this;
+            App.Railworks = new Railworks();
+
+            App.Railworks = new Railworks(Settings.Default.RailworksLocation);
+            App.Railworks.ProgressUpdated += RW_ProgressUpdated;
+            App.Railworks.RouteSaving += RW_RouteSaving;
+            App.Railworks.CrawlingComplete += RW_CrawlingComplete;
+
+            RW = App.Railworks;
 
             if (string.IsNullOrWhiteSpace(RW.RWPath))
             {
@@ -52,8 +62,20 @@ namespace RailworksDownloader
             Settings.Default.PropertyChanged += PropertyChanged;
 
             //RoutesList.Items.Add(new RouteInfo("TEST", ""));
+        }
 
+        private async void RW_CrawlingComplete()
+        {
+            TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = true);
+            await RW.GetMissing();
 
+            foreach (var route in RW.Routes)
+            {
+                route.Crawler.ParseRouteMissingAssets(RW.MissingDependencies);
+                route.MissingCount = route.Crawler.MissingDependencies.Count;
+            }
+
+            TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = false);
         }
 
         private void RW_RouteSaving(bool saved)
@@ -64,8 +86,6 @@ namespace RailworksDownloader
         private void RW_ProgressUpdated(int percent)
         {
             TotalProgress.Dispatcher.Invoke(() => { TotalProgress.Value = percent; });
-
-            //Dispatcher.Invoke(() => { UpdateLayout(); });
         }
 
         private void PropertyChanged(object sender, PropertyChangedEventArgs e)
