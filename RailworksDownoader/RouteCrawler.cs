@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SQLite;
@@ -165,7 +166,7 @@ namespace RailworksDownloader
             var blueprintSetID = absoluteBlueprintID.FirstChild.FirstChild;
             if (String.IsNullOrWhiteSpace(absoluteBlueprintID.LastChild.InnerText))
                 return String.Empty;
-            return Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText);
+            return NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText));
         }
 
         /// <summary>
@@ -211,11 +212,11 @@ namespace RailworksDownloader
             // Parse route properties entries
             await Task.Run(() =>
             {
-                dependencies.Add(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("BlueprintID")));
+                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("BlueprintID"))));
                 dependencies.AddRange(ParseSkiesNode(root.SelectSingleNode("Skies")));
-                dependencies.Add(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("WeatherBlueprint")));
-                dependencies.Add(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("TerrainBlueprint")));
-                dependencies.Add(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("MapBlueprint")));
+                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("WeatherBlueprint"))));
+                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("TerrainBlueprint"))));
+                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("MapBlueprint"))));
             });
 
             return dependencies;
@@ -226,7 +227,7 @@ namespace RailworksDownloader
         /// </summary>
         /// <param name="blueprintPath">Blueprint file path</param>
         /// <returns>Parsed file</returns>
-        private IEnumerable<string> ParseBlueprint(string blueprintPath)
+        private void ParseBlueprint(string blueprintPath)
         {
             // Load blueprint file
             XmlDocument doc = new XmlDocument();
@@ -237,18 +238,26 @@ namespace RailworksDownloader
             }
             catch
             {
-                yield break;
+                return;
             }
 
             // Parse blueprint file
-            foreach (XmlNode node in doc.SelectNodes("//Provider"))
+            //Parallel.ForEach(Routes, (ri) => ri.Crawler.Start());
+            Parallel.ForEach(doc.SelectNodes("//Provider").Cast<XmlNode>().ToArray(), node =>
+            {
+                var blueprintSetID = node.ParentNode;
+                var absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
+                if (!String.IsNullOrWhiteSpace(absoluteBlueprintID.LastChild.InnerText))
+                    Dependencies.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText)));
+            });
+            /*foreach (XmlNode node in doc.SelectNodes("//Provider"))
             {
                 var blueprintSetID = node.ParentNode;
                 var absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
                 if (String.IsNullOrWhiteSpace(absoluteBlueprintID.LastChild.InnerText))
                     continue;
                 yield return Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText);
-            }
+            }*/
         }
 
         /// <summary>
@@ -270,7 +279,8 @@ namespace RailworksDownloader
                     // Report progress
                     lock (DependenciesLock)
                     {
-                        Dependencies.UnionWith(ParseBlueprint(xml));
+                        //Dependencies.UnionWith(ParseBlueprint(xml));
+                        ParseBlueprint(xml);
                         ReportProgress(file);
                     }
                 }
@@ -285,7 +295,8 @@ namespace RailworksDownloader
             {
                 lock (DependenciesLock)
                 {
-                    Dependencies.UnionWith(ParseBlueprint(scenarioProperties));
+                    //Dependencies.UnionWith(ParseBlueprint(scenarioProperties));
+                    ParseBlueprint(scenarioProperties);
                     ReportProgress(scenarioProperties);
                 }
             }
@@ -350,7 +361,8 @@ namespace RailworksDownloader
                     {
                         lock (DependenciesLock)
                         {
-                            Dependencies.UnionWith(ParseBlueprint(xml));
+                            //Dependencies.UnionWith(ParseBlueprint(xml));
+                            ParseBlueprint(xml);
                             ReportProgress(file);
                         }
                     }
@@ -379,7 +391,8 @@ namespace RailworksDownloader
                 {
                     lock (DependenciesLock)
                     {
-                        Dependencies.UnionWith(ParseBlueprint(xml));
+                        //Dependencies.UnionWith(ParseBlueprint(xml));
+                        ParseBlueprint(xml);
                         ReportProgress(file);
                     }
                 }
@@ -703,6 +716,8 @@ namespace RailworksDownloader
                             break;
                     }
                 }
+
+                DeleteDirectory(Path.Combine(RoutePath, "temp"));
             }
 
             return size;
@@ -799,6 +814,49 @@ namespace RailworksDownloader
         public void ParseRouteMissingAssets(HashSet<string> missingAll)
         {
             MissingDependencies = Dependencies.Intersect(missingAll).ToList();
+        }
+
+
+        public static string NormalizePath(string path)
+        {
+
+            if (string.IsNullOrEmpty(path))
+                return path;
+
+            // Remove path root.
+            string path_root = Path.GetPathRoot(path);
+            path = path.Substring(path_root.Length);
+
+            string[] path_components = path.Split(Path.DirectorySeparatorChar);
+
+            // "Operating memory" for construction of normalized path.
+            // Top element is the last path component. Bottom of the stack is first path component.
+            Stack<string> stack = new Stack<string>(path_components.Length);
+
+            foreach (string path_component in path_components)
+            {
+
+                if (path_component.Length == 0)
+                    continue;
+
+                if (path_component == ".")
+                    continue;
+
+                if (path_component == ".." && stack.Count > 0 && stack.Peek() != "..")
+                {
+                    stack.Pop();
+                    continue;
+                }
+
+                stack.Push(path_component);
+
+            }
+
+            string result = string.Join(new string(Path.DirectorySeparatorChar, 1), stack.Reverse().ToArray());
+            result = Path.Combine(path_root, result);
+
+            return result;
+
         }
     }
 }

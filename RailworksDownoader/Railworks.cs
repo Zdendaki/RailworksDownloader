@@ -16,9 +16,13 @@ namespace RailworksDownloader
     {
         public string RWPath { get; set; }
 
+        public string AssetsPath { get; set; }
+
         public List<RouteInfo> Routes { get; set; }
 
         public HashSet<string> AllDependencies { get; set; }
+
+        public HashSet<string> APDependencies { get; set; }
         public HashSet<string> MissingDependencies { get; set; }
 
         int Total = 0;
@@ -28,6 +32,7 @@ namespace RailworksDownloader
         object CompleteLock = new object();
         object SavingLock = new object();
         object MissingLock = new object();
+        object APDepsLock = new object();
         int Saving = 0;
 
         public delegate void ProgressUpdatedEventHandler(int percent);
@@ -45,9 +50,11 @@ namespace RailworksDownloader
         public Railworks(string path)
         {
             RWPath = string.IsNullOrWhiteSpace(path) ? GetRWPath() : path;
+            AssetsPath = Path.Combine(RWPath, "Assets\\");
             AllDependencies = new HashSet<string>();
             Routes = new List<RouteInfo>();
             MissingDependencies = new HashSet<string>();
+            APDependencies = new HashSet<string>();
         }
 
         public void InitRoutes()
@@ -151,7 +158,7 @@ namespace RailworksDownloader
         internal void RunAllCrawlers()
         {
             InitCrawlers();
-            
+
             foreach (RouteInfo ri in Routes)
             {
                 var t = Task.Run(() => ri.Crawler.Start());
@@ -181,9 +188,7 @@ namespace RailworksDownloader
 
         private bool CheckForFileInAP(string directory, string fileToFind)
         {
-            string parDir = Directory.GetParent(directory).FullName;
-
-            if (new DirectoryInfo(directory).FullName.EndsWith("Assets")) //Directory.GetParent(parDir).FullName.EndsWith("Assets") || 
+            if (NormalizePath(directory) == NormalizePath(AssetsPath)) //Directory.GetParent(parDir).FullName.EndsWith("Assets") || 
             {
                 return false;
             }
@@ -193,13 +198,17 @@ namespace RailworksDownloader
                 {
                     foreach (var file in Directory.GetFiles(directory, "*.ap"))
                     {
-                        var zipFile = ZipFile.OpenRead(file);
-                        bool hRes = zipFile.Entries.Any(entry => (entry.FullName.EndsWith(fileToFind) || entry.FullName.EndsWith(Path.ChangeExtension(fileToFind, "bin"))));
+                        try
+                        {
+                            var zipFile = ZipFile.OpenRead(file);
 
-                        return hRes;
+                            lock (APDepsLock)
+                                APDependencies.UnionWith(from x in zipFile.Entries where (x.FullName.Contains(".xml") || x.FullName.Contains(".bin")) select NormalizePath(GetRelativePath(AssetsPath, Path.Combine(directory, x.FullName))));
+                        } catch {}
                     }
+                    return APDependencies.Contains(fileToFind) || APDependencies.Contains(Path.ChangeExtension(fileToFind, "xml"));
                 }
-                return CheckForFileInAP(parDir, fileToFind);
+                return CheckForFileInAP(Directory.GetParent(directory).FullName, fileToFind);
             }
         }
 
@@ -209,18 +218,83 @@ namespace RailworksDownloader
             {
                 foreach (string dependency in AllDependencies)
                 {
-                    string path = Path.ChangeExtension(Path.Combine(RWPath, "Assets", dependency), "xml");
-                    string path_bin = Path.ChangeExtension(path, "bin");
-
-                    if (File.Exists(path_bin) || File.Exists(path) || CheckForFileInAP(Directory.GetParent(path).FullName, Path.GetFileName(path)))
+                    if (!String.IsNullOrWhiteSpace(dependency))
                     {
-                        continue;
-                    }
+                        string path = NormalizePath(Path.ChangeExtension(Path.Combine(AssetsPath, dependency), "xml"));
+                        string path_bin = NormalizePath(Path.ChangeExtension(path, "bin"));
+                        string relative_path = NormalizePath(GetRelativePath(AssetsPath, path));
+                        string relative_path_bin = NormalizePath(Path.ChangeExtension(relative_path, ".bin"));
 
-                    lock (MissingLock)
-                        MissingDependencies.Add(dependency);
+                        if (File.Exists(path_bin) || File.Exists(path) || APDependencies.Contains(relative_path_bin) || APDependencies.Contains(relative_path) || CheckForFileInAP(Directory.GetParent(path).FullName, relative_path))
+                        {
+                            continue;
+                        }
+
+                        lock (MissingLock)
+                            MissingDependencies.Add(NormalizePath(dependency));
+                    }
                 }
             });
+        }
+
+        public static string NormalizePath(string path)
+        {
+
+            if (string.IsNullOrEmpty(path))
+                return path;
+
+            // Remove path root.
+            string path_root = Path.GetPathRoot(path);
+            path = path.Substring(path_root.Length);
+
+            string[] path_components = path.Split(Path.DirectorySeparatorChar);
+
+            // "Operating memory" for construction of normalized path.
+            // Top element is the last path component. Bottom of the stack is first path component.
+            Stack<string> stack = new Stack<string>(path_components.Length);
+
+            foreach (string path_component in path_components)
+            {
+
+                if (path_component.Length == 0)
+                    continue;
+
+                if (path_component == ".")
+                    continue;
+
+                if (path_component == ".." && stack.Count > 0 && stack.Peek() != "..")
+                {
+                    stack.Pop();
+                    continue;
+                }
+
+                stack.Push(path_component);
+
+            }
+
+            string result = string.Join(new string(Path.DirectorySeparatorChar, 1), stack.Reverse().ToArray());
+            result = Path.Combine(path_root, result);
+
+            return result;
+
+        }
+
+        /*public static string NormalizePath(string path)
+        {
+            return Path.GetFullPath(new Uri(path).LocalPath)
+                       .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                       .ToUpperInvariant();
+        }*/
+
+        public string GetRelativePath(string relativeTo, string path)
+        {
+            var uri = new Uri(relativeTo);
+            var rel = Uri.UnescapeDataString(uri.MakeRelativeUri(new Uri(path)).ToString()).Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            if (rel.Contains(Path.DirectorySeparatorChar.ToString()) == false)
+            {
+                rel = $".{ Path.DirectorySeparatorChar }{ rel }";
+            }
+            return rel;
         }
     }
 }

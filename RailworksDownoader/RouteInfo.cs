@@ -88,7 +88,7 @@ namespace RailworksDownloader
         public Brush FromInput(int input)
         {
             if (input > 0)
-                return MainWindow.Yellow;
+                return MainWindow.Red;
             else if (input == -1)
                 return MainWindow.Blue;
             else

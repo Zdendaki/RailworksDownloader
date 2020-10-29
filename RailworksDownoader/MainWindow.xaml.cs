@@ -28,6 +28,7 @@ namespace RailworksDownloader
         internal static Brush Blue = new SolidColorBrush(Color.FromArgb(255, 0, 151, 230));
         internal static Brush Green = new SolidColorBrush(Color.FromArgb(255, 76, 209, 55));
         internal static Brush Yellow = new SolidColorBrush(Color.FromArgb(255, 251, 197, 49));
+        internal static Brush Red = new SolidColorBrush(Color.FromArgb(255, 229, 20, 0));
 
         Railworks RW;
         
