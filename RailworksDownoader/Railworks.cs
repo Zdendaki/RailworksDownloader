@@ -183,7 +183,7 @@ namespace RailworksDownloader
         {
             string parDir = Directory.GetParent(directory).FullName;
 
-            if (Directory.GetParent(parDir).FullName.EndsWith("Assets") || new DirectoryInfo(directory).FullName.EndsWith("Assets"))
+            if (new DirectoryInfo(directory).FullName.EndsWith("Assets")) //Directory.GetParent(parDir).FullName.EndsWith("Assets") || 
             {
                 return false;
             }
@@ -194,7 +194,7 @@ namespace RailworksDownloader
                     foreach (var file in Directory.GetFiles(directory, "*.ap"))
                     {
                         var zipFile = ZipFile.OpenRead(file);
-                        bool hRes = zipFile.Entries.Any(entry => entry.FullName.EndsWith(fileToFind));
+                        bool hRes = zipFile.Entries.Any(entry => (entry.FullName.EndsWith(fileToFind) || entry.FullName.EndsWith(Path.ChangeExtension(fileToFind, "bin"))));
 
                         return hRes;
                     }
@@ -209,9 +209,10 @@ namespace RailworksDownloader
             {
                 foreach (string dependency in AllDependencies)
                 {
-                    string path = Path.Combine(RWPath, "Assets", dependency);
-                    
-                    if (File.Exists(path) || CheckForFileInAP(Directory.GetParent(path).FullName, Path.GetFileName(path)))
+                    string path = Path.ChangeExtension(Path.Combine(RWPath, "Assets", dependency), "xml");
+                    string path_bin = Path.ChangeExtension(path, "bin");
+
+                    if (File.Exists(path_bin) || File.Exists(path) || CheckForFileInAP(Directory.GetParent(path).FullName, Path.GetFileName(path)))
                     {
                         continue;
                     }

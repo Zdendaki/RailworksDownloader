@@ -116,10 +116,10 @@ namespace RailworksDownloader
                 }
 
                 App.Railworks.AllDependencies.UnionWith(Dependencies);
-
-                // Crawling complete event
-                Complete?.Invoke();
             }
+
+            // Crawling complete event
+            Complete?.Invoke();
         }
 
         /// <summary>
@@ -163,6 +163,8 @@ namespace RailworksDownloader
         {
             var absoluteBlueprintID = blueprintIDNode.FirstChild;
             var blueprintSetID = absoluteBlueprintID.FirstChild.FirstChild;
+            if (String.IsNullOrWhiteSpace(absoluteBlueprintID.LastChild.InnerText))
+                return String.Empty;
             return Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText);
         }
 
@@ -243,6 +245,8 @@ namespace RailworksDownloader
             {
                 var blueprintSetID = node.ParentNode;
                 var absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
+                if (String.IsNullOrWhiteSpace(absoluteBlueprintID.LastChild.InnerText))
+                    continue;
                 yield return Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText);
             }
         }
@@ -726,10 +730,13 @@ namespace RailworksDownloader
         private long GetDirectorySize(string directory, string mask)
         {
             long size = 0;
-            
-            foreach (var file in Directory.GetFiles(directory, mask, SearchOption.AllDirectories))
+
+            if (Directory.Exists(directory))
             {
-                size += GetFileSize(file);
+                foreach (var file in Directory.GetFiles(directory, mask, SearchOption.AllDirectories))
+                {
+                    size += GetFileSize(file);
+                }
             }
 
             return size;
