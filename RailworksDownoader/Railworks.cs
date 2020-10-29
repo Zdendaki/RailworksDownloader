@@ -91,6 +91,25 @@ namespace RailworksDownloader
             return ParseDisplayNameNode(doc.DocumentElement.SelectSingleNode("DisplayName"));
         }
 
+        private static void DeleteDirectory(string directory)
+        {
+            string[] files = Directory.GetFiles(directory);
+            string[] dirs = Directory.GetDirectories(directory);
+
+            foreach (string file in files)
+            {
+                File.SetAttributes(file, FileAttributes.Normal);
+                File.Delete(file);
+            }
+
+            foreach (string dir in dirs)
+            {
+                DeleteDirectory(dir);
+            }
+
+            Directory.Delete(directory, true);
+        }
+
         /// <summary>
         /// Get list of routes
         /// </summary>
@@ -106,7 +125,7 @@ namespace RailworksDownloader
 
                 if (File.Exists(rp_path)) 
                 {
-                    yield return new RouteInfo(ParseRouteProperties(rp_path).Trim(), dir);
+                    yield return new RouteInfo(ParseRouteProperties(rp_path).Trim() + " - " + Path.GetFileName(dir), dir);
                 }
                 else
                 {
@@ -120,7 +139,9 @@ namespace RailworksDownloader
                                     Directory.CreateDirectory(Path.Combine(path, dir, "temp"));
 
                                 entry.ExtractToFile(Path.Combine(path, dir, "temp", entry.FullName), true);
-                                yield return new RouteInfo(ParseRouteProperties(Path.Combine(path, dir, "temp", entry.FullName)).Trim(), dir);
+                                yield return new RouteInfo(ParseRouteProperties(Path.Combine(path, dir, "temp", entry.FullName)).Trim() + " - " + Path.GetFileName(dir), dir);
+
+                                DeleteDirectory(Path.Combine(path, dir, "temp"));
                             }
                         }
                     }

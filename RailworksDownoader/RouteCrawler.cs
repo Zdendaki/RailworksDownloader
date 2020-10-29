@@ -99,28 +99,38 @@ namespace RailworksDownloader
         /// <returns></returns>
         public async Task Start()
         {
-            // If route directory exists
-            if (Directory.Exists(RoutePath))
+            try
             {
-                // Counts size of all files
-                AllFilesSize = CountAllFiles();
-
-                // Find all dependencies
-                await GetDependencies();
-
-                // If crawling skipped because cache or inaccuracy, adds to 100 %
-                if (PercentProgress != 100)
+                // If route directory exists
+                if (Directory.Exists(RoutePath))
                 {
-                    DeltaProgress?.Invoke(100f - PercentProgress);
-                    PercentProgress = 100;
-                    ProgressUpdated?.Invoke(PercentProgress);
+                    // Counts size of all files
+                    AllFilesSize = CountAllFiles();
+
+                    // Find all dependencies
+                    await GetDependencies();
+
+                    // If crawling skipped because cache or inaccuracy, adds to 100 %
+                    if (PercentProgress != 100)
+                    {
+                        DeltaProgress?.Invoke(100f - PercentProgress);
+                        PercentProgress = 100;
+                        ProgressUpdated?.Invoke(PercentProgress);
+                    }
+
+                    App.Railworks.AllDependencies.UnionWith(Dependencies);
                 }
 
-                App.Railworks.AllDependencies.UnionWith(Dependencies);
-            }
+                // Crawling complete event
+                Complete?.Invoke();
+            } catch (Exception e)
+            {
+                Desharp.Debug.Log(e, Desharp.Level.DEBUG);
 
-            // Crawling complete event
-            Complete?.Invoke();
+                // store exception with all inner exceptions and everything else
+                // you need to know later in exceptions.html or exceptions.log file
+                Desharp.Debug.Log(e.ToString());
+            }
         }
 
         /// <summary>
@@ -162,11 +172,15 @@ namespace RailworksDownloader
         /// <returns>Parsed node</returns>
         private string ParseAbsoluteBlueprintIDNode(XmlNode blueprintIDNode)
         {
-            var absoluteBlueprintID = blueprintIDNode.FirstChild;
-            var blueprintSetID = absoluteBlueprintID.FirstChild.FirstChild;
-            if (String.IsNullOrWhiteSpace(absoluteBlueprintID.LastChild.InnerText))
-                return String.Empty;
-            return NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText));
+            if (blueprintIDNode != null)
+            {
+                var absoluteBlueprintID = blueprintIDNode.FirstChild;
+                var blueprintSetID = absoluteBlueprintID.FirstChild.FirstChild;
+                if (String.IsNullOrWhiteSpace(absoluteBlueprintID.LastChild.InnerText))
+                    return String.Empty;
+                return NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText));
+            }
+            return null;
         }
 
         /// <summary>
@@ -430,12 +444,12 @@ namespace RailworksDownloader
                 apChanged = GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum;
             }
 
-            bool loftsChanged = (GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Loft Tiles")) != SavedRoute.LoftChecksum) || apChanged;
-            bool roadsChanged = (GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Road Tiles")) != SavedRoute.RoadChecksum) || apChanged;
-            bool tracksChanged = (GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Track Tiles")) != SavedRoute.TrackChecksum) || apChanged;
-            bool sceneryChanged = (GetDirectoryMD5(Path.Combine(RoutePath, "Scenery")) != SavedRoute.SceneryChecksum) || apChanged;
-            bool rpChanged = (GetFileMD5(Path.Combine(RoutePath, "RouteProperties.xml")) != SavedRoute.RoutePropertiesChecksum) || apChanged;
-            bool scenariosChanged = (GetDirectoryMD5(Path.Combine(RoutePath, "Scenarios")) != SavedRoute.ScenariosChecksum) || apChanged;
+            bool loftsChanged = ((GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Loft Tiles")) != SavedRoute.LoftChecksum) && !IsAP) || apChanged;
+            bool roadsChanged = ((GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Road Tiles")) != SavedRoute.RoadChecksum) && !IsAP) || apChanged;
+            bool tracksChanged = ((GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Track Tiles")) != SavedRoute.TrackChecksum) && !IsAP) || apChanged;
+            bool sceneryChanged = ((GetDirectoryMD5(Path.Combine(RoutePath, "Scenery")) != SavedRoute.SceneryChecksum) && !IsAP) || apChanged;
+            bool rpChanged = ((GetFileMD5(Path.Combine(RoutePath, "RouteProperties.xml")) != SavedRoute.RoutePropertiesChecksum) && !IsAP) || apChanged;
+            bool scenariosChanged = ((GetDirectoryMD5(Path.Combine(RoutePath, "Scenarios")) != SavedRoute.ScenariosChecksum) && !IsAP) || apChanged;
 
             var md5 = ComputeChecksums();
 
@@ -580,7 +594,7 @@ namespace RailworksDownloader
             {
                 await _GetDependencies();
             }
-            else if (IsAP && GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum)
+            else if (IsAP) // && GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum)
             {
                 int count = 0;
                 foreach (string file in Directory.GetFiles(RoutePath, "*.ap"))
@@ -717,7 +731,7 @@ namespace RailworksDownloader
                     }
                 }
 
-                DeleteDirectory(Path.Combine(RoutePath, "temp"));
+                //DeleteDirectory(Path.Combine(RoutePath, "temp"));
             }
 
             return size;
@@ -725,21 +739,24 @@ namespace RailworksDownloader
 
         private static void DeleteDirectory(string directory)
         {
-            string[] files = Directory.GetFiles(directory);
-            string[] dirs = Directory.GetDirectories(directory);
-
-            foreach (string file in files)
+            try
             {
-                File.SetAttributes(file, FileAttributes.Normal);
-                File.Delete(file);
-            }
+                string[] files = Directory.GetFiles(directory);
+                string[] dirs = Directory.GetDirectories(directory);
 
-            foreach (string dir in dirs)
-            {
-                DeleteDirectory(dir);
-            }
+                foreach (string file in files)
+                {
+                    File.SetAttributes(file, FileAttributes.Normal);
+                    File.Delete(file);
+                }
 
-            Directory.Delete(directory, true);
+                foreach (string dir in dirs)
+                {
+                    DeleteDirectory(dir);
+                }
+
+                Directory.Delete(directory, true);
+            } catch { }
         }
 
         private long GetDirectorySize(string directory, string mask)
