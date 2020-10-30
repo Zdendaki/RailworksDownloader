@@ -551,7 +551,7 @@ namespace RailworksDownloader
                     }
                 }
 
-                Dependencies.RemoveWhere(x => string.IsNullOrWhiteSpace(x));
+                Dependencies.RemoveWhere(x => string.IsNullOrWhiteSpace(x) || (!x.Contains(".xml") && !x.Contains(".bin")));
 
                 await md5;
 
