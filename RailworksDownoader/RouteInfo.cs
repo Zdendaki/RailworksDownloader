@@ -10,7 +10,7 @@ using Windows.UI;
 
 namespace RailworksDownloader
 {
-    class RouteInfo : INotifyPropertyChanged
+    public class RouteInfo : INotifyPropertyChanged
     {
         public string Name { get; set; }
 

@@ -20,7 +20,7 @@ namespace RailworksDownloader
     /// <summary>
     /// Crawles specific route
     /// </summary>
-    class RouteCrawler
+    public class RouteCrawler
     {
         // Route path
         private string RoutePath;

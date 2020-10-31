@@ -17,6 +17,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using RailworksDownloader.Properties;
+using SWC = System.Windows.Controls;
 
 namespace RailworksDownloader
 {
@@ -61,6 +62,9 @@ namespace RailworksDownloader
             PathChanged();
 
             Settings.Default.PropertyChanged += PropertyChanged;
+
+            if (!string.IsNullOrWhiteSpace(RW.RWPath))
+                ScanRailworks_Click(this, null);
 
             //RoutesList.Items.Add(new RouteInfo("TEST", ""));
         }
@@ -154,6 +158,17 @@ namespace RailworksDownloader
         private void ScanRailworks_Click(object sender, RoutedEventArgs e)
         {
             RW.RunAllCrawlers();
+        }
+
+        private void ListViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            SWC.ListViewItem item = (SWC.ListViewItem)sender;
+
+            if (item?.IsSelected == true)
+            {
+                DependencyWindow dw = new DependencyWindow((RouteInfo)item.Content);
+                dw.ShowDialog();
+            }
         }
     }
 }
