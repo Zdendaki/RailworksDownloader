@@ -227,7 +227,10 @@ namespace RailworksDownloader
                                 APDependencies.UnionWith(from x in zipFile.Entries where (x.FullName.Contains(".xml") || x.FullName.Contains(".bin")) select NormalizePath(GetRelativePath(AssetsPath, Path.Combine(directory, x.FullName))));
                         } catch {}
                     }
-                    return APDependencies.Contains(fileToFind) || APDependencies.Contains(Path.ChangeExtension(fileToFind, "xml"));
+                    if (APDependencies.Contains(fileToFind) || APDependencies.Contains(Path.ChangeExtension(fileToFind, "xml")))
+                    {
+                        return true;
+                    }
                 }
                 return CheckForFileInAP(Directory.GetParent(directory).FullName, fileToFind);
             }
