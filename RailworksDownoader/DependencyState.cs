@@ -2,9 +2,10 @@
 {
     public enum DependencyState
     {
-        Downloaded,
-        Available,
+        Unknown,
         Unavailable,
-        Paid
+        Paid,
+        Available,
+        Downloaded
     }
 }

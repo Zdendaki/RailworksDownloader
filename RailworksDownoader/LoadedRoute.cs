@@ -24,7 +24,9 @@ namespace RailworksDownloader
 
         public List<string> Dependencies { get; set; }
 
-        public LoadedRoute(string loftChecksum, string roadChecksum, string trackChecksum, string sceneryChecksum, string routePropertiesChecksum, string apChecksum, string scenariosChecksum, List<string> dependencies)
+        public List<string> ScenarioDeps { get; set; }
+
+        public LoadedRoute(string loftChecksum, string roadChecksum, string trackChecksum, string sceneryChecksum, string routePropertiesChecksum, string apChecksum, string scenariosChecksum, List<string> dependencies, List<string> scenarioDeps)
         {
             LoftChecksum = loftChecksum;
             RoadChecksum = roadChecksum;
@@ -34,6 +36,7 @@ namespace RailworksDownloader
             ScenariosChecksum =  scenariosChecksum;
             APChecksum = apChecksum;
             Dependencies = dependencies;
+            ScenarioDeps = scenarioDeps;
         }
     }
 }

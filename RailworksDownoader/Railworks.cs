@@ -22,7 +22,10 @@ namespace RailworksDownloader
 
         public HashSet<string> AllDependencies { get; set; }
 
+        public HashSet<string> AllScenarioDeps { get; set; }
+
         public HashSet<string> APDependencies { get; set; }
+
         public HashSet<string> MissingDependencies { get; set; }
 
         int Total = 0;
@@ -52,6 +55,7 @@ namespace RailworksDownloader
             RWPath = string.IsNullOrWhiteSpace(path) ? GetRWPath() : path;
             AssetsPath = Path.Combine(RWPath, "Assets\\");
             AllDependencies = new HashSet<string>();
+            AllScenarioDeps = new HashSet<string>();
             Routes = new List<RouteInfo>();
             MissingDependencies = new HashSet<string>();
             APDependencies = new HashSet<string>();
@@ -154,6 +158,8 @@ namespace RailworksDownloader
             Total = 0;
             foreach (RouteInfo ri in Routes)
             {
+                ri.Progress = 0;
+                ri.MissingCount = -1;
                 ri.Crawler = new RouteCrawler(ri.Path, RWPath);
                 ri.Crawler.DeltaProgress += OnProgress;
                 ri.Crawler.ProgressUpdated += ri.ProgressUpdated;
@@ -179,6 +185,11 @@ namespace RailworksDownloader
         internal void RunAllCrawlers()
         {
             InitCrawlers();
+
+            AllDependencies.Clear();
+            AllScenarioDeps.Clear();
+            MissingDependencies.Clear();
+            APDependencies.Clear();
 
             foreach (RouteInfo ri in Routes)
             {
@@ -240,7 +251,7 @@ namespace RailworksDownloader
         {
             await Task.Run(() =>
             {
-                foreach (string dependency in AllDependencies)
+                foreach (string dependency in AllDependencies.Union(AllScenarioDeps))
                 {
                     if (!String.IsNullOrWhiteSpace(dependency))
                     {

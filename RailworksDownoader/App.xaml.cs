@@ -16,5 +16,7 @@ namespace RailworksDownloader
         internal static MainWindow Window { get; set; }
 
         internal static Railworks Railworks { get; set; }
+
+        internal static PackageManager PackageManager { get; set; }
     }
 }

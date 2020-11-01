@@ -29,9 +29,14 @@ namespace RailworksDownloader
         internal static Brush Blue = new SolidColorBrush(Color.FromArgb(255, 0, 151, 230));
         internal static Brush Green = new SolidColorBrush(Color.FromArgb(255, 76, 209, 55));
         internal static Brush Yellow = new SolidColorBrush(Color.FromArgb(255, 251, 197, 49));
-        internal static Brush Red = new SolidColorBrush(Color.FromArgb(255, 229, 20, 0));
+        internal static Brush Red = new SolidColorBrush(Color.FromArgb(255, 232, 65, 24));
+        internal static Brush Purple = new SolidColorBrush(Color.FromArgb(255, 190, 46, 221));
 
         Railworks RW;
+
+        PackageManager PM;
+
+        bool crawlingComplete = false;
         
         public MainWindow()
         {
@@ -46,6 +51,9 @@ namespace RailworksDownloader
             App.Railworks.CrawlingComplete += RW_CrawlingComplete;
 
             RW = App.Railworks;
+
+            App.PackageManager = new PackageManager(RW.RWPath);
+            PM = App.PackageManager;
 
             if (string.IsNullOrWhiteSpace(RW.RWPath))
             {
@@ -73,14 +81,21 @@ namespace RailworksDownloader
         {
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = true);
             await RW.GetMissing();
+            await PM.GetDownloadableDependencies(RW.MissingDependencies);
 
-            foreach (var route in RW.Routes)
+            foreach (RouteInfo route in RW.Routes)
             {
                 route.Crawler.ParseRouteMissingAssets(RW.MissingDependencies);
+                route.Crawler.ParseRouteDownloadableAssets(PM.DownloadableDependencies);
                 route.MissingCount = route.Crawler.MissingDependencies.Count;
+                route.DownloadableCount = route.Crawler.MissingDependencies.Intersect(PM.DownloadableDependencies).Count();
+                route.MissingScenariosCount = route.Crawler.MissingScenarioDeps.Count;
+                route.DownloadableScenarioCount = route.Crawler.MissingScenarioDeps.Intersect(PM.DownloadableDependencies).Count();
             }
 
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = false);
+            ScanRailworks.Dispatcher.Invoke(() => ScanRailworks.IsEnabled = true);
+            crawlingComplete = true;
         }
 
         private void RW_RouteSaving(bool saved)
@@ -157,6 +172,9 @@ namespace RailworksDownloader
 
         private void ScanRailworks_Click(object sender, RoutedEventArgs e)
         {
+            ScanRailworks.IsEnabled = false;
+            crawlingComplete = false;
+            TotalProgress.Value = 0;
             RW.RunAllCrawlers();
         }
 
@@ -164,7 +182,7 @@ namespace RailworksDownloader
         {
             SWC.ListViewItem item = (SWC.ListViewItem)sender;
 
-            if (item?.IsSelected == true)
+            if (item?.IsSelected == true && crawlingComplete)
             {
                 DependencyWindow dw = new DependencyWindow((RouteInfo)item.Content);
                 dw.ShowDialog();

@@ -7,7 +7,7 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         ui:WindowHelper.UseModernWindowStyle="True"
         mc:Ignorable="d"
-        Title="DependencyWindow" Height="450" Width="800" ResizeMode="CanResize">
+        Title="" Height="450" Width="800" ResizeMode="CanResize">
     <Grid>
         <ListView x:Name="DependenciesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <ListView.ItemContainerStyle>

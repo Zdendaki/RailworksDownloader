@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Documents;
 using System.Xml;
 
 namespace RailworksDownloader
@@ -32,6 +33,7 @@ namespace RailworksDownloader
         private long Progress = 0;
         // Thread locks
         private object DependenciesLock = new object();
+        private object ScenarioDepsLock = new object();
         private object ProgressLock = new object();
         // Total crawling process (%)
         internal float PercentProgress = 0f;
@@ -71,12 +73,32 @@ namespace RailworksDownloader
         /// <summary>
         /// All route dependencies
         /// </summary>
-        public HashSet<string> Dependencies { get; private set; }
+        public HashSet<string> Dependencies { get; set; }
+
+        /// <summary>
+        /// All scenarios dependencies
+        /// </summary>
+        public HashSet<string> ScenarioDeps { get; set; }
 
         /// <summary>
         /// All route missing dependencies
         /// </summary>
-        public List<string> MissingDependencies { get; private set; }
+        public List<string> MissingDependencies { get; set; }
+
+        /// <summary>
+        /// All route missing dependencies
+        /// </summary>
+        public List<string> MissingScenarioDeps { get; set; }
+
+        /// <summary>
+        /// All route missing dependencies
+        /// </summary>
+        public List<string> DownloadableDependencies { get; set; }
+
+        /// <summary>
+        /// All route missing dependencies
+        /// </summary>
+        public List<string> DownloadableScenarioDeps { get; set; }
 
         /// <summary>
         /// Initializes route crawler
@@ -88,9 +110,13 @@ namespace RailworksDownloader
             RoutePath = path;
             RailworksPath = railworksPath;
             Dependencies = new HashSet<string>();
+            ScenarioDeps = new HashSet<string>();
             Adapter = new SqLiteAdapter(Path.Combine(RoutePath, "cache.dls"));
             SavedRoute = Adapter.LoadSavedRoute(IsAP);
             MissingDependencies = new List<string>();
+            MissingScenarioDeps = new List<string>();
+            DownloadableDependencies = new List<string>();
+            DownloadableScenarioDeps = new List<string>();
         }
 
         /// <summary>
@@ -119,6 +145,7 @@ namespace RailworksDownloader
                     }
 
                     App.Railworks.AllDependencies.UnionWith(Dependencies);
+                    App.Railworks.AllScenarioDeps.UnionWith(ScenarioDeps);
                 }
 
                 // Crawling complete event
@@ -241,7 +268,7 @@ namespace RailworksDownloader
         /// </summary>
         /// <param name="blueprintPath">Blueprint file path</param>
         /// <returns>Parsed file</returns>
-        private void ParseBlueprint(string blueprintPath)
+        private void ParseBlueprint(string blueprintPath, bool isScenario = false)
         {
             // Load blueprint file
             XmlDocument doc = new XmlDocument();
@@ -262,7 +289,15 @@ namespace RailworksDownloader
                 var blueprintSetID = node.ParentNode;
                 var absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
                 if (!String.IsNullOrWhiteSpace(absoluteBlueprintID.LastChild.InnerText))
-                    Dependencies.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText)));
+                {
+                    if (isScenario)
+                    {
+                        ScenarioDeps.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText)));
+                    } else
+                    {
+                        Dependencies.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText)));
+                    }
+                }
             });
             /*foreach (XmlNode node in doc.SelectNodes("//Provider"))
             {
@@ -291,10 +326,10 @@ namespace RailworksDownloader
                 try
                 {
                     // Report progress
-                    lock (DependenciesLock)
+                    lock (ScenarioDepsLock)
                     {
                         //Dependencies.UnionWith(ParseBlueprint(xml));
-                        ParseBlueprint(xml);
+                        ParseBlueprint(xml, true);
                         ReportProgress(file);
                     }
                 }
@@ -307,10 +342,10 @@ namespace RailworksDownloader
             string scenarioProperties = Path.Combine(scenarioDir, "ScenarioProperties.xml");
             if (File.Exists(scenarioProperties))
             {
-                lock (DependenciesLock)
+                lock (ScenarioDepsLock)
                 {
                     //Dependencies.UnionWith(ParseBlueprint(scenarioProperties));
-                    ParseBlueprint(scenarioProperties);
+                    ParseBlueprint(scenarioProperties, true);
                     ReportProgress(scenarioProperties);
                 }
             }
@@ -456,6 +491,9 @@ namespace RailworksDownloader
             if (SavedRoute.Dependencies != null)
                 Dependencies.UnionWith(SavedRoute.Dependencies);
 
+            if (SavedRoute.ScenarioDeps != null)
+                ScenarioDeps.UnionWith(SavedRoute.ScenarioDeps);
+
             if (loftsChanged || roadsChanged || tracksChanged || sceneryChanged || rpChanged || scenariosChanged)
             {
                 Task n1 = null;
@@ -556,6 +594,7 @@ namespace RailworksDownloader
                 await md5;
 
                 SavedRoute.Dependencies = Dependencies.ToList();
+                SavedRoute.ScenarioDeps = ScenarioDeps.ToList();
 
                 Thread tt = new Thread(() => 
                 {
@@ -831,8 +870,14 @@ namespace RailworksDownloader
         public void ParseRouteMissingAssets(HashSet<string> missingAll)
         {
             MissingDependencies = Dependencies.Intersect(missingAll).ToList();
+            MissingScenarioDeps = ScenarioDeps.Intersect(missingAll).ToList();
         }
 
+        public void ParseRouteDownloadableAssets(HashSet<string> downloadableAll)
+        {
+            DownloadableDependencies = Dependencies.Intersect(downloadableAll).ToList();
+            DownloadableScenarioDeps = ScenarioDeps.Intersect(downloadableAll).ToList();
+        }
 
         public static string NormalizePath(string path)
         {

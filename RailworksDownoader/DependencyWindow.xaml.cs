@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,7 +21,6 @@ namespace RailworksDownloader
     public partial class DependencyWindow : Window
     {
         List<Dependency> Dependencies;
-        
         public DependencyWindow(RouteInfo info)
         {
             InitializeComponent();
@@ -31,8 +31,10 @@ namespace RailworksDownloader
             {
                 info.Crawler?.MissingDependencies.ForEach(x => Dependencies.Add(new Dependency(x, DependencyState.Unavailable)));
                 info.Crawler?.Dependencies.Except(info.Crawler?.MissingDependencies).ToList().ForEach(x => Dependencies.Add(new Dependency(x, DependencyState.Downloaded)));
+                Title = info.Name;
             }
 
+            Dependencies = Dependencies.OrderBy(x => x.State).ThenBy(x => x.Name).ToList();
             DependenciesList.ItemsSource = Dependencies;
         }
 

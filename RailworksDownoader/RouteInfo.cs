@@ -39,11 +39,32 @@ namespace RailworksDownloader
         {
             get
             {
-                return FromInput(MissingCount);
+                return FromInput(MissingCount, MissingScenariosCount, DownloadableCount, DownloadableScenarioCount);
             }
         }
 
         int count;
+        int downloadableCount;
+        int scenarioCount;
+        int downloadableScenarioCount;
+
+        public int DownloadableCount
+        {
+            get
+            {
+                return downloadableCount;
+            }
+            set
+            {
+                if (downloadableCount != value)
+                {
+                    OnPropertyChanged<Brush>("ProgressBackground");
+                    OnPropertyChanged<int>();
+                }
+
+                downloadableCount = value;
+            }
+        }
 
         public int MissingCount
         {
@@ -60,6 +81,42 @@ namespace RailworksDownloader
                 }
 
                 count = value;
+            }
+        }
+
+        public int DownloadableScenarioCount
+        {
+            get
+            {
+                return downloadableScenarioCount;
+            }
+            set
+            {
+                if (downloadableScenarioCount != value)
+                {
+                    OnPropertyChanged<Brush>("ProgressBackground");
+                    OnPropertyChanged<int>();
+                }
+
+                downloadableScenarioCount = value;
+            }
+        }
+
+        public int MissingScenariosCount
+        {
+            get
+            {
+                return scenarioCount;
+            }
+            set
+            {
+                if (scenarioCount != value)
+                {
+                    OnPropertyChanged<Brush>("ProgressBackground");
+                    OnPropertyChanged<int>();
+                }
+
+                scenarioCount = value;
             }
         }
 
@@ -85,12 +142,16 @@ namespace RailworksDownloader
             Progress = progress;
         }
 
-        public Brush FromInput(int input)
+        public Brush FromInput(int depsCount, int scenarioDepsCount, int downloadableCount, int downloadableScenarioCount)
         {
-            if (input > 0)
+            if (depsCount > 0 && downloadableCount < depsCount)
                 return MainWindow.Red;
-            else if (input == -1)
+            else if (depsCount == -1)
                 return MainWindow.Blue;
+            else if (scenarioDepsCount > 0 && downloadableScenarioCount < scenarioDepsCount)
+                return MainWindow.Purple;
+            else if (downloadableCount > 0 || downloadableScenarioCount > 0)
+                return MainWindow.Yellow;
             else
                 return MainWindow.Green;
         }
