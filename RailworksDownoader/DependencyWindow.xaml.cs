@@ -29,7 +29,8 @@ namespace RailworksDownloader
 
             if (info != null)
             {
-                info.Crawler?.MissingDependencies.ForEach(x => Dependencies.Add(new Dependency(x, DependencyState.Unavailable)));
+                info.Crawler?.DownloadableDependencies.ForEach(x => Dependencies.Add(new Dependency(x, DependencyState.Available)));
+                info.Crawler?.MissingDependencies.Except(info.Crawler?.DownloadableDependencies).ToList().ForEach(x => Dependencies.Add(new Dependency(x, DependencyState.Unavailable)));
                 info.Crawler?.Dependencies.Except(info.Crawler?.MissingDependencies).ToList().ForEach(x => Dependencies.Add(new Dependency(x, DependencyState.Downloaded)));
                 Title = info.Name;
             }

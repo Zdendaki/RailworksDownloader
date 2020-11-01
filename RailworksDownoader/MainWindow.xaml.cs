@@ -87,10 +87,12 @@ namespace RailworksDownloader
             {
                 route.Crawler.ParseRouteMissingAssets(RW.MissingDependencies);
                 route.Crawler.ParseRouteDownloadableAssets(PM.DownloadableDependencies);
+
                 route.MissingCount = route.Crawler.MissingDependencies.Count;
-                route.DownloadableCount = route.Crawler.MissingDependencies.Intersect(PM.DownloadableDependencies).Count();
+                route.DownloadableCount = route.Crawler.DownloadableDependencies.Count;
+
                 route.MissingScenariosCount = route.Crawler.MissingScenarioDeps.Count;
-                route.DownloadableScenarioCount = route.Crawler.MissingScenarioDeps.Intersect(PM.DownloadableDependencies).Count();
+                route.DownloadableScenarioCount = route.Crawler.DownloadableScenarioDeps.Count;
             }
 
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = false);

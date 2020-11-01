@@ -92,53 +92,42 @@ namespace RailworksDownloader
             DownloadableDependencies = new HashSet<string>();
         }
 
-        public async Task<bool> FindFile(string file_name)
+        public async Task<int> FindFile(string file_name)
         {
-            /*Package package = CachedPackages.Where(x => x.DepsContained.Contains(Path.ChangeExtension(file_name, ".xml"))).First();
+            Package package = CachedPackages.Where(x => x.DepsContained.Contains(file_name)).First();
             if (package != null)
-            {
-                lock (DownloadableLock)
-                    DownloadableDependencies.UnionWith(package.DepsContained);
-                return true;
-            }
+                return package.PackageId;
 
-            package = CachedPackages.Where(x => x.DepsContained.Contains(Path.ChangeExtension(file_name, ".bin"))).First();
+            package = CachedPackages.Where(x => x.DepsContained.Contains(file_name)).First();
             if (package != null)
-            {
-                lock (DownloadableLock)
-                    DownloadableDependencies.UnionWith(package.DepsContained);
-                return true;
-            }*/
+                return package.PackageId;
 
             WebWrapper ww = new WebWrapper(ApiUrl);
-            Package onlinePackage = await ww.SearchForFile(Path.ChangeExtension(file_name, ".bin"));
+            Package onlinePackage = await ww.SearchForFile(file_name);
             if (onlinePackage != null && onlinePackage.PackageId > 0)
             {
                 lock (CachedLock)
                 {
                     CachedPackages.Add(onlinePackage);
                 }
-                lock (DownloadableLock)
-                    DownloadableDependencies.UnionWith(onlinePackage.DepsContained);
-                return true;
+                /*lock (DownloadableLock)
+                    DownloadableDependencies.UnionWith(onlinePackage.DepsContained);*/
+                return onlinePackage.PackageId;
             }
 
-            return true;
+            return -1;
         }
 
         public async Task GetDownloadableDependencies(HashSet<string> missingDependencies)
         {
-            foreach (string dependency in missingDependencies)
-            {
-                if (!String.IsNullOrWhiteSpace(dependency))
-                {
-                    string path = Railworks.NormalizePath(Path.ChangeExtension(Path.Combine(AssetsPath, dependency), "xml"));
-                    string path_bin = Railworks.NormalizePath(Path.ChangeExtension(path, "bin"));
+            WebWrapper ww = new WebWrapper(ApiUrl);
+            HashSet<string> downloadableDeps = await ww.GetAllFiles();
+            lock (DownloadableLock)
+                DownloadableDependencies = downloadableDeps;
 
-                    if (DownloadableDependencies.Contains(path) || DownloadableDependencies.Contains(path_bin) || await FindFile(path))
-                        continue;
-                }
-            }
+            /*if (DownloadableDependencies.Contains(path) || DownloadableDependencies.Contains(path_bin) || await FindFile(path))
+                continue;
+            }*/
         }
     }
 }

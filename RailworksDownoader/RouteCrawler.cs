@@ -205,7 +205,7 @@ namespace RailworksDownloader
                 var blueprintSetID = absoluteBlueprintID.FirstChild.FirstChild;
                 if (String.IsNullOrWhiteSpace(absoluteBlueprintID.LastChild.InnerText))
                     return String.Empty;
-                return NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText));
+                return Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText));
             }
             return null;
         }
@@ -253,11 +253,11 @@ namespace RailworksDownloader
             // Parse route properties entries
             await Task.Run(() =>
             {
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("BlueprintID"))));
+                dependencies.Add(Railworks.NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("BlueprintID"))));
                 dependencies.AddRange(ParseSkiesNode(root.SelectSingleNode("Skies")));
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("WeatherBlueprint"))));
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("TerrainBlueprint"))));
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("MapBlueprint"))));
+                dependencies.Add(Railworks.NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("WeatherBlueprint"))));
+                dependencies.Add(Railworks.NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("TerrainBlueprint"))));
+                dependencies.Add(Railworks.NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("MapBlueprint"))));
             });
 
             return dependencies;
@@ -292,10 +292,10 @@ namespace RailworksDownloader
                 {
                     if (isScenario)
                     {
-                        ScenarioDeps.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText)));
+                        ScenarioDeps.Add(Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText)));
                     } else
                     {
-                        Dependencies.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText)));
+                        Dependencies.Add(Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, absoluteBlueprintID.LastChild.InnerText)));
                     }
                 }
             });
@@ -875,50 +875,8 @@ namespace RailworksDownloader
 
         public void ParseRouteDownloadableAssets(HashSet<string> downloadableAll)
         {
-            DownloadableDependencies = Dependencies.Intersect(downloadableAll).ToList();
-            DownloadableScenarioDeps = ScenarioDeps.Intersect(downloadableAll).ToList();
-        }
-
-        public static string NormalizePath(string path)
-        {
-
-            if (string.IsNullOrEmpty(path))
-                return path;
-
-            // Remove path root.
-            string path_root = Path.GetPathRoot(path);
-            path = path.Substring(path_root.Length);
-
-            string[] path_components = path.Split(Path.DirectorySeparatorChar);
-
-            // "Operating memory" for construction of normalized path.
-            // Top element is the last path component. Bottom of the stack is first path component.
-            Stack<string> stack = new Stack<string>(path_components.Length);
-
-            foreach (string path_component in path_components)
-            {
-
-                if (path_component.Length == 0)
-                    continue;
-
-                if (path_component == ".")
-                    continue;
-
-                if (path_component == ".." && stack.Count > 0 && stack.Peek() != "..")
-                {
-                    stack.Pop();
-                    continue;
-                }
-
-                stack.Push(path_component);
-
-            }
-
-            string result = string.Join(new string(Path.DirectorySeparatorChar, 1), stack.Reverse().ToArray());
-            result = Path.Combine(path_root, result);
-
-            return result;
-
+            DownloadableDependencies = MissingDependencies.Intersect(downloadableAll).ToList();
+            DownloadableScenarioDeps = MissingScenarioDeps.Intersect(downloadableAll).ToList();
         }
     }
 }

@@ -238,7 +238,7 @@ namespace RailworksDownloader
                                 APDependencies.UnionWith(from x in zipFile.Entries where (x.FullName.Contains(".xml") || x.FullName.Contains(".bin")) select NormalizePath(GetRelativePath(AssetsPath, Path.Combine(directory, x.FullName))));
                         } catch {}
                     }
-                    if (APDependencies.Contains(fileToFind) || APDependencies.Contains(Path.ChangeExtension(fileToFind, "xml")))
+                    if (APDependencies.Contains(fileToFind) || APDependencies.Contains(NormalizePath(fileToFind, "xml")))
                     {
                         return true;
                     }
@@ -255,10 +255,10 @@ namespace RailworksDownloader
                 {
                     if (!String.IsNullOrWhiteSpace(dependency))
                     {
-                        string path = NormalizePath(Path.ChangeExtension(Path.Combine(AssetsPath, dependency), "xml"));
-                        string path_bin = NormalizePath(Path.ChangeExtension(path, "bin"));
+                        string path = NormalizePath(Path.Combine(AssetsPath, dependency), "xml");
+                        string path_bin = NormalizePath(path, "bin");
                         string relative_path = NormalizePath(GetRelativePath(AssetsPath, path));
-                        string relative_path_bin = NormalizePath(Path.ChangeExtension(relative_path, ".bin"));
+                        string relative_path_bin = NormalizePath(relative_path, ".bin");
 
                         if (File.Exists(path_bin) || File.Exists(path) || APDependencies.Contains(relative_path_bin) || APDependencies.Contains(relative_path) || CheckForFileInAP(Directory.GetParent(path).FullName, relative_path))
                         {
@@ -272,7 +272,7 @@ namespace RailworksDownloader
             });
         }
 
-        public static string NormalizePath(string path)
+        public static string NormalizePath(string path, string ext = null)
         {
 
             if (string.IsNullOrEmpty(path))
@@ -280,8 +280,9 @@ namespace RailworksDownloader
 
             // Remove path root.
             string path_root = Path.GetPathRoot(path);
-            path = path.Substring(path_root.Length);
+            path = Path.ChangeExtension(path.Substring(path_root.Length), ext).Replace('/', Path.DirectorySeparatorChar);
 
+            //string[] path_components = path.Split(new Char[] { Path.DirectorySeparatorChar, '/' });
             string[] path_components = path.Split(Path.DirectorySeparatorChar);
 
             // "Operating memory" for construction of normalized path.
@@ -303,7 +304,7 @@ namespace RailworksDownloader
                     continue;
                 }
 
-                stack.Push(path_component);
+                stack.Push(path_component.ToLower());
 
             }
 

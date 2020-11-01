@@ -28,6 +28,15 @@ namespace RailworksDownloader
         public int[] dependencies { get; set; }
     }
 
+
+    public class GetAllFilesResult
+    {
+        public int code { get; set; }
+        public string message { get; set; }
+        public string[] content { get; set; }
+    }
+
+
     internal class WebWrapper
     {
         private Uri ApiUrl { get; set; }
@@ -48,6 +57,19 @@ namespace RailworksDownloader
                 return new Package(JsonConvert.DeserializeObject<QueryResult>(await response.Content.ReadAsStringAsync()).content);
 
             return null;
+        }
+
+        public async Task<HashSet<string>> GetAllFiles()
+        {
+            Dictionary<string, string> content = new Dictionary<string, string> { { "listFiles", null } };
+            FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
+
+            HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
+            if (response.IsSuccessStatusCode)
+                return new HashSet<string>(JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync()).content.Select(x => Railworks.NormalizePath(x)));
+
+            return null;
+
         }
     }
 }

@@ -139,10 +139,10 @@ namespace RailworksDownloader
                     switch (Convert.ToInt32(reader["isScenario"]))
                     {
                         case 1:
-                            loadedRoute.ScenarioDeps.Add(Convert.ToString(reader["path"]));
+                            loadedRoute.ScenarioDeps.Add(Railworks.NormalizePath(Convert.ToString(reader["path"])));
                             break;
                         default:
-                            loadedRoute.Dependencies.Add(Convert.ToString(reader["path"]));
+                            loadedRoute.Dependencies.Add(Railworks.NormalizePath(Convert.ToString(reader["path"])));
                             break;
                     }
                 }
@@ -280,7 +280,7 @@ CREATE TABLE file_list (
                     SQLiteDataReader r = cmd.ExecuteReader();
                     while (r.Read())
                     {
-                        loadedPackage.DepsContained.Add(Convert.ToString(r["file_name"]));
+                        loadedPackage.DepsContained.Add(Railworks.NormalizePath(Convert.ToString(r["file_name"])));
                     }
                     cmd.Dispose();
 
