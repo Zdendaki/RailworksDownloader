@@ -37,9 +37,13 @@
             </ListView.ItemTemplate>
         </ListView>
         <Button Content="Download missing assets" HorizontalAlignment="Right" Margin="10" VerticalAlignment="Bottom" />
-        <Grid x:Name="SavingGrid" Margin="0,0,190,0.333" VerticalAlignment="Bottom" Height="50" Visibility="Hidden">
-            <Label Content="Saving" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="10" VerticalAlignment="Center" />
-            <ProgressBar Margin="65,2,10,0" VerticalAlignment="Center" IsIndeterminate="True" />
+        <Grid x:Name="SavingGrid" Margin="0,0,190,0.333" VerticalAlignment="Bottom" Height="50"  Visibility="Hidden">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Label x:Name="SavingLabel" Content="Saving" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" Margin="10,12" VerticalAlignment="Center" Height="26" />
+            <ProgressBar Margin="10,25,10,23" VerticalAlignment="Center" IsIndeterminate="True" Grid.Column="1" Height="2" HorizontalAlignment="Stretch" />
         </Grid>
     </Grid>
 </Window>

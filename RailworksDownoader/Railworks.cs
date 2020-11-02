@@ -46,14 +46,11 @@ namespace RailworksDownloader
 
         public delegate void CompleteEventHandler();
         public event CompleteEventHandler CrawlingComplete;
-        
 
-        public Railworks() : this (null) { }
-
-        public Railworks(string path)
+        public Railworks(string path = null)
         {
             RWPath = string.IsNullOrWhiteSpace(path) ? GetRWPath() : path;
-            AssetsPath = Path.Combine(RWPath, "Assets\\");
+            AssetsPath = Path.Combine(RWPath, "Assets");
             AllDependencies = new HashSet<string>();
             AllScenarioDeps = new HashSet<string>();
             Routes = new List<RouteInfo>();
@@ -191,10 +188,10 @@ namespace RailworksDownloader
             MissingDependencies.Clear();
             APDependencies.Clear();
 
-            foreach (RouteInfo ri in Routes)
+            Parallel.ForEach(Routes, ri =>
             {
                 var t = Task.Run(() => ri.Crawler.Start());
-            }
+            });
         }
 
         private void Complete()
@@ -282,7 +279,6 @@ namespace RailworksDownloader
             string path_root = Path.GetPathRoot(path);
             path = Path.ChangeExtension(path.Substring(path_root.Length), ext).Replace('/', Path.DirectorySeparatorChar);
 
-            //string[] path_components = path.Split(new Char[] { Path.DirectorySeparatorChar, '/' });
             string[] path_components = path.Split(Path.DirectorySeparatorChar);
 
             // "Operating memory" for construction of normalized path.
@@ -315,15 +311,11 @@ namespace RailworksDownloader
 
         }
 
-        /*public static string NormalizePath(string path)
+        public static string GetRelativePath(string relativeTo, string path)
         {
-            return Path.GetFullPath(new Uri(path).LocalPath)
-                       .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                       .ToUpperInvariant();
-        }*/
+            if (!relativeTo.EndsWith("/") && !relativeTo.EndsWith("\\"))
+                relativeTo += Path.DirectorySeparatorChar;
 
-        public string GetRelativePath(string relativeTo, string path)
-        {
             var uri = new Uri(relativeTo);
             var rel = Uri.UnescapeDataString(uri.MakeRelativeUri(new Uri(path)).ToString()).Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             if (rel.Contains(Path.DirectorySeparatorChar.ToString()) == false)

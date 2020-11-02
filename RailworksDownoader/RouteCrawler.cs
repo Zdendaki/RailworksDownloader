@@ -317,7 +317,7 @@ namespace RailworksDownloader
         private async Task _GetScenariosDependencies(string scenarioDir)
         {
             // Foreach all scenario files
-            foreach (string file in Directory.GetFiles(scenarioDir, "*.*bin", SearchOption.AllDirectories))
+            foreach (string file in Directory.GetFiles(scenarioDir, "*.bin", SearchOption.AllDirectories))
             {
                 string xml = Path.ChangeExtension(file, ".xml");
 
@@ -400,7 +400,7 @@ namespace RailworksDownloader
             foreach (string dir in Directory.GetDirectories(path))
             {
                 // Foreach all network .bin files
-                foreach (string file in Directory.GetFiles(dir, "*.*bin"))
+                foreach (string file in Directory.GetFiles(dir, "*.bin"))
                 {
                     string xml = Path.ChangeExtension(file, ".xml");
 
@@ -430,7 +430,7 @@ namespace RailworksDownloader
         private async Task GetSceneryDependencies(string path)
         {
             // Foreach all scenery .bin files
-            foreach (string file in Directory.GetFiles(path, "*.*bin"))
+            foreach (string file in Directory.GetFiles(path, "*.bin"))
             {
                 string xml = Path.ChangeExtension(file, ".xml");
 
@@ -688,9 +688,9 @@ namespace RailworksDownloader
                         case "Networks":
                             if (loftsChanged || roadsChanged || tracksChanged)
                             {
-                                size += GetDirectorySize(Path.Combine(dir, "Loft Tiles"), "*.*bin");
-                                size += GetDirectorySize(Path.Combine(dir, "Road Tiles"), "*.*bin");
-                                size += GetDirectorySize(Path.Combine(dir, "Track Tiles"), "*.*bin");
+                                size += GetDirectorySize(Path.Combine(dir, "Loft Tiles"), "*.bin");
+                                size += GetDirectorySize(Path.Combine(dir, "Road Tiles"), "*.bin");
+                                size += GetDirectorySize(Path.Combine(dir, "Track Tiles"), "*.bin");
                             }
 
                             break;
@@ -699,14 +699,14 @@ namespace RailworksDownloader
                             {
                                 foreach (string dir2 in Directory.GetDirectories(dir))
                                 {
-                                    size += GetDirectorySize(dir2, "*.*bin");
+                                    size += GetDirectorySize(dir2, "*.bin");
                                     size += GetFileSize(Path.Combine(dir2, "ScenarioProperties.xml"));
                                 }
                             }
                             break;
                         case "Scenery":
                             if (sceneryChanged)
-                                size += GetDirectorySize(dir, "*.*bin");
+                                size += GetDirectorySize(dir, "*.bin");
                             break;
                     }
                 }
@@ -730,18 +730,18 @@ namespace RailworksDownloader
                         case "Networks":
                             foreach (string dir2 in Directory.GetDirectories(dir))
                             {
-                                size += GetDirectorySize(dir2, "*.*bin");
+                                size += GetDirectorySize(dir2, "*.bin");
                             }
                             break;
                         case "Scenarios":
                             foreach (string dir2 in Directory.GetDirectories(dir))
                             {
-                                size += GetDirectorySize(dir2, "*.*bin");
+                                size += GetDirectorySize(dir2, "*.bin");
                                 size += GetFileSize(Path.Combine(dir2, "ScenarioProperties.xml"));
                             }
                             break;
                         case "Scenery":
-                            size += GetDirectorySize(dir, "*.*bin");
+                            size += GetDirectorySize(dir, "*.bin");
                             break;
                     }
                 }
@@ -754,18 +754,18 @@ namespace RailworksDownloader
                         case "Networks":
                             foreach (string dir2 in Directory.GetDirectories(dir))
                             {
-                                size += GetDirectorySize(dir2, "*.*bin");
+                                size += GetDirectorySize(dir2, "*.bin");
                             }
                             break;
                         case "Scenarios":
                             foreach (string dir2 in Directory.GetDirectories(dir))
                             {
-                                size += GetDirectorySize(dir2, "*.*bin");
+                                size += GetDirectorySize(dir2, "*.bin");
                                 size += GetFileSize(Path.Combine(dir2, "ScenarioProperties.xml"));
                             }
                             break;
                         case "Scenery":
-                            size += GetDirectorySize(dir, "*.*bin");
+                            size += GetDirectorySize(dir, "*.bin");
                             break;
                     }
                 }
@@ -849,7 +849,7 @@ namespace RailworksDownloader
             if (!Directory.Exists(path))
                 return null;
             
-            var filePaths = isAP ? Directory.GetFiles(path, "*.ap").OrderBy(p => p).ToArray() : Directory.GetFiles(path, "*.*bin").OrderBy(p => p).ToArray();
+            var filePaths = isAP ? Directory.GetFiles(path, "*.ap").OrderBy(p => p).ToArray() : Directory.GetFiles(path, "*.bin").OrderBy(p => p).ToArray();
 
             using (var md5 = MD5.Create())
             {

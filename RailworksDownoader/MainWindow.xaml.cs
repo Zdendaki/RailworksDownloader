@@ -1,21 +1,12 @@
-﻿using ModernWpf.Controls;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using RailworksDownloader.Properties;
 using SWC = System.Windows.Controls;
 
@@ -26,11 +17,16 @@ namespace RailworksDownloader
     /// </summary>
     public partial class MainWindow : Window
     {
+        public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/api/");
+
         internal static Brush Blue = new SolidColorBrush(Color.FromArgb(255, 0, 151, 230));
         internal static Brush Green = new SolidColorBrush(Color.FromArgb(255, 76, 209, 55));
         internal static Brush Yellow = new SolidColorBrush(Color.FromArgb(255, 251, 197, 49));
         internal static Brush Red = new SolidColorBrush(Color.FromArgb(255, 232, 65, 24));
         internal static Brush Purple = new SolidColorBrush(Color.FromArgb(255, 190, 46, 221));
+
+        private bool Saving = false;
+        private bool CheckingDLC = false;
 
         Railworks RW;
 
@@ -43,16 +39,18 @@ namespace RailworksDownloader
             InitializeComponent();
 
             App.Window = this;
-            App.Railworks = new Railworks();
 
-            App.Railworks = new Railworks(Settings.Default.RailworksLocation);
+            App.SteamManager = new SteamManager();
+
+            string savedRWPath = Settings.Default.RailworksLocation;
+            App.Railworks = new Railworks(string.IsNullOrWhiteSpace(App.SteamManager.RWPath) ? savedRWPath : App.SteamManager.RWPath);
             App.Railworks.ProgressUpdated += RW_ProgressUpdated;
             App.Railworks.RouteSaving += RW_RouteSaving;
             App.Railworks.CrawlingComplete += RW_CrawlingComplete;
 
             RW = App.Railworks;
 
-            App.PackageManager = new PackageManager(RW.RWPath);
+            App.PackageManager = new PackageManager(RW.RWPath, ApiUrl);
             PM = App.PackageManager;
 
             if (string.IsNullOrWhiteSpace(RW.RWPath))
@@ -71,17 +69,37 @@ namespace RailworksDownloader
 
             Settings.Default.PropertyChanged += PropertyChanged;
 
-            if (!string.IsNullOrWhiteSpace(RW.RWPath))
-                ScanRailworks_Click(this, null);
+            Task.Run(async () =>
+            {
+                RW_CheckingDLC(false);
+                List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
+                await WebWrapper.ReportDLC(dlcList, ApiUrl);
+                RW_CheckingDLC(true);
+            });
+
+            /*if (!string.IsNullOrWhiteSpace(RW.RWPath))
+                ScanRailworks_Click(this, null);*/
 
             //RoutesList.Items.Add(new RouteInfo("TEST", ""));
+        }
+
+        private void MainWindowDialog_Closing(object sender, CancelEventArgs e)
+        {
+            if (Saving || CheckingDLC)
+            {
+                MessageBoxResult result = MessageBox.Show("Do you really want to do that?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (result == MessageBoxResult.No)
+                {
+                    e.Cancel = true;
+                }
+            }
         }
 
         private async void RW_CrawlingComplete()
         {
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = true);
             await RW.GetMissing();
-            await PM.GetDownloadableDependencies(RW.MissingDependencies);
+            await PM.GetDownloadableDependencies();
 
             foreach (RouteInfo route in RW.Routes)
             {
@@ -100,9 +118,24 @@ namespace RailworksDownloader
             crawlingComplete = true;
         }
 
+        private void ToggleSavingGrid(string type)
+        {
+            SavingGrid.Dispatcher.Invoke(() => {
+                SavingLabel.Content = type;
+                SavingGrid.Visibility = (Saving || CheckingDLC) ? Visibility.Hidden : Visibility.Visible;
+            });
+        }
+
+        private void RW_CheckingDLC(bool @checked)
+        {
+            CheckingDLC = @checked;
+            ToggleSavingGrid("Checking installed DLCs");
+        }
+
         private void RW_RouteSaving(bool saved)
         {
-            SavingGrid.Dispatcher.Invoke(() => { SavingGrid.Visibility = saved ? Visibility.Hidden : Visibility.Visible; });
+            Saving = saved;
+            ToggleSavingGrid("Saving");
         }
 
         private void RW_ProgressUpdated(int percent)

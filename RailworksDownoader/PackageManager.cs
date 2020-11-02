@@ -5,7 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Environment;
-
+using SteamKit2;
+using Microsoft.Win32;
+using System.Web.UI;
+using System.IO.Compression;
 
 namespace RailworksDownloader
 {
@@ -76,11 +79,12 @@ namespace RailworksDownloader
 
         private string AssetsPath { get; set; }
 
-        private static Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/api/");
+        private static Uri ApiUrl { get; set; }
 
-        public PackageManager(string rwPath)
+        public PackageManager(string rwPath, Uri apiUrl)
         {
             RWPath = rwPath;
+            ApiUrl = apiUrl;
             AssetsPath = Path.Combine(RWPath, "Assets");
 
             //string commonpath = GetFolderPath(SpecialFolder.CommonApplicationData);
@@ -118,7 +122,7 @@ namespace RailworksDownloader
             return -1;
         }
 
-        public async Task GetDownloadableDependencies(HashSet<string> missingDependencies)
+        public async Task GetDownloadableDependencies()
         {
             WebWrapper ww = new WebWrapper(ApiUrl);
             HashSet<string> downloadableDeps = await ww.GetAllFiles();
@@ -129,5 +133,10 @@ namespace RailworksDownloader
                 continue;
             }*/
         }
+
+        public async Task GetSteamDependencies()
+        {
+        }
     }
+
 }

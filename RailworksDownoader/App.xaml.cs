@@ -17,6 +17,8 @@ namespace RailworksDownloader
 
         internal static Railworks Railworks { get; set; }
 
+        internal static SteamManager SteamManager { get; set; }
+
         internal static PackageManager PackageManager { get; set; }
     }
 }
