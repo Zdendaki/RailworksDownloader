@@ -78,92 +78,9 @@ namespace RailworksDownloader
 
         public static async Task ReportDLC(List<SteamManager.DLC> dlcList, Uri apiUrl)
         {
-            //Dictionary<string, string> content = new Dictionary<string, string> { { "content", dlcList } };
-
-            string z = JsonConvert.SerializeObject(dlcList);
-
-            new SetClipboardHelper(DataFormats.Text, z).Go();
-
-            StringContent encodedContent = new StringContent(z, Encoding.UTF8, "application/json");
+            StringContent encodedContent = new StringContent(JsonConvert.SerializeObject(dlcList), Encoding.UTF8, "application/json");
 
             HttpResponseMessage response = await client.PostAsync(apiUrl + "reportDLC", encodedContent);
-            if (response.IsSuccessStatusCode)
-            {
-                string x = await response.Content.ReadAsStringAsync();
-                Console.WriteLine(x);
-            }
         }
-    }
-
-    class SetClipboardHelper : StaHelper
-    {
-        readonly string _format;
-        readonly object _data;
-
-        public SetClipboardHelper(string format, object data)
-        {
-            _format = format;
-            _data = data;
-        }
-
-        protected override void Work()
-        {
-            var obj = new System.Windows.DataObject(
-                _format,
-                _data
-            );
-
-            System.Windows.Clipboard.SetDataObject(obj, true);
-        }
-    }
-
-    abstract class StaHelper
-    {
-        readonly ManualResetEvent _complete = new ManualResetEvent(false);
-
-        public void Go()
-        {
-            var thread = new Thread(new ThreadStart(DoWork))
-            {
-                IsBackground = true,
-            };
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Start();
-        }
-
-        // Thread entry method
-        private void DoWork()
-        {
-            try
-            {
-                _complete.Reset();
-                Work();
-            }
-            catch (Exception ex)
-            {
-                if (DontRetryWorkOnFailed)
-                    throw;
-                else
-                {
-                    try
-                    {
-                        Thread.Sleep(1000);
-                        Work();
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
-            finally
-            {
-                _complete.Set();
-            }
-        }
-
-        public bool DontRetryWorkOnFailed { get; set; }
-
-        // Implemented in base class to do actual work.
-        protected abstract void Work();
     }
 }
