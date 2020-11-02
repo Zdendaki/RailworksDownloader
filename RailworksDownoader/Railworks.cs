@@ -23,10 +23,10 @@ namespace RailworksDownloader
             }
             set
             {
-                if (value != null)
-                    AssetsPath = Path.Combine(RWPath, "Assets");
-
                 rwPath = value;
+
+                if (rwPath != null)
+                    AssetsPath = Path.Combine(RWPath, "Assets");
             }
         }
 
