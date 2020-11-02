@@ -14,7 +14,21 @@ namespace RailworksDownloader
 {
     class Railworks
     {
-        public string RWPath { get; set; }
+        private string rwPath;
+        public string RWPath 
+        {
+            get
+            {
+                return rwPath;
+            }
+            set
+            {
+                if (value != null)
+                    AssetsPath = Path.Combine(RWPath, "Assets");
+
+                rwPath = value;
+            }
+        }
 
         public string AssetsPath { get; set; }
 
@@ -50,7 +64,8 @@ namespace RailworksDownloader
         public Railworks(string path = null)
         {
             RWPath = string.IsNullOrWhiteSpace(path) ? GetRWPath() : path;
-            AssetsPath = Path.Combine(RWPath, "Assets");
+            if (RWPath != null)
+                AssetsPath = Path.Combine(RWPath, "Assets");
             AllDependencies = new HashSet<string>();
             AllScenarioDeps = new HashSet<string>();
             Routes = new List<RouteInfo>();

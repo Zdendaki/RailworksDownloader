@@ -50,9 +50,6 @@ namespace RailworksDownloader
 
             RW = App.Railworks;
 
-            App.PackageManager = new PackageManager(RW.RWPath, ApiUrl);
-            PM = App.PackageManager;
-
             if (string.IsNullOrWhiteSpace(RW.RWPath))
             {
                 RailworksPathDialog rpd = new RailworksPathDialog();
@@ -64,6 +61,8 @@ namespace RailworksDownloader
                 Settings.Default.RailworksLocation = RW.RWPath;
                 Settings.Default.Save();
             }
+
+            
 
             PathChanged();
 
@@ -154,7 +153,13 @@ namespace RailworksDownloader
 
         private void PathChanged()
         {
-            PathSelected.IsChecked = ScanRailworks.IsEnabled = !string.IsNullOrWhiteSpace(RW.RWPath);
+            PathSelected.IsChecked = DownloadMissing.IsEnabled = ScanRailworks.IsEnabled = !string.IsNullOrWhiteSpace(RW.RWPath);
+
+            if (RW.RWPath != null)
+            {
+                App.PackageManager = new PackageManager(RW.RWPath, ApiUrl);
+                PM = App.PackageManager;
+            }
 
             LoadRoutes();
         }

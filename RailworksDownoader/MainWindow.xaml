@@ -36,7 +36,7 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-        <Button Content="Download missing assets" HorizontalAlignment="Right" Margin="10" VerticalAlignment="Bottom" />
+        <Button x:Name="DownloadMissing" IsEnabled="False" Content="Download missing assets" HorizontalAlignment="Right" Margin="10" VerticalAlignment="Bottom" />
         <Grid x:Name="SavingGrid" Margin="0,0,190,0.333" VerticalAlignment="Bottom" Height="50"  Visibility="Hidden">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
