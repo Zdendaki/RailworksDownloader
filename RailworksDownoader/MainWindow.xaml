@@ -37,6 +37,7 @@
             </ListView.ItemTemplate>
         </ListView>
         <Button x:Name="DownloadMissing" IsEnabled="False" Content="Download missing assets" HorizontalAlignment="Right" Margin="10" VerticalAlignment="Bottom" />
+        <Button x:Name="ManagePackages" IsEnabled="true" Content="Manage packages" HorizontalAlignment="Right" Margin="0,0,152,10" VerticalAlignment="Bottom" Click="ManagePackages_Click" />
         <Grid x:Name="SavingGrid" Margin="0,0,190,0.333" VerticalAlignment="Bottom" Height="50"  Visibility="Hidden">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>

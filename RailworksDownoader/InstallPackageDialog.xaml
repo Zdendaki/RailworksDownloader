@@ -1,0 +1,44 @@
+﻿<ui:ContentDialog  
+    x:Class="RailworksDownloader.InstallPackageDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.modernwpf.com/2019"
+    Title="Select packages to install"
+    PrimaryButtonText="Cancel"
+    SecondaryButtonText="Install selected packages"
+    SecondaryButtonClick="ContentDialog_SecondaryButtonClick">
+
+    <Grid Height="Auto" MinWidth="450">
+        <ListView MinHeight="100" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionMode="Multiple">
+
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Background" Value="Transparent" />
+                    <EventSetter Event="Selected" Handler="ListViewItem_Selected" />
+                    <EventSetter Event="Unselected" Handler="ListViewItem_Unselected" />
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="10*" />
+                        </Grid.ColumnDefinitions>
+                        <CheckBox IsChecked="{Binding IsSelected}" Content="" Click="CheckBox_Click" Margin="5,0" Grid.Column="0" VerticalContentAlignment="Center" HorizontalAlignment="Left" />
+                        <Label Content="{Binding Content}" Grid.Column="1" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+            <ListView.Items>
+                <ComboBoxItem Content="ASDF ASDASDASDASDASD" IsSelected="False" />
+                <ComboBoxItem Content="ASDF" IsSelected="False" />
+                <ComboBoxItem Content="ASDF" IsSelected="False" />
+                <ComboBoxItem Content="ASDF" IsSelected="False" />
+            </ListView.Items>
+        </ListView>
+    </Grid>
+</ui:ContentDialog>

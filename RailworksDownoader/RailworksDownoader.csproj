@@ -102,9 +102,15 @@
     </Compile>
     <Compile Include="LoadedRoute.cs" />
     <Compile Include="PackageManager.cs" />
+    <Compile Include="PackageManagerWindow.xaml.cs">
+      <DependentUpon>PackageManagerWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Railworks.cs" />
     <Compile Include="FindPath.xaml.cs">
       <DependentUpon>FindPath.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="InstallPackageDialog.xaml.cs">
+      <DependentUpon>InstallPackageDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="RailworksPathDialog.xaml.cs">
       <DependentUpon>RailworksPathDialog.xaml</DependentUpon>
@@ -137,6 +143,14 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="PackageManagerWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="InstallPackageDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="RailworksPathDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

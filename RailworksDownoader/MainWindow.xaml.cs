@@ -228,5 +228,11 @@ namespace RailworksDownloader
                 dw.ShowDialog();
             }
         }
+
+        private void ManagePackages_Click(object sender, RoutedEventArgs e)
+        {
+            PackageManagerWindow pmw = new PackageManagerWindow();
+            pmw.ShowDialog();
+        }
     }
 }
