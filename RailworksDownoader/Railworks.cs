@@ -99,31 +99,42 @@ namespace RailworksDownloader
             return null;
         }
 
-        private string ParseRouteProperties(string path)
+        private string ParseRouteProperties(Stream fstream)
         {
             XmlDocument doc = new XmlDocument();
-            doc.Load(path);
-            
+            doc.Load(XmlReader.Create(RemoveInvalidXmlChars(fstream), new XmlReaderSettings() { CheckCharacters = false }));
+
             return ParseDisplayNameNode(doc.DocumentElement.SelectSingleNode("DisplayName"));
         }
 
-        private static void DeleteDirectory(string directory)
+        private string ParseRouteProperties(string fpath)
         {
-            string[] files = Directory.GetFiles(directory);
-            string[] dirs = Directory.GetDirectories(directory);
+            XmlDocument doc = new XmlDocument();
+            doc.Load(XmlReader.Create(RemoveInvalidXmlChars(fpath), new XmlReaderSettings() { CheckCharacters = false }));
 
-            foreach (string file in files)
+            return ParseDisplayNameNode(doc.DocumentElement.SelectSingleNode("DisplayName"));
+        }
+
+        internal static void DeleteDirectory(string directory)
+        {
+            if (Directory.Exists(directory))
             {
-                File.SetAttributes(file, FileAttributes.Normal);
-                File.Delete(file);
-            }
+                string[] files = Directory.GetFiles(directory);
+                string[] dirs = Directory.GetDirectories(directory);
 
-            foreach (string dir in dirs)
-            {
-                DeleteDirectory(dir);
-            }
+                foreach (string file in files)
+                {
+                    File.SetAttributes(file, FileAttributes.Normal);
+                    File.Delete(file);
+                }
 
-            Directory.Delete(directory, true);
+                foreach (string dir in dirs)
+                {
+                    DeleteDirectory(dir);
+                }
+
+                Directory.Delete(directory, true);
+            }
         }
 
         /// <summary>
@@ -141,23 +152,17 @@ namespace RailworksDownloader
 
                 if (File.Exists(rp_path)) 
                 {
-                    yield return new RouteInfo(ParseRouteProperties(rp_path).Trim() + " - " + Path.GetFileName(dir), dir);
+                    yield return new RouteInfo(ParseRouteProperties(rp_path).Trim() + " - " + Path.GetFileName(dir), dir + Path.DirectorySeparatorChar);
                 }
                 else
                 {
-                    foreach (string file in Directory.GetFiles(Path.Combine(path, dir), "*.ap"))
+                    foreach (string file in Directory.GetFiles(dir, "*.ap"))
                     {
                         using (ZipArchive archive = ZipFile.OpenRead(file))
                         {
                             foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("RouteProperties")))
                             {
-                                if (!Directory.Exists(Path.Combine(path, dir, "temp")))
-                                    Directory.CreateDirectory(Path.Combine(path, dir, "temp"));
-
-                                entry.ExtractToFile(Path.Combine(path, dir, "temp", entry.FullName), true);
-                                yield return new RouteInfo(ParseRouteProperties(Path.Combine(path, dir, "temp", entry.FullName)).Trim() + " - " + Path.GetFileName(dir), dir);
-
-                                DeleteDirectory(Path.Combine(path, dir, "temp"));
+                                yield return new RouteInfo(ParseRouteProperties(entry.Open()).Trim() + " - " + Path.GetFileName(dir), dir + Path.DirectorySeparatorChar);
                             }
                         }
                     }
@@ -196,17 +201,23 @@ namespace RailworksDownloader
 
         internal void RunAllCrawlers()
         {
-            InitCrawlers();
+            try {
+                InitCrawlers();
 
-            AllDependencies.Clear();
-            AllScenarioDeps.Clear();
-            MissingDependencies.Clear();
-            APDependencies.Clear();
+                AllDependencies.Clear();
+                AllScenarioDeps.Clear();
+                MissingDependencies.Clear();
+                APDependencies.Clear();
 
-            Parallel.ForEach(Routes, ri =>
+                Parallel.ForEach(Routes, ri =>
+                {
+                    var t = Task.Run(() => ri.Crawler.Start());
+                });
+            }
+            catch (Exception e)
             {
-                var t = Task.Run(() => ri.Crawler.Start());
-            });
+                Desharp.Debug.Log(e, Desharp.Level.DEBUG);
+            }
         }
 
         private void Complete()
@@ -338,6 +349,34 @@ namespace RailworksDownloader
                 rel = $".{ Path.DirectorySeparatorChar }{ rel }";
             }
             return rel;
+        }
+
+        public static Stream RemoveInvalidXmlChars(string fname)
+        {
+            /*FileStream istream = new FileStream(fname, FileMode.Open);
+            Stream ms = new MemoryStream((byte[])StreamToByteArray(istream).Where(b => XmlConvert.IsXmlChar(Convert.ToChar(b))).ToArray());
+            istream.Close();
+            return ms;*/
+            return new MemoryStream(File.ReadAllBytes(fname).Where(b => XmlConvert.IsXmlChar(Convert.ToChar(b))).ToArray());
+        }
+
+        public static Stream RemoveInvalidXmlChars(Stream istream)
+        {
+            return new MemoryStream((byte[])StreamToByteArray(istream).Where(b => XmlConvert.IsXmlChar(Convert.ToChar(b))).ToArray());
+        }
+
+        private static byte[] StreamToByteArray(Stream istream)
+        {
+            byte[] buffer = new byte[16 * 1024];
+            using (MemoryStream ostream = new MemoryStream())
+            {
+                int read;
+                while ((read = istream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    ostream.Write(buffer, 0, read);
+                }
+                return ostream.ToArray();
+            }
         }
     }
 }

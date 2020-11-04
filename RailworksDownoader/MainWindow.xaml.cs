@@ -36,44 +36,58 @@ namespace RailworksDownloader
         
         public MainWindow()
         {
-            InitializeComponent();
-
-            App.Window = this;
-
-            App.SteamManager = new SteamManager();
-
-            string savedRWPath = Settings.Default.RailworksLocation;
-            App.Railworks = new Railworks(string.IsNullOrWhiteSpace(App.SteamManager.RWPath) ? savedRWPath : App.SteamManager.RWPath);
-            App.Railworks.ProgressUpdated += RW_ProgressUpdated;
-            App.Railworks.RouteSaving += RW_RouteSaving;
-            App.Railworks.CrawlingComplete += RW_CrawlingComplete;
-
-            RW = App.Railworks;
-
-            if (string.IsNullOrWhiteSpace(RW.RWPath))
+            try
             {
-                RailworksPathDialog rpd = new RailworksPathDialog();
-                rpd.ShowAsync();
-            }
+                InitializeComponent();
 
-            if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                App.Window = this;
+
+                App.SteamManager = new SteamManager();
+
+                Closing += MainWindowDialog_Closing;
+
+                string savedRWPath = Settings.Default.RailworksLocation;
+                App.Railworks = new Railworks(string.IsNullOrWhiteSpace(App.SteamManager.RWPath) ? savedRWPath : App.SteamManager.RWPath);
+                App.Railworks.ProgressUpdated += RW_ProgressUpdated;
+                App.Railworks.RouteSaving += RW_RouteSaving;
+                App.Railworks.CrawlingComplete += RW_CrawlingComplete;
+
+                RW = App.Railworks;
+
+                if (string.IsNullOrWhiteSpace(RW.RWPath))
+                {
+                    RailworksPathDialog rpd = new RailworksPathDialog();
+                    rpd.ShowAsync();
+                }
+
+                if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                {
+                    Settings.Default.RailworksLocation = RW.RWPath;
+                    Settings.Default.Save();
+                }
+
+                PathChanged();
+
+                Settings.Default.PropertyChanged += PropertyChanged;
+            } 
+            catch (Exception e)
             {
-                Settings.Default.RailworksLocation = RW.RWPath;
-                Settings.Default.Save();
+                Desharp.Debug.Log(e, Desharp.Level.DEBUG);
             }
-
-            
-
-            PathChanged();
-
-            Settings.Default.PropertyChanged += PropertyChanged;
 
             Task.Run(async () =>
             {
-                RW_CheckingDLC(false);
-                List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
-                await WebWrapper.ReportDLC(dlcList, ApiUrl);
-                RW_CheckingDLC(true);
+                try
+                {
+                    RW_CheckingDLC(false);
+                    List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
+                    await WebWrapper.ReportDLC(dlcList, ApiUrl);
+                    RW_CheckingDLC(true);
+                }
+                catch (Exception e)
+                {
+                    Desharp.Debug.Log(e, Desharp.Level.DEBUG);
+                }
             });
 
             /*if (!string.IsNullOrWhiteSpace(RW.RWPath))
@@ -86,7 +100,7 @@ namespace RailworksDownloader
         {
             if (Saving || CheckingDLC)
             {
-                MessageBoxResult result = MessageBox.Show("Do you really want to do that?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                MessageBoxResult result = MessageBox.Show("Some operation is still running.\nDo you really want to close this app?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.No)
                 {
                     e.Cancel = true;
@@ -121,19 +135,19 @@ namespace RailworksDownloader
         {
             SavingGrid.Dispatcher.Invoke(() => {
                 SavingLabel.Content = type;
-                SavingGrid.Visibility = (Saving || CheckingDLC) ? Visibility.Hidden : Visibility.Visible;
+                SavingGrid.Visibility = (Saving || CheckingDLC) ? Visibility.Visible : Visibility.Hidden;
             });
         }
 
         private void RW_CheckingDLC(bool @checked)
         {
-            CheckingDLC = @checked;
+            CheckingDLC = !@checked;
             ToggleSavingGrid("Checking installed DLCs");
         }
 
         private void RW_RouteSaving(bool saved)
         {
-            Saving = saved;
+            Saving = !saved;
             ToggleSavingGrid("Saving");
         }
 
@@ -155,13 +169,13 @@ namespace RailworksDownloader
         {
             PathSelected.IsChecked = DownloadMissing.IsEnabled = ScanRailworks.IsEnabled = !string.IsNullOrWhiteSpace(RW.RWPath);
 
-            if (RW.RWPath != null)
+            if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
             {
                 App.PackageManager = new PackageManager(RW.RWPath, ApiUrl);
                 PM = App.PackageManager;
-            }
 
-            LoadRoutes();
+                LoadRoutes();
+            }
         }
 
         private void LoadRoutes()
@@ -179,29 +193,35 @@ namespace RailworksDownloader
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            Railworks rw = new Railworks();
+            try {
+                Railworks rw = new Railworks();
 
-            Stopwatch sw = new Stopwatch();
+                Stopwatch sw = new Stopwatch();
 
-            rw.InitCrawlers();
+                rw.InitCrawlers();
 
-            //rw.ProgressUpdated += (perc) => { PB.Dispatcher.Invoke(() => { PB.Value = perc; }); };
+                //rw.ProgressUpdated += (perc) => { PB.Dispatcher.Invoke(() => { PB.Value = perc; }); };
 
-            rw.RunAllCrawlers();
+                rw.RunAllCrawlers();
 
-            //RouteCrawler rc = new RouteCrawler(@"D:\Hry\Steam\steamapps\common\RailWorks\Content\Routes\bd4aae03-09b5-4149-a133-297420197356", rw.RWPath);
-            /*RouteCrawler rc = new RouteCrawler(Path.Combine(rw.RWPath, "Content", "Routes", "bd4aae03-09b5-4149-a133-297420197356"), rw.RWPath);
+                //RouteCrawler rc = new RouteCrawler(@"D:\Hry\Steam\steamapps\common\RailWorks\Content\Routes\bd4aae03-09b5-4149-a133-297420197356", rw.RWPath);
+                /*RouteCrawler rc = new RouteCrawler(Path.Combine(rw.RWPath, "Content", "Routes", "bd4aae03-09b5-4149-a133-297420197356"), rw.RWPath);
 
 
-            rc.ProgressUpdated += (perc) => { PB.Value = perc; };
-            rc.Complete += () => 
-            { 
-                sw.Stop();
-                MessageBox.Show(sw.Elapsed.ToString());
-            };
+                rc.ProgressUpdated += (perc) => { PB.Value = perc; };
+                rc.Complete += () => 
+                { 
+                    sw.Stop();
+                    MessageBox.Show(sw.Elapsed.ToString());
+                };
 
-            sw.Start();
-            await rc.Start();*/
+                sw.Start();
+                await rc.Start();*/
+            }
+            catch (Exception ex)
+            {
+                Desharp.Debug.Log(ex, Desharp.Level.DEBUG);
+            }
         }
 
         private void SelectRailworksLocation_Click(object sender, RoutedEventArgs e)
@@ -212,10 +232,16 @@ namespace RailworksDownloader
 
         private void ScanRailworks_Click(object sender, RoutedEventArgs e)
         {
-            ScanRailworks.IsEnabled = false;
-            crawlingComplete = false;
-            TotalProgress.Value = 0;
-            RW.RunAllCrawlers();
+            try {
+                ScanRailworks.IsEnabled = false;
+                crawlingComplete = false;
+                TotalProgress.Value = 0;
+                RW.RunAllCrawlers();
+            }
+            catch (Exception ex)
+            {
+                Desharp.Debug.Log(ex, Desharp.Level.DEBUG);
+            }
         }
 
         private void ListViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e)

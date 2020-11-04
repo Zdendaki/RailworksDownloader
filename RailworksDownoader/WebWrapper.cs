@@ -80,7 +80,7 @@ namespace RailworksDownloader
         {
             StringContent encodedContent = new StringContent(JsonConvert.SerializeObject(dlcList), Encoding.UTF8, "application/json");
 
-            HttpResponseMessage response = await client.PostAsync(apiUrl + "reportDLC", encodedContent);
+            await client.PostAsync(apiUrl + "reportDLC", encodedContent);
         }
     }
 }
