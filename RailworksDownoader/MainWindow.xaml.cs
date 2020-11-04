@@ -90,10 +90,8 @@ namespace RailworksDownloader
                 }
             });
 
-            /*if (!string.IsNullOrWhiteSpace(RW.RWPath))
-                ScanRailworks_Click(this, null);*/
-
-            //RoutesList.Items.Add(new RouteInfo("TEST", ""));
+            if (!string.IsNullOrWhiteSpace(RW.RWPath))
+                ScanRailworks_Click(this, null);
         }
 
         private void MainWindowDialog_Closing(object sender, CancelEventArgs e)
@@ -127,7 +125,6 @@ namespace RailworksDownloader
             }
 
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = false);
-            ScanRailworks.Dispatcher.Invoke(() => ScanRailworks.IsEnabled = true);
             crawlingComplete = true;
         }
 

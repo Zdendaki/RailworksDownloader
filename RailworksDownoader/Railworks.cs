@@ -152,7 +152,7 @@ namespace RailworksDownloader
 
                 if (File.Exists(rp_path)) 
                 {
-                    yield return new RouteInfo(ParseRouteProperties(rp_path).Trim() + " - " + Path.GetFileName(dir), dir + Path.DirectorySeparatorChar);
+                    yield return new RouteInfo(ParseRouteProperties(rp_path).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar);
                 }
                 else
                 {
@@ -162,7 +162,7 @@ namespace RailworksDownloader
                         {
                             foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("RouteProperties")))
                             {
-                                yield return new RouteInfo(ParseRouteProperties(entry.Open()).Trim() + " - " + Path.GetFileName(dir), dir + Path.DirectorySeparatorChar);
+                                yield return new RouteInfo(ParseRouteProperties(entry.Open()).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar);
                             }
                         }
                     }

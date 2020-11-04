@@ -14,6 +14,8 @@ namespace RailworksDownloader
     {
         public string Name { get; set; }
 
+        public string Hash { get; set; }
+
         public string Path { get; set; }
 
         float progress = 0;
@@ -122,9 +124,10 @@ namespace RailworksDownloader
 
         public RouteCrawler Crawler { get; set; }
 
-        internal RouteInfo(string name, string path)
+        internal RouteInfo(string name, string hash, string path)
         {
             Name = name;
+            Hash = hash;
             Path = path;
             Crawler = null;
             count = -1;

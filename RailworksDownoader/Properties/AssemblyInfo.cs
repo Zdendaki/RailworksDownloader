@@ -12,7 +12,7 @@ using System.Windows;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Railworks Download Station Client")]
-[assembly: AssemblyCopyright("Copyright © Zdendaki.net 2020")]
+[assembly: AssemblyCopyright("Copyright © Zdendaki.net & JachyHm 2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
