@@ -156,10 +156,10 @@ namespace RailworksDownloader
 
         private List<Tag> AllTags = new List<Tag>();
 
-        public SerzReader ()
+        public SerzReader(string inputFile, string outputFile)
         {
-            InputStream = new FileStream(@"g:\Steam\steamapps\common\RailWorks\Content\Routes\bd4aae03-09b5-4149-a133-297420197357\Networks\funkcni zaloha\Tracks6 vymena rychlostniku1 funkcni.bin", FileMode.Open, FileAccess.Read);
-            OutputStream = File.OpenWrite(@"g:\Steam\steamapps\common\RailWorks\Content\Routes\bd4aae03-09b5-4149-a133-297420197357\Networks\funkcni zaloha\Tracks6 vymena rychlostniku1 funkcni.xml");
+            InputStream = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
+            OutputStream = File.OpenWrite(outputFile);
 
             BinaryReader binaryReader = new BinaryReader(InputStream, Encoding.UTF8);
 
