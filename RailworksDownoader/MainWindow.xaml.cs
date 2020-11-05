@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -90,8 +91,23 @@ namespace RailworksDownloader
                 }
             });
 
-            if (!string.IsNullOrWhiteSpace(RW.RWPath))
-                ScanRailworks_Click(this, null);
+
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            /*SerzData sd = new SerzData();
+            sd.OpenFile(@"g:\Steam\steamapps\common\RailWorks\Content\Routes\f8b64803-ddb6-47bd-9ee8-69e3ceba1bf3\Scenarios\06be99f0-9c57-4616-be80-2eaf43448484\Scenario.bin");*/
+            SerzReader sr = new SerzReader();
+            sw.Stop();
+            MessageBox.Show(sw.Elapsed.ToString());
+
+            sw = new Stopwatch();
+            sw.Start();
+            sr.FlushToXML();
+            sw.Stop();
+            MessageBox.Show(sw.Elapsed.ToString());
+
+            /*if (!string.IsNullOrWhiteSpace(RW.RWPath))
+                ScanRailworks_Click(this, null);*/
         }
 
         private void MainWindowDialog_Closing(object sender, CancelEventArgs e)
