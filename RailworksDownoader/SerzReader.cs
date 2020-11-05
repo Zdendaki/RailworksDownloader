@@ -477,7 +477,7 @@ namespace RailworksDownloader
                         break;
                     }
                 default:
-                    throw new Exception(String.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
+                    throw new Exception(string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
             }
         }
 
@@ -674,7 +674,7 @@ namespace RailworksDownloader
                                 RefTag rt = (RefTag)currentTag;
                                 StringBuilder builder = new StringBuilder(Strings[rt.TagNameID]);
                                 builder.Replace("::", "-");
-                                WriteString(String.Format("<{0} d:type=\"ref\">{1}</{0}>\r\n", builder.ToString(), rt.ID));
+                                WriteString(string.Format("<{0} d:type=\"ref\">{1}</{0}>\r\n", builder.ToString(), rt.ID));
                                 break;
                             }
                     }
