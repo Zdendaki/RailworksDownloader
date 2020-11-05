@@ -438,7 +438,7 @@ namespace RailworksDownloader
             //if (File.ReadAllText(file).Contains(""))
             string xml = Path.ChangeExtension(file, ".xml");
 
-            ProcessStartInfo si = new ProcessStartInfo();
+            /*ProcessStartInfo si = new ProcessStartInfo();
             si.FileName = Path.Combine(RailworksPath, "serz.exe");
             si.Arguments = $"\"{file}\" /xml:\"{xml}\"";
             si.RedirectStandardOutput = true;
@@ -450,7 +450,10 @@ namespace RailworksDownloader
             serz.StartInfo = si;
 
             serz.Start();
-            serz.WaitForExit();
+            serz.WaitForExit();*/
+
+            SerzReader sr = new SerzReader(file, xml);
+            sr.FlushToXML();
         }
 
         private async Task _GetDependencies()

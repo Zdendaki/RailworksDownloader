@@ -91,12 +91,12 @@ namespace RailworksDownloader
                 }
             });
 
-
+            /*
             Stopwatch sw = new Stopwatch();
             sw.Start();
             /*SerzData sd = new SerzData();
             sd.OpenFile(@"g:\Steam\steamapps\common\RailWorks\Content\Routes\f8b64803-ddb6-47bd-9ee8-69e3ceba1bf3\Scenarios\06be99f0-9c57-4616-be80-2eaf43448484\Scenario.bin");*/
-            SerzReader sr = new SerzReader();
+            /*SerzReader sr = new SerzReader();
             sw.Stop();
             MessageBox.Show(sw.Elapsed.ToString());
 
@@ -104,7 +104,7 @@ namespace RailworksDownloader
             sw.Start();
             sr.FlushToXML();
             sw.Stop();
-            MessageBox.Show(sw.Elapsed.ToString());
+            MessageBox.Show(sw.Elapsed.ToString());*/
 
             /*if (!string.IsNullOrWhiteSpace(RW.RWPath))
                 ScanRailworks_Click(this, null);*/
