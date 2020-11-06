@@ -58,7 +58,7 @@ namespace RailworksDownloader
             }
             set
             {
-                if (downloadableCount != value)
+                if (downloadableCount != value || value == 0)
                 {
                     OnPropertyChanged<Brush>("ProgressBackground");
                     OnPropertyChanged<int>();
@@ -76,7 +76,7 @@ namespace RailworksDownloader
             }
             set
             {
-                if (count != value)
+                if (count != value || value == 0)
                 {
                     OnPropertyChanged<Brush>("ProgressBackground");
                     OnPropertyChanged<int>();
@@ -94,7 +94,7 @@ namespace RailworksDownloader
             }
             set
             {
-                if (downloadableScenarioCount != value)
+                if (downloadableScenarioCount != value || value == 0)
                 {
                     OnPropertyChanged<Brush>("ProgressBackground");
                     OnPropertyChanged<int>();
@@ -112,7 +112,7 @@ namespace RailworksDownloader
             }
             set
             {
-                if (scenarioCount != value)
+                if (scenarioCount != value || value == 0)
                 {
                     OnPropertyChanged<Brush>("ProgressBackground");
                     OnPropertyChanged<int>();
