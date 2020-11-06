@@ -91,18 +91,16 @@ namespace RailworksDownloader
                 }
             });
 
-            /*
-            Stopwatch sw = new Stopwatch();
+            
+            /*Stopwatch sw = new Stopwatch();
             sw.Start();
-            /*SerzData sd = new SerzData();
-            sd.OpenFile(@"g:\Steam\steamapps\common\RailWorks\Content\Routes\f8b64803-ddb6-47bd-9ee8-69e3ceba1bf3\Scenarios\06be99f0-9c57-4616-be80-2eaf43448484\Scenario.bin");*/
-            /*SerzReader sr = new SerzReader();
+            SerzReader sr = new SerzReader(@"G:\\Steam\\steamapps\\common\\RailWorks\\Content\\Routes\\9cac1720-316c-4a01-a3e6-8c594df5452f\\Scenery\\+000022-000041.bin");
             sw.Stop();
             MessageBox.Show(sw.Elapsed.ToString());
 
             sw = new Stopwatch();
             sw.Start();
-            sr.FlushToXML();
+            string[] deps = sr.GetDependencies();
             sw.Stop();
             MessageBox.Show(sw.Elapsed.ToString());*/
 
@@ -114,7 +112,7 @@ namespace RailworksDownloader
         {
             if (Saving || CheckingDLC)
             {
-                MessageBoxResult result = MessageBox.Show("Some operation is still running.\nDo you really want to close this app?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                MessageBoxResult result = MessageBox.Show("Some operation are still running.\nDo you really want to close this app?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.No)
                 {
                     e.Cancel = true;

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using System.Web.UI.WebControls;
 
 namespace RailworksDownloader
@@ -22,14 +23,14 @@ namespace RailworksDownloader
 
             public enum Types : byte
             {
-                StartTag = 80, //Opening word
-                CloseTag = 112, //Closing work
-                DataTag = 86, //Data word
-                MatrixTag = 65, //Matrix row
-                NilTag = 78, //Nil word
-                RefTag = 82, //Reference word
-                /*DBlob = 66, //Blob word
-                unk43, //Unknown word*/
+                MatrixTag = 65, //Matrix tag
+                BlobTag = 66, //Blob tag
+                MagicTag = 67, //Unknown tag
+                NilTag = 78, //Nil tag
+                OpenTag = 80, //Opening tag
+                RefTag = 82, //Reference tag
+                DataTag = 86, //Data tag
+                CloseTag = 112, //Closing tag
             }
 
             public enum DataTypes : short
@@ -55,7 +56,7 @@ namespace RailworksDownloader
 
             public StartTag(int id, int rwType, ushort stringId)
             {
-                Type = Types.StartTag;
+                Type = Types.OpenTag;
                 ID = id;
                 RWtype = rwType;
                 TagNameID = stringId;
@@ -136,8 +137,42 @@ namespace RailworksDownloader
             }
         }
 
+        private class MagicTag : Tag
+        {
+            public byte UnknownByte { get; set; }
+
+            public uint UnknownUint { get; set; }
+
+            public MagicTag(byte unknownByte, uint unknownUint)
+            {
+                Type = Types.MagicTag;
+                UnknownByte = unknownByte;
+                UnknownUint = unknownUint;
+            }
+        }
+
+        private class BlobTag : Tag
+        {
+            public uint Size { get; set; }
+            public byte[] Data { get; set; }
+
+            public BlobTag(uint size, byte[] data) 
+            {
+                Size = size;
+                Data = data;
+            }
+        }
+
+        private class Dependency
+        {
+            public string Provider { get; set; }
+            public string Product { get; set; }
+            public string Asset { get; set; }
+        }
+
         private const uint SERZ_MAGIC = 1515341139U;
         private const string XML_HEADER = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n";
+        private const byte BINDEX_MAX = 0xFF;
 
         private int CurrentXMLlevel { get; set; }
 
@@ -152,46 +187,52 @@ namespace RailworksDownloader
 
         private string[] Strings = new string[0xFFFF];
 
-        private Tag[] BinTags = new Tag[256];
+        private Tag[] BinTags = new Tag[BINDEX_MAX];
 
         private List<Tag> AllTags = new List<Tag>();
 
-        public SerzReader(string inputFile, string outputFile)
+        private List<Dependency> Dependencies = new List<Dependency>();
+
+        public SerzReader(string inputFile)
         {
             InputStream = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
-            OutputStream = File.OpenWrite(outputFile);
 
             BinaryReader binaryReader = new BinaryReader(InputStream, Encoding.UTF8);
 
-            //Check file contains SERZ at 0x0
-            uint magic = binaryReader.ReadUInt32();
-            if (magic == SERZ_MAGIC)
+            if (binaryReader.BaseStream.Length > sizeof(int)*2)
             {
-                int someNumber = binaryReader.ReadInt32();
-
-                DebugStep = 0;
-                BIndex = 0;
-                SIndex = 0;
-
-                //Read whole bin file
-                while (binaryReader.BaseStream.Position != binaryReader.BaseStream.Length)
+                //Check file contains SERZ at 0x0
+                uint magic = binaryReader.ReadUInt32();
+                if (magic == SERZ_MAGIC)
                 {
-                    byte cur_byte = binaryReader.ReadByte();
+                    int someNumber = binaryReader.ReadInt32();
 
-                    /*Debug.Assert(DebugStep < 644607, "Debug assert!");
+                    DebugStep = 0;
+                    BIndex = 0;
+                    SIndex = 0;
+                    CurrentXMLlevel = 0;
 
-                    Debug.Assert(cur_byte > 0, "Ambigous index!");*/
-
-                    if (cur_byte == 0xFF) //FF is "startbit" for command
+                    //Read whole bin file
+                    while (binaryReader.BaseStream.Position != binaryReader.BaseStream.Length)
                     {
-                        ParseNewTag(ref binaryReader);
-                        BIndex++;
+                        byte cur_byte = binaryReader.ReadByte();
+
+                        //Debug.Assert(DebugStep < 20174, "Debug assert!");
+                        //Debug.Assert(BIndex % BINDEX_MAX != 0x85 || cur_byte != 0xFF, "Desired index reached!");
+
+                        //Debug.Assert(cur_byte > 0, "Ambigous index!");*/
+
+                        if (cur_byte == 0xFF) //FF is "startbit" for command
+                        {
+                            ParseNewTag(ref binaryReader);
+                            BIndex++;
+                        }
+                        else
+                        {
+                            ParseExistingTag(cur_byte, ref binaryReader);
+                        }
+                        DebugStep++;
                     }
-                    else
-                    {
-                        ParseExistingTag(cur_byte, ref binaryReader);
-                    }
-                    DebugStep++;
                 }
             }
         }
@@ -200,7 +241,7 @@ namespace RailworksDownloader
         {
             ushort string_id = br.ReadUInt16(); //read two bytes as short
 
-            Debug.Assert(string_id < Strings.Length+1 || string_id == 0xFFFF, String.Format("Adding non loaded string id {0} at position {1}, step {2}!", string_id, br.BaseStream.Position, DebugStep));
+            Debug.Assert(string_id < SIndex || string_id == 0xFFFF, String.Format("Adding non loaded string id {0} at position {1}, step {2}!", string_id, br.BaseStream.Position, DebugStep));
 
             if (string_id == 0xFFFF) //if string index == FFFF then it is string itself
             {
@@ -228,6 +269,31 @@ namespace RailworksDownloader
                 case "cDeltaString":
                     {
                         dt = new DataTag(DataTag.DataTypes.String, ReadString(ref br), 0, tagName_id);
+                        string elemContent = Strings[dt.IntValue];
+                        if (!string.IsNullOrWhiteSpace(elemContent))
+                        {
+                            switch (Strings[tagName_id])
+                            {
+                                case "Provider":
+                                    {
+                                        Dependencies.Add(new Dependency());
+                                        Dependencies.Last().Provider = elemContent;
+                                        break;
+                                    }
+                                case "Product":
+                                    {
+                                        if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Product))
+                                            Dependencies.Last().Product = elemContent;
+                                        break;
+                                    }
+                                case "BlueprintID":
+                                    {
+                                        if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Asset))
+                                            Dependencies.Last().Asset = elemContent;
+                                        break;
+                                    }
+                            }
+                        }
                         break;
                     }
                 case "sInt64":
@@ -287,11 +353,13 @@ namespace RailworksDownloader
                     }
                 default:
                     {
-                        throw new Exception(string.Format("Unknown data type {0} at position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
+                        Debug.Assert(false, string.Format("Unknown data type {0} at position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
+                        return;
+                        //throw new Exception(string.Format("Unknown data type {0} at position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
                     }
             }
 
-            BinTags[BIndex % 255] = dt;
+            BinTags[BIndex % BINDEX_MAX] = dt;
             AllTags.Add(dt);
         }
 
@@ -309,6 +377,31 @@ namespace RailworksDownloader
                 case DataTag.DataTypes.String:
                     {
                         dt = new DataTag(DataTag.DataTypes.String, ReadString(ref br), 0, tagName_id);
+                        string elemContent = Strings[dt.IntValue];
+                        if (!string.IsNullOrWhiteSpace(elemContent))
+                        {
+                            switch (Strings[tagName_id])
+                            {
+                                case "Provider":
+                                    {
+                                        Dependencies.Add(new Dependency());
+                                        Dependencies.Last().Provider = elemContent;
+                                        break;
+                                    }
+                                case "Product":
+                                    {
+                                        if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Product))
+                                            Dependencies.Last().Product = elemContent;
+                                        break;
+                                    }
+                                case "BlueprintID":
+                                    {
+                                        if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Asset))
+                                            Dependencies.Last().Asset = elemContent;
+                                        break;
+                                    }
+                            }
+                        }
                         break;
                     }
                 case DataTag.DataTypes.Int64:
@@ -379,10 +472,14 @@ namespace RailworksDownloader
         private void ParseNewMatrixTag(ref BinaryReader br)
         {
             ushort tagName_id = ReadString(ref br); //reads name of tag
-            ushort format_id = br.ReadUInt16(); //reads format of saved data
+            ushort format_id = ReadString(ref br); //reads format of saved data
 
             if (Strings[format_id] != "sFloat32")
-                throw new Exception(String.Format("Unknown format {0} in mattrice on position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
+            {
+                Debug.Assert(false, string.Format("Unknown format {0} in mattrice on position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
+                return;
+                //throw new Exception(string.Format("Unknown format {0} in mattrice on position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
+            }
 
             ushort num_elements = br.ReadByte();
             float[] elements = new float[num_elements];
@@ -394,7 +491,7 @@ namespace RailworksDownloader
 
             MatrixTag mt = new MatrixTag(elements, 0, tagName_id);
 
-            BinTags[BIndex % 255] = mt;
+            BinTags[BIndex % BINDEX_MAX] = mt;
             AllTags.Add(mt);
         }
 
@@ -421,7 +518,7 @@ namespace RailworksDownloader
 
             switch (command_type)
             {
-                case Tag.Types.StartTag:
+                case Tag.Types.OpenTag:
                     {
                         ushort tagName_id = ReadString(ref br); //reads name of tag
                         int node_id = br.ReadInt32(); //gets node id
@@ -429,8 +526,10 @@ namespace RailworksDownloader
 
                         StartTag st = new StartTag(node_id, node_type, tagName_id);
 
-                        BinTags[BIndex % 255] = st;
+                        BinTags[BIndex % BINDEX_MAX] = st;
                         AllTags.Add(st);
+
+                        CurrentXMLlevel++;
 
                         break;
                     }
@@ -440,8 +539,10 @@ namespace RailworksDownloader
 
                         EndTag et = new EndTag(string_id);
 
-                        BinTags[BIndex % 255] = et;
+                        BinTags[BIndex % BINDEX_MAX] = et;
                         AllTags.Add(et);
+
+                        CurrentXMLlevel--;
 
                         break;
                     }
@@ -459,7 +560,7 @@ namespace RailworksDownloader
                     {
                         NilTag nt = new NilTag();
 
-                        BinTags[BIndex % 255] = nt;
+                        BinTags[BIndex % BINDEX_MAX] = nt;
                         AllTags.Add(nt);
 
                         break;
@@ -471,13 +572,45 @@ namespace RailworksDownloader
 
                         RefTag rt = new RefTag(node_id, tagName_id);
 
-                        BinTags[BIndex % 255] = rt;
+                        BinTags[BIndex % BINDEX_MAX] = rt;
                         AllTags.Add(rt);
 
                         break;
                     }
+                case Tag.Types.MagicTag:
+                    {
+                        byte unknown_byte = br.ReadByte();
+                        uint unknown_uint = br.ReadUInt32();
+
+                        MagicTag mt = new MagicTag(unknown_byte, unknown_uint);
+
+                        BinTags[BIndex % BINDEX_MAX] = mt;
+
+                        //Debug.Assert(false, string.Format("Magic tag at level {0}, byte {1}, uint {2}, BIndex {3}!!!", CurrentXMLlevel, unknown_byte, unknown_uint, BIndex % BINDEX_MAX));
+
+                        break;
+                    }
+                case Tag.Types.BlobTag:
+                    {
+                        uint blobSize = br.ReadUInt32();
+                        byte[] blobData = new byte[blobSize];
+
+                        for (int i = 0; i < Math.Ceiling((double)blobSize/int.MaxValue); i++)
+                        {
+                            int buffer_size = (int) Math.Min(blobSize - int.MaxValue * i, int.MaxValue);
+                            byte[] buffer = br.ReadBytes(buffer_size);
+                            Array.Copy(buffer, 0, blobData, int.MaxValue * i, buffer_size);
+                        }
+
+                        BlobTag bt = new BlobTag(blobSize, blobData);
+
+                        BinTags[BIndex % BINDEX_MAX] = bt;
+                        break;
+                    }
                 default:
-                    throw new Exception(string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
+                    Debug.Assert(false, string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
+                    break;
+                    //throw new Exception(string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
             }
         }
 
@@ -487,17 +620,19 @@ namespace RailworksDownloader
 
             switch (refTag.Type)
             {
-                case Tag.Types.StartTag:
+                case Tag.Types.OpenTag:
                     {
                         int node_id = br.ReadInt32(); //gets node id
                         int node_type = br.ReadInt32(); //gets node type
 
                         AllTags.Add(new StartTag(node_id, refTag.RWtype, refTag.TagNameID));
+                        CurrentXMLlevel++;
                         break;
                     }
                 case Tag.Types.CloseTag:
                     {
                         AllTags.Add(new EndTag(refTag.TagNameID));
+                        CurrentXMLlevel--;
                         break;
                     }
                 case Tag.Types.DataTag:
@@ -528,51 +663,110 @@ namespace RailworksDownloader
 
                         break;
                     }
+                case Tag.Types.MagicTag:
+                    {
+                        byte unknown_byte = br.ReadByte();
+                        uint unknown_uint = br.ReadUInt32();
+
+                        MagicTag mt = new MagicTag(unknown_byte, unknown_uint);
+
+                        //BinTags[BIndex % BINDEX_MAX] = ut;
+
+                        //Debug.Assert(false, string.Format("Reused magic tag at level {0}, byte {1}, uint {2}, BIndex {3}!!!", CurrentXMLlevel, unknown_byte, unknown_uint, BIndex % BINDEX_MAX));
+
+                        break;
+                    }
+                case Tag.Types.BlobTag:
+                    {
+                        uint blobSize = br.ReadUInt32();
+                        byte[] blobData = new byte[blobSize];
+
+                        for (int i = 0; i < Math.Ceiling((double)blobSize / int.MaxValue); i++)
+                        {
+                            int buffer_size = (int)Math.Min(blobSize - int.MaxValue * i, int.MaxValue);
+                            byte[] buffer = br.ReadBytes(buffer_size);
+                            Array.Copy(buffer, 0, blobData, int.MaxValue * i, buffer_size);
+                        }
+
+                        BlobTag bt = new BlobTag(blobSize, blobData);
+
+                        BinTags[BIndex % BINDEX_MAX] = bt;
+                        break;
+                    }
             }
 
         }
 
-        public void FlushToXML()
+        public string[] GetDependencies()
+        {
+            Dependency[] deps = Dependencies.Where(x => !string.IsNullOrWhiteSpace(x.Asset) && (Path.GetExtension(x.Asset.ToLower()) == ".xml" || Path.GetExtension(x.Asset.ToLower()) == ".bin")).ToArray();
+            int depsCount = deps.Length;
+
+            string[] outDeps = new string[depsCount];
+
+            for (int i = 0; i < depsCount; i++)
+            {
+                ref Dependency depRef = ref deps[i];
+                outDeps[i] = Railworks.NormalizePath(Path.Combine(depRef.Provider, depRef.Product, depRef.Asset));
+            }
+
+            return outDeps;
+        }
+
+        public void FlushToXML(string outputFile)
         {
             CurrentXMLlevel = 0;
+            OutputStream = File.OpenWrite(outputFile);
+
             WriteString(XML_HEADER);
+
             for (int i = 0; i < AllTags.Count; i++)
             {
                 Tag currentTag = AllTags[i];
                 Tag nextTag = i+1<AllTags.Count?AllTags[i+1]:null;
 
+                Debug.Assert(currentTag.TagNameID < SIndex, "Attempted to flush unreaded string");
+
                 if (i == 0)
                 {
                     StringBuilder builder = new StringBuilder(Strings[currentTag.TagNameID]);
                     builder.Replace("::", "-");
+                    string tag_name = builder.ToString();
+                    if (tag_name.Length == 0)
+                        tag_name = "e";
+                    string id = ((StartTag)currentTag).ID > 0 ? string.Format("d:id =\"{0}\"", ((StartTag)currentTag).ID) : "";
+
                     if (nextTag?.TagNameID == currentTag.TagNameID)
-                        WriteString(string.Format("<{0} xmlns:d=\"http://www.kuju.com/TnT/2003/Delta\" d:version=\"1.0\" d:id=\"{1}\"/>\r\n", builder.ToString(), ((StartTag)currentTag).ID));
+                        WriteString(string.Format("<{0} xmlns:d=\"http://www.kuju.com/TnT/2003/Delta\" d:version=\"1.0\" {1}/>\r\n", tag_name, id));
                     else
-                        WriteString(string.Format("<{0} xmlns:d=\"http://www.kuju.com/TnT/2003/Delta\" d:version=\"1.0\" d:id=\"{1}\">\r\n", builder.ToString(), ((StartTag)currentTag).ID));
+                        WriteString(string.Format("<{0} xmlns:d=\"http://www.kuju.com/TnT/2003/Delta\" d:version=\"1.0\" {1}>\r\n", tag_name, id));
                     CurrentXMLlevel++;
                 } 
                 else
                 {
                     switch (currentTag.Type)
                     {
-                        case Tag.Types.StartTag:
+                        case Tag.Types.OpenTag:
                             {
                                 StartTag st = (StartTag)currentTag;
                                 StringBuilder builder = new StringBuilder(Strings[st.TagNameID]);
                                 builder.Replace("::", "-");
+                                string tag_name = builder.ToString();
+                                if (tag_name.Length == 0)
+                                    tag_name = "e";
                                 if (st.ID > 0)
                                 {
                                     if (nextTag?.TagNameID == currentTag.TagNameID)
-                                        WriteString(string.Format("<{0} d:id=\"{1}\"/>\r\n", builder.ToString(), st.ID));
+                                        WriteString(string.Format("<{0} d:id=\"{1}\"/>\r\n", tag_name, st.ID));
                                     else
-                                        WriteString(string.Format("<{0} d:id=\"{1}\">\r\n", builder.ToString(), st.ID));
+                                        WriteString(string.Format("<{0} d:id=\"{1}\">\r\n", tag_name, st.ID));
                                 } 
                                 else
                                 {
                                     if (nextTag?.TagNameID == currentTag.TagNameID)
-                                        WriteString(string.Format("<{0}/>\r\n", builder.ToString()));
+                                        WriteString(string.Format("<{0}/>\r\n", tag_name));
                                     else
-                                        WriteString(string.Format("<{0}>\r\n", builder.ToString()));
+                                        WriteString(string.Format("<{0}>\r\n", tag_name));
                                 }
                                 CurrentXMLlevel++;
                                 break;
@@ -582,6 +776,9 @@ namespace RailworksDownloader
                                 DataTag dt = (DataTag)currentTag;
                                 StringBuilder builder = new StringBuilder(Strings[dt.TagNameID]);
                                 builder.Replace("::", "-");
+                                string tag_name = builder.ToString();
+                                if (tag_name.Length == 0)
+                                    tag_name = "e";
                                 if (dt.DataType == Tag.DataTypes.Float32 || dt.DataType == Tag.DataTypes.Float64)
                                 {
                                     byte[] bytes = BitConverter.GetBytes(dt.FloatValue);
@@ -595,7 +792,7 @@ namespace RailworksDownloader
                                             format = "sFloat64"; break;
                                     }
 
-                                    WriteString(string.Format("<{0} d:type=\"{3}\" d:alt_encoding=\"{1}\" d:precision=\"string\">{2}</{0}>\r\n", builder.ToString(), BitConverter.ToString(bytes).Replace("-", string.Empty), dt.FloatValue, format));
+                                    WriteString(string.Format("<{0} d:type=\"{3}\" d:alt_encoding=\"{1}\" d:precision=\"string\">{2}</{0}>\r\n", tag_name, BitConverter.ToString(bytes).Replace("-", string.Empty), dt.FloatValue, format));
                                 }
                                 else
                                 {
@@ -625,15 +822,15 @@ namespace RailworksDownloader
                                     }
                                     if (dt.DataType == Tag.DataTypes.String)
                                     {
-                                        WriteString(string.Format("<{0} d:type=\"{1}\">{2}</{0}>\r\n", Strings[dt.TagNameID], format, Strings[(int)dt.IntValue]));
+                                        WriteString(string.Format("<{0} d:type=\"{1}\">{2}</{0}>\r\n", tag_name, format, HttpUtility.HtmlEncode(Strings[(int)dt.IntValue])));
                                     } 
                                     else if (dt.DataType == Tag.DataTypes.Int8 || dt.DataType == Tag.DataTypes.Int16 || dt.DataType == Tag.DataTypes.Int32 || dt.DataType == Tag.DataTypes.Int64)
                                     {
-                                        WriteString(string.Format("<{0} d:type=\"{1}\">{2}</{0}>\r\n", Strings[dt.TagNameID], format, (long)dt.IntValue + long.MinValue));
+                                        WriteString(string.Format("<{0} d:type=\"{1}\">{2}</{0}>\r\n", tag_name, format, (long)dt.IntValue + long.MinValue));
                                     }
                                     else
                                     {
-                                        WriteString(string.Format("<{0} d:type=\"{1}\">{2}</{0}>\r\n", Strings[dt.TagNameID], format, dt.IntValue));
+                                        WriteString(string.Format("<{0} d:type=\"{1}\">{2}</{0}>\r\n", tag_name, format, dt.IntValue));
                                     }
                                 }
                                 break;
@@ -646,7 +843,10 @@ namespace RailworksDownloader
                                 {
                                     StringBuilder builder = new StringBuilder(Strings[currentTag.TagNameID]);
                                     builder.Replace("::", "-");
-                                    WriteString(string.Format("</{0}>\r\n", builder.ToString()));
+                                    string tag_name = builder.ToString();
+                                    if (tag_name.Length == 0)
+                                        tag_name = "e";
+                                    WriteString(string.Format("</{0}>\r\n", tag_name));
                                 }
                                 break;
                             }
@@ -661,7 +861,10 @@ namespace RailworksDownloader
 
                                 StringBuilder builder = new StringBuilder(Strings[mt.TagNameID]);
                                 builder.Replace("::", "-");
-                                WriteString(string.Format("<{0} d:numElements=\"{1}\" d:elementType=\"sFloat32\" d:precision=\"string\">{2}</{0}>\r\n", builder.ToString(), mt.Elements.Length, inner_string.Trim()));
+                                string tag_name = builder.ToString();
+                                if (tag_name.Length == 0)
+                                    tag_name = "e";
+                                WriteString(string.Format("<{0} d:numElements=\"{1}\" d:elementType=\"sFloat32\" d:precision=\"string\">{2}</{0}>\r\n", tag_name, mt.Elements.Length, inner_string.Trim()));
                                 break;
                             }
                         case Tag.Types.NilTag:
@@ -674,7 +877,10 @@ namespace RailworksDownloader
                                 RefTag rt = (RefTag)currentTag;
                                 StringBuilder builder = new StringBuilder(Strings[rt.TagNameID]);
                                 builder.Replace("::", "-");
-                                WriteString(string.Format("<{0} d:type=\"ref\">{1}</{0}>\r\n", builder.ToString(), rt.ID));
+                                string tag_name = builder.ToString();
+                                if (tag_name.Length == 0)
+                                    tag_name = "e";
+                                WriteString(string.Format("<{0} d:type=\"ref\">{1}</{0}>\r\n", tag_name, rt.ID));
                                 break;
                             }
                     }
@@ -690,8 +896,10 @@ namespace RailworksDownloader
             {
                 s = ((char) 0x09) + s;
             }
-            byte[] b = Encoding.Default.GetBytes(s);
+            byte[] b = Encoding.UTF8.GetBytes(s);
+            //Debug.Assert(!s.Contains("</cRecordSet>\r\n"));
             OutputStream.Write(b, 0, b.Length);
+            OutputStream.FlushAsync();
         }
     }
 }

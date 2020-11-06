@@ -347,8 +347,7 @@ namespace RailworksDownloader
             // Foreach all scenarios
             foreach (string scenarioDir in Directory.GetDirectories(scenariosDir))
             {
-                // Foreach all scenario files
-                foreach (string file in Directory.GetFiles(scenarioDir, "*.bin", SearchOption.AllDirectories))
+                /*foreach (string file in Directory.GetFiles(scenarioDir, "*.bin", SearchOption.AllDirectories))
                 {
                     string xml = Path.ChangeExtension(file, ".xml");
 
@@ -363,19 +362,35 @@ namespace RailworksDownloader
                     }
                     // Delete temporary .xml file
                     File.Delete(xml);
-                }
+                }*/
 
-                // Read scenario properties file
-                string scenarioProperties = Path.Combine(scenarioDir, "ScenarioProperties.xml");
-                if (File.Exists(scenarioProperties))
+                await Task.Run(() =>
                 {
-                    lock (ScenarioDepsLock)
+                    // Foreach all scenario files
+                    Parallel.ForEach(Directory.GetFiles(scenarioDir, "*.bin", SearchOption.AllDirectories), file =>
                     {
-                        //Dependencies.UnionWith(ParseBlueprint(scenarioProperties));
-                        ParseBlueprint(scenarioProperties, true);
-                        ReportProgress(scenarioProperties);
+                        SerzReader sr = new SerzReader(file);
+
+                        lock (ScenarioDepsLock)
+                        {
+                            ScenarioDeps.UnionWith(sr.GetDependencies());
+                        }
+
+                        ReportProgress(file);
+                    });
+
+                    // Read scenario properties file
+                    string scenarioProperties = Path.Combine(scenarioDir, "ScenarioProperties.xml");
+                    if (File.Exists(scenarioProperties))
+                    {
+                        lock (ScenarioDepsLock)
+                        {
+                            //Dependencies.UnionWith(ParseBlueprint(scenarioProperties));
+                            ParseBlueprint(scenarioProperties, true);
+                            ReportProgress(scenarioProperties);
+                        }
                     }
-                }
+                });
             }
         }
 
@@ -390,7 +405,7 @@ namespace RailworksDownloader
             foreach (string dir in Directory.GetDirectories(path).Where(x => x.ToLower() == "road tiles" || x.ToLower() == "track tiles" || x.ToLower() == "loft tiles"))
             {
                 // Foreach all network .bin files
-                foreach (string file in Directory.GetFiles(dir, "*.bin"))
+                /*foreach (string file in Directory.GetFiles(dir, "*.bin"))
                 {
                     string xml = Path.ChangeExtension(file, ".xml");
 
@@ -404,7 +419,24 @@ namespace RailworksDownloader
                     }
                     // Deletes temporary .xml file
                     File.Delete(xml);
-                }
+                }*/
+
+
+                await Task.Run(() =>
+                {
+                    // Foreach all Network files
+                    Parallel.ForEach(Directory.GetFiles(dir, "*.bin"), file =>
+                    {
+                        SerzReader sr = new SerzReader(file);
+
+                        lock (DependenciesLock)
+                        {
+                            Dependencies.UnionWith(sr.GetDependencies());
+                        }
+
+                        ReportProgress(file);
+                    });
+                });
             }
         }
 
@@ -416,7 +448,7 @@ namespace RailworksDownloader
         private async Task GetSceneryDependencies(string path)
         {
             // Foreach all scenery .bin files
-            foreach (string file in Directory.GetFiles(path, "*.bin"))
+            /*foreach (string file in Directory.GetFiles(path, "*.bin"))
             {
                 string xml = Path.ChangeExtension(file, ".xml");
 
@@ -430,7 +462,23 @@ namespace RailworksDownloader
                 }
                 // Delete temporary .xml file
                 File.Delete(xml);
-            }
+            }*/
+
+            await Task.Run(() =>
+            {
+                // Foreach all Network files
+                Parallel.ForEach(Directory.GetFiles(path, "*.bin"), file =>
+                {
+                    SerzReader sr = new SerzReader(file);
+
+                    lock (DependenciesLock)
+                    {
+                        Dependencies.UnionWith(sr.GetDependencies());
+                    }
+
+                    ReportProgress(file);
+                });
+            });
         }
 
         private void RunSERZ(string file)
@@ -452,8 +500,14 @@ namespace RailworksDownloader
             serz.Start();
             serz.WaitForExit();*/
 
-            SerzReader sr = new SerzReader(file, xml);
-            sr.FlushToXML();
+            try
+            {
+                SerzReader sr = new SerzReader(file);
+                sr.FlushToXML(xml);
+            } catch (Exception e)
+            {
+                Desharp.Debug.Log(e);
+            }
         }
 
         private async Task _GetDependencies()
