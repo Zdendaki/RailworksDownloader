@@ -682,23 +682,23 @@ namespace RailworksDownloader
                 {
                     Dependencies.UnionWith(routeProperties1);
                 }
-
-                Dependencies.RemoveWhere(x => string.IsNullOrWhiteSpace(x));
-
-                await md5;
-
-                SavedRoute.Dependencies = Dependencies.ToList();
-                SavedRoute.ScenarioDeps = ScenarioDeps.ToList();
-
-                Thread tt = new Thread(() => 
-                {
-                    RouteSaving?.Invoke(false);
-                    Adapter.SaveRoute(SavedRoute);
-                    RouteSaving?.Invoke(true);
-                });
-
-                tt.Start();
             }
+
+            Dependencies.RemoveWhere(x => string.IsNullOrWhiteSpace(x));
+
+            await md5;
+
+            SavedRoute.Dependencies = Dependencies.ToList();
+            SavedRoute.ScenarioDeps = ScenarioDeps.ToList();
+
+            Thread tt = new Thread(() =>
+            {
+                RouteSaving?.Invoke(false);
+                Adapter.SaveRoute(SavedRoute);
+                RouteSaving?.Invoke(true);
+            });
+
+            tt.Start();
         }
 
         private async Task ComputeChecksums()
