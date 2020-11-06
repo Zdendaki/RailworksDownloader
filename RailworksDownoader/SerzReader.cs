@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.UI.WebControls;
+using Windows.Storage.Streams;
 
 namespace RailworksDownloader
 {
@@ -182,7 +183,7 @@ namespace RailworksDownloader
 
         private int DebugStep { get; set; }
 
-        private FileStream InputStream { get; set; }
+        private Stream InputStream { get; set; }
         private FileStream OutputStream { get; set; }
 
         private string[] Strings = new string[0xFFFF];
@@ -196,10 +197,20 @@ namespace RailworksDownloader
         public SerzReader(string inputFile)
         {
             InputStream = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
+            Deserialize();
+        }
 
+        public SerzReader(Stream fileStream)
+        {
+            InputStream = fileStream;
+            Deserialize();
+        }
+
+        private void Deserialize()
+        {
             BinaryReader binaryReader = new BinaryReader(InputStream, Encoding.UTF8);
 
-            if (binaryReader.BaseStream.Length > sizeof(int)*2)
+            if (binaryReader.BaseStream.Length > sizeof(int) * 2)
             {
                 //Check file contains SERZ at 0x0
                 uint magic = binaryReader.ReadUInt32();

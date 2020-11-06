@@ -313,7 +313,6 @@ namespace RailworksDownloader
 
             foreach (string path_component in path_components)
             {
-
                 if (path_component.Length == 0)
                     continue;
 
@@ -327,7 +326,6 @@ namespace RailworksDownloader
                 }
 
                 stack.Push(path_component.ToLower());
-
             }
 
             string result = string.Join(new string(Path.DirectorySeparatorChar, 1), stack.Reverse().ToArray());
@@ -362,7 +360,7 @@ namespace RailworksDownloader
 
         public static Stream RemoveInvalidXmlChars(Stream istream)
         {
-            return new MemoryStream((byte[])StreamToByteArray(istream).Where(b => XmlConvert.IsXmlChar(Convert.ToChar(b))).ToArray());
+            return new MemoryStream(StreamToByteArray(istream).Where(b => XmlConvert.IsXmlChar(Convert.ToChar(b))).ToArray());
         }
 
         private static byte[] StreamToByteArray(Stream istream)
