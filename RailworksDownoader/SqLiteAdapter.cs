@@ -12,19 +12,39 @@ namespace RailworksDownloader
     {
         internal string DatabasePath { get; set; }
 
-        string ConnectionString;
+        private string ConnectionString;
+
+        private SQLiteConnection MemoryConn { get; set; }
+        private SQLiteConnection FileConn { get; set; }
 
         public SqLiteAdapter(string path)
         {
             DatabasePath = path;
             ConnectionString = $"Data Source={DatabasePath}; Version = 3; Compress = True;";
+            MemoryConn = new SQLiteConnection("Data Source=:memory:");
+            MemoryConn.Open();
+
+            if (File.Exists(DatabasePath))
+            {
+                FileConn = new SQLiteConnection(ConnectionString);
+                FileConn.Open();
+                FileConn.BackupDatabase(MemoryConn, "main", "main", -1, null, 0);
+                FileConn.Close();
+            }
+        }
+
+        public void FlushToFile()
+        {
+            FileConn = new SQLiteConnection(ConnectionString);
+            FileConn.Open();
+            MemoryConn.BackupDatabase(FileConn, "main", "main", -1, null, 0);
+            FileConn.Close();
+            MemoryConn.Close();
         }
 
         internal void SaveRoute(LoadedRoute route)
         {
-            SQLiteConnection con = new SQLiteConnection(ConnectionString);
-            con.Open();
-            SQLiteCommand cmd = new SQLiteCommand("INSERT INTO checksums (folder, chcksum) VALUES (@folder,@chcksum) ON CONFLICT(folder) DO UPDATE SET folder = @folder, chcksum = @chcksum;", con);
+            SQLiteCommand cmd = new SQLiteCommand("INSERT INTO checksums (folder, chcksum) VALUES (@folder,@chcksum) ON CONFLICT(folder) DO UPDATE SET folder = @folder, chcksum = @chcksum;", MemoryConn);
             for (int i = 0; i < 7; i++)
             {
                 switch (i)
@@ -61,9 +81,9 @@ namespace RailworksDownloader
                 cmd.ExecuteNonQuery();
             }
 
-            SQLiteCommand clear = new SQLiteCommand("DELETE FROM dependencies;", con);
+            SQLiteCommand clear = new SQLiteCommand("DELETE FROM dependencies;", MemoryConn);
             clear.ExecuteNonQuery();
-            SQLiteCommand insertSQL = new SQLiteCommand("INSERT INTO dependencies (path, isScenario) VALUES (@path,@isScenario);", con);
+            SQLiteCommand insertSQL = new SQLiteCommand("INSERT INTO dependencies (path, isScenario) VALUES (@path,@isScenario);", MemoryConn);
             int depsCount = route.Dependencies.Count;
             for (int i = 0; i < depsCount + route.ScenarioDeps.Count; i++)
             {
@@ -80,9 +100,6 @@ namespace RailworksDownloader
                     insertSQL.ExecuteNonQuery();
                 }
             }
-
-            con.Close();
-            con.Dispose();
         }
 
         internal LoadedRoute LoadSavedRoute(bool isAP = false)
@@ -91,9 +108,7 @@ namespace RailworksDownloader
 
             if (File.Exists(DatabasePath))
             {
-                SQLiteConnection con = new SQLiteConnection(ConnectionString);
-                con.Open();
-                SQLiteCommand command = new SQLiteCommand(con)
+                SQLiteCommand command = new SQLiteCommand(MemoryConn)
                 {
                     CommandText = "SELECT * FROM checksums;"
                 };
@@ -129,7 +144,7 @@ namespace RailworksDownloader
 
                 loadedRoute.Dependencies = new List<string>();
                 loadedRoute.ScenarioDeps = new List<string>();
-                command = new SQLiteCommand(con)
+                command = new SQLiteCommand(MemoryConn)
                 {
                     CommandText = "SELECT * FROM dependencies"
                 };
@@ -147,8 +162,6 @@ namespace RailworksDownloader
                     }
                 }
                 command.Dispose();
-                con.Close();
-                con.Dispose();
             }
             else
             {
@@ -160,24 +173,17 @@ namespace RailworksDownloader
 
         internal void CreateRouteCacheFile()
         {
-            SQLiteConnection con = new SQLiteConnection(ConnectionString);
-            con.Open();
-            SQLiteCommand command = new SQLiteCommand(con)
+            SQLiteCommand command = new SQLiteCommand(MemoryConn)
             {
                 CommandText = "CREATE TABLE dependencies (id INTEGER PRIMARY KEY, path TEXT, isScenario INTEGER);CREATE TABLE checksums (id INTEGER PRIMARY KEY, folder VARCHAR(32) UNIQUE, chcksum VARCHAR(32));"
             };
             command.ExecuteNonQuery();
             command.Dispose();
-
-            con.Close();
-            con.Dispose();
         }
 
         internal void CreateMainCacheFile()
         {
-            SQLiteConnection con = new SQLiteConnection(ConnectionString);
-            con.Open();
-            SQLiteCommand command = new SQLiteCommand(con)
+            SQLiteCommand command = new SQLiteCommand(MemoryConn)
             {
                 CommandText = @"CREATE TABLE package_list (
     id INTEGER PRIMARY KEY,
@@ -200,9 +206,6 @@ CREATE TABLE file_list (
             };
             command.ExecuteNonQuery();
             command.Dispose();
-
-            con.Close();
-            con.Dispose();
         }
 
         internal void SaveInstalledPackage(Package package)
@@ -210,14 +213,11 @@ CREATE TABLE file_list (
             if (!File.Exists(DatabasePath))
                 CreateMainCacheFile();
 
-            SQLiteConnection con = new SQLiteConnection(ConnectionString);
-            con.Open();
-
-            SQLiteCommand cmd = new SQLiteCommand("DELETE FROM file_list;", con);
+            SQLiteCommand cmd = new SQLiteCommand("DELETE FROM file_list;", MemoryConn);
             cmd.ExecuteNonQuery();
             cmd.Dispose();
 
-            cmd = new SQLiteCommand("INSERT INTO package_list (id, file_name, display_name, category, era, country, version, owner, datetime, description, target_path) VALUES (@id,@file_name,@display_name,@category,@era,@country,@version,@owner,@datetime,@desription,@target_path) ON CONFLICT(folder) DO UPDATE SET file_name = @file_name, display_name = @display_name, category = @category, era = @era, country = @country, version = @version, owner = @owner, datetime = @datetime, description = @description, version = @version;", con);
+            cmd = new SQLiteCommand("INSERT INTO package_list (id, file_name, display_name, category, era, country, version, owner, datetime, description, target_path) VALUES (@id,@file_name,@display_name,@category,@era,@country,@version,@owner,@datetime,@desription,@target_path) ON CONFLICT(folder) DO UPDATE SET file_name = @file_name, display_name = @display_name, category = @category, era = @era, country = @country, version = @version, owner = @owner, datetime = @datetime, description = @description, version = @version;", MemoryConn);
             cmd.Parameters.AddWithValue("id", package.PackageId);
             cmd.Parameters.AddWithValue("file_name", package.FileName);
             cmd.Parameters.AddWithValue("display_name", package.DisplayName);
@@ -232,17 +232,13 @@ CREATE TABLE file_list (
             cmd.ExecuteNonQuery();
             cmd.Dispose();
 
-            cmd = new SQLiteCommand("INSERT INTO file_list (package_id, file_name) VALUES (@package_id,@file_name);", con);
+            cmd = new SQLiteCommand("INSERT INTO file_list (package_id, file_name) VALUES (@package_id,@file_name);", MemoryConn);
             cmd.Parameters.AddWithValue("package_id", package.PackageId);
             foreach (string file in package.DepsContained)
             {
                 cmd.Parameters.AddWithValue("file_name", file);
                 cmd.ExecuteNonQuery();
             }
-
-            cmd.Dispose();
-            con.Close();
-            con.Dispose();
         }
 
         internal List<Package> LoadInstalledPackages()
@@ -251,9 +247,7 @@ CREATE TABLE file_list (
 
             if (File.Exists(DatabasePath))
             {
-                SQLiteConnection con = new SQLiteConnection(ConnectionString);
-                con.Open();
-                SQLiteCommand command = new SQLiteCommand(con)
+                SQLiteCommand command = new SQLiteCommand(MemoryConn)
                 {
                     CommandText = "SELECT * FROM package_list;"
                 };
@@ -275,7 +269,7 @@ CREATE TABLE file_list (
                         Convert.ToInt32(reader["version"])
                     );
 
-                    SQLiteCommand cmd = new SQLiteCommand("SELECT * FROM file_list WHERE package_id = @package_id;", con);
+                    SQLiteCommand cmd = new SQLiteCommand("SELECT * FROM file_list WHERE package_id = @package_id;", MemoryConn);
                     cmd.Parameters.AddWithValue("@package_id", loadedPackage.PackageId);
                     SQLiteDataReader r = cmd.ExecuteReader();
                     while (r.Read())
@@ -287,9 +281,6 @@ CREATE TABLE file_list (
                     loadedPackages.Add(loadedPackage);
                 }
                 command.Dispose();
-
-                con.Close();
-                con.Dispose();
             }
             else
             {

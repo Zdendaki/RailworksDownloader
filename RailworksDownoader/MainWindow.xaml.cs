@@ -256,6 +256,7 @@ namespace RailworksDownloader
         {
             try {
                 ScanRailworks.IsEnabled = false;
+                SelectRailworksLocation.IsEnabled = false;
                 crawlingComplete = false;
                 TotalProgress.Value = 0;
                 RW.RunAllCrawlers();
