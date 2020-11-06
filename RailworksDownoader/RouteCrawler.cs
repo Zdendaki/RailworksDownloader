@@ -31,6 +31,8 @@ namespace RailworksDownloader
         private object DependenciesLock = new object();
         private object ScenarioDepsLock = new object();
         private object ProgressLock = new object();
+        private object DebugCountLock = new object();
+        private object DebugReadedLock = new object();
         // Total crawling process (%)
         internal float PercentProgress = 0f;
         // Loaded route data
@@ -70,6 +72,9 @@ namespace RailworksDownloader
         /// All route dependencies
         /// </summary>
         public HashSet<string> Dependencies { get; set; }
+
+        private List<string> DebugCountList { get; set; }
+        private List<string> DebugReadedList { get; set; }
 
         /// <summary>
         /// All scenarios dependencies
@@ -114,6 +119,8 @@ namespace RailworksDownloader
             MissingScenarioDeps = new List<string>();
             DownloadableDependencies = new List<string>();
             DownloadableScenarioDeps = new List<string>();
+            DebugCountList = new List<string>();
+            DebugReadedList = new List<string>();
         }
 
         public string GetTemporaryDirectory()
@@ -299,6 +306,10 @@ namespace RailworksDownloader
             });
 
             ReportProgress(propertiesPath);
+            lock (DebugReadedLock)
+            {
+                DebugReadedList.Add(Railworks.NormalizePath(propertiesPath));
+            }
 
             return dependencies;
         }
@@ -428,29 +439,39 @@ namespace RailworksDownloader
                 await Task.Run(() =>
                 {
                     // Foreach all scenario files
-                    Parallel.ForEach(Directory.GetFiles(scenarioDir, "*.bin", SearchOption.AllDirectories), file =>
+                    Parallel.ForEach(Directory.GetFiles(scenarioDir, "*", SearchOption.AllDirectories), file =>
                     {
-                        SerzReader sr = new SerzReader(file);
-
-                        lock (ScenarioDepsLock)
+                        string ext = Path.GetExtension(file).ToLower();
+                        if (ext == ".bin")
                         {
-                            ScenarioDeps.UnionWith(sr.GetDependencies());
-                        }
+                            SerzReader sr = new SerzReader(file);
 
-                        ReportProgress(file);
+                            lock (ScenarioDepsLock)
+                            {
+                                ScenarioDeps.UnionWith(sr.GetDependencies());
+                            }
+
+                            lock (DebugReadedLock)
+                            {
+                                DebugReadedList.Add(Railworks.NormalizePath(file));
+                            }
+
+                            ReportProgress(file);
+                        } 
+                        else if (ext == ".xml")
+                        {
+                            lock (ScenarioDepsLock)
+                            {
+                                ParseBlueprint(file, true);
+                            }
+                            ReportProgress(file);
+
+                            lock (DebugReadedLock)
+                            {
+                                DebugReadedList.Add(Railworks.NormalizePath(file));
+                            }
+                        }
                     });
-
-                    // Read scenario properties file
-                    string scenarioProperties = Path.Combine(scenarioDir, "ScenarioProperties.xml");
-                    if (File.Exists(scenarioProperties))
-                    {
-                        lock (ScenarioDepsLock)
-                        {
-                            //Dependencies.UnionWith(ParseBlueprint(scenarioProperties));
-                            ParseBlueprint(scenarioProperties, true);
-                            ReportProgress(scenarioProperties);
-                        }
-                    }
                 });
             }
         }
@@ -460,45 +481,45 @@ namespace RailworksDownloader
         /// </summary>
         /// <param name="path">Network directory path</param>
         /// <returns></returns>
-        private async Task GetNetworkDependencies(string path)
+        private async Task GetNetworkDependencies(string dir)
         {
-            // Foreach all network directories
-            foreach (string dir in Directory.GetDirectories(path).Where(x => x.ToLower() == "road tiles" || x.ToLower() == "track tiles" || x.ToLower() == "loft tiles"))
+            // Foreach all network .bin files
+            /*foreach (string file in Directory.GetFiles(dir, "*.bin"))
             {
-                // Foreach all network .bin files
-                /*foreach (string file in Directory.GetFiles(dir, "*.bin"))
-                {
-                    string xml = Path.ChangeExtension(file, ".xml");
+                string xml = Path.ChangeExtension(file, ".xml");
 
-                    // Parse .bin file to .xml
-                    await Task.Run(() => RunSERZ(file));
+                // Parse .bin file to .xml
+                await Task.Run(() => RunSERZ(file));
+                lock (DependenciesLock)
+                {
+                    //Dependencies.UnionWith(ParseBlueprint(xml));
+                    ParseBlueprint(xml);
+                    ReportProgress(file);
+                }
+                // Deletes temporary .xml file
+                File.Delete(xml);
+            }*/
+
+
+            await Task.Run(() =>
+            {
+                // Foreach all Network files
+                Parallel.ForEach(Directory.GetFiles(dir, "*.bin"), file =>
+                {
+                    SerzReader sr = new SerzReader(file);
+
                     lock (DependenciesLock)
                     {
-                        //Dependencies.UnionWith(ParseBlueprint(xml));
-                        ParseBlueprint(xml);
-                        ReportProgress(file);
+                        Dependencies.UnionWith(sr.GetDependencies());
                     }
-                    // Deletes temporary .xml file
-                    File.Delete(xml);
-                }*/
 
-
-                await Task.Run(() =>
-                {
-                    // Foreach all Network files
-                    Parallel.ForEach(Directory.GetFiles(dir, "*.bin"), file =>
+                    ReportProgress(file);
+                    lock (DebugReadedLock)
                     {
-                        SerzReader sr = new SerzReader(file);
-
-                        lock (DependenciesLock)
-                        {
-                            Dependencies.UnionWith(sr.GetDependencies());
-                        }
-
-                        ReportProgress(file);
-                    });
+                        DebugReadedList.Add(Railworks.NormalizePath(file));
+                    }
                 });
-            }
+            });
         }
 
         /// <summary>
@@ -538,6 +559,10 @@ namespace RailworksDownloader
                     }
 
                     ReportProgress(file);
+                    lock (DebugReadedLock)
+                    {
+                        DebugReadedList.Add(Railworks.NormalizePath(file));
+                    }
                 });
             });
         }
@@ -565,7 +590,8 @@ namespace RailworksDownloader
             {
                 SerzReader sr = new SerzReader(file);
                 sr.FlushToXML(xml);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Desharp.Debug.Log(e);
             }
@@ -591,93 +617,70 @@ namespace RailworksDownloader
             if (loftsChanged || roadsChanged || tracksChanged || sceneryChanged || rpChanged || scenariosChanged)
             {
                 Task n1 = null;
-                Task s1 = null;
-                Task t1 = null;
                 Task n2 = null;
-                Task s2 = null;
-                Task t2 = null;
-                Task<IEnumerable<string>> prop1 = null;
-                Task<IEnumerable<string>> prop2 = null;
+                Task n3 = null;
+                Task s = null;
+                Task t = null;
+                Task<IEnumerable<string>> prop = null;
 
                 if (rpChanged)
-                    prop1 = GetRoutePropertiesDependencies(Path.Combine(RoutePath, "RouteProperties.xml"));
-                if (ContainsAP)
-                    prop2 = GetRoutePropertiesDependencies(Path.Combine(TempPath, "RouteProperties.xml"));
+                    prop = GetRoutePropertiesDependencies(Path.Combine(RoutePath, "RouteProperties.xml"));
 
-                foreach (string dir in Directory.GetDirectories(RoutePath))
+                Parallel.ForEach(Directory.GetDirectories(RoutePath), dir =>
                 {
                     switch (Path.GetFileName(dir).ToLower())
                     {
                         case "networks":
-                            if (loftsChanged || roadsChanged || tracksChanged)
-                                n1 = GetNetworkDependencies(dir);
+                            // Foreach all network directories
+                            Parallel.ForEach(Directory.GetDirectories(dir), network_dir =>
+                            {
+                                switch (Path.GetFileName(network_dir).ToLower())
+                                {
+                                    case "loft tiles":
+                                        if (loftsChanged)
+                                            n1 = GetNetworkDependencies(network_dir);
+                                        break;
+                                    case "road tiles":
+                                        if (roadsChanged)
+                                            n2 = GetNetworkDependencies(network_dir);
+                                        break;
+                                    case "track tiles":
+                                        if (tracksChanged)
+                                            n3 = GetNetworkDependencies(network_dir);
+                                        break;
+                                }
+                            });
                             break;
                         case "scenarios":
                             if (scenariosChanged)
-                                s1 = GetScenariosDependencies(dir);
+                                s = GetScenariosDependencies(dir);
                             break;
                         case "scenery":
                             if (sceneryChanged)
-                                t1 = GetSceneryDependencies(dir);
+                                t = GetSceneryDependencies(dir);
                             break;
                     }
-                }
-
-                if (ContainsAP)
-                {
-                    foreach (string dir in Directory.GetDirectories(TempPath))
-                    {
-                        switch (Path.GetFileName(dir))
-                        {
-                            case "Networks":
-                                if (loftsChanged || roadsChanged || tracksChanged)
-                                    n2 = GetNetworkDependencies(dir);
-                                break;
-                            case "Scenarios":
-                                if (scenariosChanged)
-                                    s2 = GetScenariosDependencies(dir);
-                                break;
-                            case "Scenery":
-                                if (sceneryChanged)
-                                    t2 = GetSceneryDependencies(dir);
-                                break;
-                        }
-                    }
-                }
+                });
 
                 if (n1 != null)
                     await n1;
-                if (s1 != null)
-                    await s1;
-                if (t1 != null)
-                    await t1;
-
                 if (n2 != null)
                     await n2;
-                if (s2 != null)
-                    await s2;
-                if (t2 != null)
-                    await t2;
+                if (n3 != null)
+                    await n3;
+                if (s != null)
+                    await s;
+                if (t != null)
+                    await t;
+
 
                 IEnumerable<string> routeProperties1 = new List<string>();
-                if (prop1 != null)
-                    routeProperties1 = await prop1;
+                if (prop != null)
+                    routeProperties1 = await prop;
 
                 lock (DependenciesLock)
                 {
                     Dependencies.UnionWith(routeProperties1);
-                }
-
-                if (ContainsAP)
-                {
-                    IEnumerable<string> routeProperties2 = new List<string>();
-                    if (prop2 != null)
-                        routeProperties2 = await prop2;
-
-                    lock (DependenciesLock)
-                    {
-                        Dependencies.UnionWith(routeProperties2);
-                    }
                 }
 
                 Dependencies.RemoveWhere(x => string.IsNullOrWhiteSpace(x));
@@ -706,19 +709,16 @@ namespace RailworksDownloader
                 {
                     SavedRoute.APChecksum = GetDirectoryMD5(RoutePath, true);
                 }
-                else
-                {
-                    SavedRoute.RoutePropertiesChecksum = GetFileMD5(Path.Combine(RoutePath, "RouteProperties.xml"));
-                    SavedRoute.LoftChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Loft Tiles"));
-                    SavedRoute.RoadChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Road Tiles"));
-                    SavedRoute.TrackChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Track Tiles"));
-                    SavedRoute.SceneryChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Scenery"));
-                    SavedRoute.ScenariosChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Scenarios"));
-                }
+                SavedRoute.RoutePropertiesChecksum = GetFileMD5(Path.Combine(RoutePath, "RouteProperties.xml"));
+                SavedRoute.LoftChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Loft Tiles"));
+                SavedRoute.RoadChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Road Tiles"));
+                SavedRoute.TrackChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Track Tiles"));
+                SavedRoute.SceneryChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Scenery"));
+                SavedRoute.ScenariosChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Scenarios"));
             });
         }
 
-        private void ParseAPEntry(ZipFile file, ZipEntry entry, bool isScenario = false)
+        private void ParseAPEntry(ZipFile file, ZipEntry entry, bool isScenario = false, string fname = "")
         {
             try
             {
@@ -749,7 +749,15 @@ namespace RailworksDownloader
                 }
 
                 ReportProgress(entry.Size);
-            } catch { }
+                lock (DebugReadedLock)
+                {
+                    DebugReadedList.Add(Railworks.NormalizePath(Path.Combine(Path.GetDirectoryName(fname), entry.Name)));
+                }
+            } catch (Exception e)
+            {
+                Desharp.Debug.Log(e);
+                Debug.Assert(false, "Nastala kritická chyba při čtení souboru ZIP Entry!!!");
+            }
         }
 
         private async Task GetDependencies()
@@ -779,32 +787,53 @@ namespace RailworksDownloader
                                 {
                                     string relativePath = Railworks.NormalizePath(Railworks.GetRelativePath(RoutePath, Path.Combine(Path.GetDirectoryName(file), entry.Name)));
                                     string mainFolder = relativePath.Split(Path.DirectorySeparatorChar)[0];
-                                    switch (mainFolder)
+                                    if (mainFolder == "networks" || mainFolder == "scenarios" || mainFolder == "scenery") {
+                                        switch (mainFolder)
+                                        {
+                                            case "networks":
+                                                string subFolder = relativePath.Split(Path.DirectorySeparatorChar)[1];
+                                                if (subFolder == "loft tiles" || subFolder == "road tiles" || subFolder == "track tiles")
+                                                    ParseAPEntry(zipFile, entry, false, file);
+                                                break;
+                                            case "scenarios":
+                                                ParseAPEntry(zipFile, entry, true, file);
+                                                break;
+                                            case "scenery":
+                                                ParseAPEntry(zipFile, entry, false, file);
+                                                break;
+                                        }
+                                    }
+                                    else if (Path.GetFileName(entry.Name).ToLower().Contains("routeproperties"))
                                     {
-                                        case "networks":
-                                            string subFolder = relativePath.Split(Path.DirectorySeparatorChar)[1];
-                                            if (subFolder == "Loft Tiles" || subFolder == "Road Tiles" || subFolder == "Track Tiles")
-                                                ParseAPEntry(zipFile, entry);
-                                            break;
-                                        case "scenarios":
-                                            ParseAPEntry(zipFile, entry, true);
-                                            break;
-                                        case "scenery":
-                                            ParseAPEntry(zipFile, entry);
-                                            break;
+                                        ParseAPEntry(zipFile, entry, false, file);
                                     }
                                 }
                             }
                         }
-                        catch
+                        catch (Exception e)
                         {
-
+                            Desharp.Debug.Log(e);
+                            Debug.Assert(false, "Nastala kritická chyba při čtení souboru ZIP!!!");
                         }
                     }
                 });
             }
 
             await _GetDependencies();
+
+            foreach (string fname in DebugCountList.Except(DebugReadedList))
+            {
+                Debug.Assert(false, string.Format("Kritička chyba! Neparsovaný soubor {0} který byl načten při sčítání velikostí!", fname));
+                Desharp.Debug.Log(DebugCountList);
+                Desharp.Debug.Log(DebugReadedList);
+            }
+
+            foreach (string fname in DebugReadedList.Except(DebugCountList))
+            {
+                Debug.Assert(false, string.Format("Kritička chyba! Parsovaný soubor {0} nebyl načten při sčítání velikostí!", fname));
+                Desharp.Debug.Log(DebugCountList);
+                Desharp.Debug.Log(DebugReadedList);
+            }
 
             /*if (count > 0)
             {
@@ -831,19 +860,32 @@ namespace RailworksDownloader
             bool scenariosChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Scenarios")) != SavedRoute.ScenariosChecksum;
 
             if (rpChanged)
+            {
                 size += GetFileSize(Path.Combine(RoutePath, "RouteProperties.xml"));
+                if (size != 0)
+                {
+                    lock (DebugCountLock)
+                    {
+                        DebugCountList.Add(Railworks.NormalizePath(Path.Combine(RoutePath, "RouteProperties.xml")));
+                    }
+                }
+            }
+
+            string[] commonMask = new string[] { "*.bin", "*.xml" };
 
             foreach (string dir in Directory.GetDirectories(RoutePath))
             {
                 switch (Path.GetFileName(dir).ToLower())
                 {
                     case "networks":
-                        if (loftsChanged || roadsChanged || tracksChanged)
-                        {
-                            size += GetDirectorySize(Path.Combine(dir, "Loft Tiles"), "*.bin");
-                            size += GetDirectorySize(Path.Combine(dir, "Road Tiles"), "*.bin");
-                            size += GetDirectorySize(Path.Combine(dir, "Track Tiles"), "*.bin");
-                        }
+                        if (loftsChanged)
+                            size += GetDirectorySize(Path.Combine(dir, "Loft Tiles"), commonMask);
+
+                        if (roadsChanged)
+                            size += GetDirectorySize(Path.Combine(dir, "Road Tiles"), commonMask);
+
+                        if (tracksChanged)
+                            size += GetDirectorySize(Path.Combine(dir, "Track Tiles"), commonMask);
 
                         break;
                     case "scenarios":
@@ -851,14 +893,13 @@ namespace RailworksDownloader
                         {
                             foreach (string dir2 in Directory.GetDirectories(dir))
                             {
-                                size += GetDirectorySize(dir2, "*.bin");
-                                size += GetFileSize(Path.Combine(dir2, "ScenarioProperties.xml"));
+                                size += GetDirectorySize(dir2, commonMask, SearchOption.AllDirectories);
                             }
                         }
                         break;
                     case "scenery":
                         if (sceneryChanged)
-                            size += GetDirectorySize(dir, "*.bin");
+                            size += GetDirectorySize(dir, commonMask);
                         break;
                 }
             }
@@ -873,7 +914,38 @@ namespace RailworksDownloader
                         {
                             string ext = Path.GetExtension(entry.Name).ToLower();
                             if (ext == ".xml" || ext == ".bin")
-                                size += entry.Size;
+                            {
+                                string relativePath = Railworks.NormalizePath(Railworks.GetRelativePath(RoutePath, Path.Combine(Path.GetDirectoryName(file), entry.Name)));
+                                string mainFolder = relativePath.Split(Path.DirectorySeparatorChar)[0];
+                                if (mainFolder == "scenarios" || mainFolder == "scenery")
+                                {
+                                    size += entry.Size;
+                                    lock (DebugCountLock)
+                                    {
+                                        DebugCountList.Add(Railworks.NormalizePath(Path.Combine(Path.GetDirectoryName(file), entry.Name)));
+                                    }
+                                }
+                                else if (mainFolder == "networks")
+                                {
+                                    string subFolder = relativePath.Split(Path.DirectorySeparatorChar)[1];
+                                    if (subFolder == "loft tiles" || subFolder == "road tiles" || subFolder == "track tiles")
+                                    {
+                                        size += entry.Size;
+                                        lock (DebugCountLock)
+                                        {
+                                            DebugCountList.Add(Railworks.NormalizePath(Path.Combine(Path.GetDirectoryName(file), entry.Name)));
+                                        }
+                                    }
+                                } 
+                                else if (Path.GetFileName(entry.Name).ToLower().Contains("routeproperties"))
+                                {
+                                    size += entry.Size;
+                                    lock (DebugCountLock)
+                                    {
+                                        DebugCountList.Add(Railworks.NormalizePath(Path.Combine(Path.GetDirectoryName(file), entry.Name)));
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -882,15 +954,23 @@ namespace RailworksDownloader
             return size;
         }
 
-        private long GetDirectorySize(string directory, string mask)
+        private long GetDirectorySize(string directory, string[] maskArr, SearchOption so = SearchOption.TopDirectoryOnly)
         {
             long size = 0;
 
-            if (Directory.Exists(directory))
+            for (int i = 0; i < maskArr.Length; i++)
             {
-                foreach (var file in Directory.GetFiles(directory, mask, SearchOption.AllDirectories))
+                if (Directory.Exists(directory))
                 {
-                    size += GetFileSize(file);
+                    foreach (var file in Directory.GetFiles(directory, maskArr[i], so))
+                    {
+                        size += GetFileSize(file);
+
+                        lock (DebugCountLock)
+                        {
+                            DebugCountList.Add(Railworks.NormalizePath(file));
+                        }
+                    }
                 }
             }
 

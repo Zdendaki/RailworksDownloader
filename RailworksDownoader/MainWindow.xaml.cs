@@ -104,8 +104,8 @@ namespace RailworksDownloader
             sw.Stop();
             MessageBox.Show(sw.Elapsed.ToString());*/
 
-            /*if (!string.IsNullOrWhiteSpace(RW.RWPath))
-                ScanRailworks_Click(this, null);*/
+            if (!string.IsNullOrWhiteSpace(RW.RWPath))
+                ScanRailworks_Click(this, null);
         }
 
         private void MainWindowDialog_Closing(object sender, CancelEventArgs e)
@@ -122,6 +122,7 @@ namespace RailworksDownloader
 
         private async void RW_CrawlingComplete()
         {
+            TotalProgress.Dispatcher.Invoke(() => TotalProgress.Value = 100);
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = true);
             await RW.GetMissing();
             await PM.GetDownloadableDependencies();
