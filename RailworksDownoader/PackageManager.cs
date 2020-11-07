@@ -69,13 +69,13 @@ namespace RailworksDownloader
 
     public class PackageManager
     {
-        private SqLiteAdapter SqLiteAdapter { get; set; }
+        private readonly SqLiteAdapter SqLiteAdapter = new SqLiteAdapter(Path.GetFullPath("packages.mcf"));
 
         public List<Package> InstalledPackages { get; set; }
 
-        public HashSet<Package> CachedPackages { get; set; }
+        public HashSet<Package> CachedPackages = new HashSet<Package>();
 
-        public HashSet<string> DownloadableDependencies { get; set; }
+        public HashSet<string> DownloadableDependencies = new HashSet<string>();
 
         private readonly object CachedLock = new object();
 
@@ -87,6 +87,8 @@ namespace RailworksDownloader
 
         private static Uri ApiUrl { get; set; }
 
+        private static WebWrapper WebWrapper { get; set; }
+
         public PackageManager(string rwPath, Uri apiUrl)
         {
             RWPath = rwPath;
@@ -95,11 +97,9 @@ namespace RailworksDownloader
 
             //string commonpath = GetFolderPath(SpecialFolder.CommonApplicationData);
             //SqLiteAdapter = new SqLiteAdapter(Path.Combine(commonpath, "DLS", "packages.mcf"));
-            SqLiteAdapter = new SqLiteAdapter(Path.GetFullPath("packages.mcf"));
 
             InstalledPackages = SqLiteAdapter.LoadInstalledPackages();
-            CachedPackages = new HashSet<Package>();
-            DownloadableDependencies = new HashSet<string>();
+            WebWrapper = new WebWrapper(ApiUrl);
         }
 
         public async Task<int> FindFile(string file_name)
@@ -112,8 +112,7 @@ namespace RailworksDownloader
             if (package != null)
                 return package.PackageId;
 
-            WebWrapper ww = new WebWrapper(ApiUrl);
-            Package onlinePackage = await ww.SearchForFile(file_name);
+            Package onlinePackage = await WebWrapper.SearchForFile(file_name);
             if (onlinePackage != null && onlinePackage.PackageId > 0)
             {
                 lock (CachedLock)
@@ -130,18 +129,22 @@ namespace RailworksDownloader
 
         public async Task GetDownloadableDependencies()
         {
-            WebWrapper ww = new WebWrapper(ApiUrl);
-            HashSet<string> downloadableDeps = await ww.GetAllFiles();
-            lock (DownloadableLock)
-                DownloadableDependencies = downloadableDeps;
-
-            /*if (DownloadableDependencies.Contains(path) || DownloadableDependencies.Contains(path_bin) || await FindFile(path))
-                continue;
-            }*/
+            HashSet<string> downloadableDeps = await WebWrapper.GetAllFiles();
+            if (downloadableDeps != null)
+            {
+                lock (DownloadableLock)
+                    DownloadableDependencies = downloadableDeps;
+            }
         }
 
         public async Task GetSteamDependencies()
         {
+            HashSet<string> paidDeps = await WebWrapper.GetPaidFiles();
+            if (paidDeps != null)
+            {
+                lock (DownloadableLock)
+                    DownloadableDependencies = paidDeps;
+            }
         }
     }
 
