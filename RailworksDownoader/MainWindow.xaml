@@ -17,25 +17,14 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition />
-                <RowDefinition Height="40"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <!--<Grid HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="6*" />
-                    <ColumnDefinition Width="7*" />
-                    <ColumnDefinition Width="5*" />
-                </Grid.ColumnDefinitions>
-                <Label Grid.Column="0" Content="Route name"/>
-                <Label Grid.Column="1" Content="Route hash"/>
-                <Label Grid.Column="2" Content="Progress"/>
-            </Grid>-->
             <ListView x:Name="RoutesList" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Row="1" Margin="0,0,0,10">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                         <Setter Property="Padding" Value="0,10" />
                         <Setter Property="BorderThickness" Value="0" />
-                        <!--<Setter Property="Background" Value="{Binding ProgressBackground, Mode=OneWay}" />-->
                         <Setter Property="Background" Value="Transparent" />
                         <EventSetter Event="PreviewMouseDoubleClick" Handler="ListViewItem_PreviewMouseDoubleClick" />
                     </Style>
@@ -45,11 +34,9 @@
                         <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ToolTip="{Binding Hash}" >
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="6*" />
-                                <!--<ColumnDefinition Width="0" />-->
                                 <ColumnDefinition Width="3*" />
                             </Grid.ColumnDefinitions>
                             <Label Grid.Column="0" Content="{Binding Name}" Margin="10,0" VerticalContentAlignment="Center" />
-                            <!--<Label Grid.Column="1" Content="{Binding Hash}" Margin="10,0" VerticalContentAlignment="Center" />-->
                             <ProgressBar Value="{Binding Progress, Mode=OneWay}" Foreground="{Binding ProgressBackground, Mode=OneWay}" HorizontalAlignment="Stretch" Grid.Column="1" Margin="10,0,25,0" />
                         </Grid>
                     </DataTemplate>
@@ -69,8 +56,8 @@
                     <Label x:Name="SavingLabel" Content="Saving" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="0,10" VerticalAlignment="Center" Height="26" />
                     <ProgressBar Margin="10,0,10,0" VerticalAlignment="Center" IsIndeterminate="True" Grid.Column="1" Height="2" HorizontalAlignment="Stretch"/>
                 </Grid>
-                <Button x:Name="DownloadMissing" Grid.Column="2" IsEnabled="False" Content="Download missing assets" Margin="5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="32" />
-                <Button x:Name="ManagePackages" Grid.Column="1" IsEnabled="true" Content="Manage packages" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Click="ManagePackages_Click" Height="32" />
+                <Button x:Name="DownloadMissing" Grid.Column="2" IsEnabled="False" Content="Download missing assets" Margin="5,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="32" />
+                <Button x:Name="ManagePackages" Grid.Column="1" IsEnabled="true" Content="Manage packages" HorizontalAlignment="Left" Margin="5,10" VerticalAlignment="Bottom" Click="ManagePackages_Click" Height="32" />
             </Grid>
         </Grid>
     </Grid>
