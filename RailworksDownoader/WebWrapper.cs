@@ -42,7 +42,6 @@ namespace RailworksDownloader
         public string[] content { get; set; }
     }
 
-
     internal class WebWrapper
     {
         private Uri ApiUrl { get; set; }
@@ -60,7 +59,7 @@ namespace RailworksDownloader
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
             HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
-            if (response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode && response.StatusCode > 0)
                 return new Package(JsonConvert.DeserializeObject<QueryResult>(await response.Content.ReadAsStringAsync()).content);
 
             return null;
@@ -72,7 +71,19 @@ namespace RailworksDownloader
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
             HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
-            if (response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode && response.StatusCode > 0)
+                return new HashSet<string>(JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync()).content.Select(x => Railworks.NormalizePath(x)));
+
+            return null;
+        }
+
+        public async Task<HashSet<string>> GetPaidFiles()
+        {
+            Dictionary<string, string> content = new Dictionary<string, string> { { "listPaid", null } };
+            FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
+
+            HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
+            if (response.IsSuccessStatusCode && response.StatusCode > 0)
                 return new HashSet<string>(JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync()).content.Select(x => Railworks.NormalizePath(x)));
 
             return null;
