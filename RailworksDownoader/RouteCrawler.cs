@@ -1,4 +1,5 @@
 ﻿using ICSharpCode.SharpZipLib.Zip;
+using Microsoft.VisualBasic.Devices;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Xml;
 
 namespace RailworksDownloader
@@ -19,8 +21,6 @@ namespace RailworksDownloader
     {
         // Route path
         private string RoutePath;
-        // Temp route path
-        private string TempPath;
         // Railworks path
         private string RailworksPath;
         // Size of all route files
@@ -109,7 +109,6 @@ namespace RailworksDownloader
         public RouteCrawler(string path, string railworksPath)
         {
             RoutePath = path;
-            TempPath = ContainsAP ? GetTemporaryDirectory() : null;
             RailworksPath = railworksPath;
             Dependencies = new HashSet<string>();
             ScenarioDeps = new HashSet<string>();
@@ -725,36 +724,40 @@ namespace RailworksDownloader
             {
                 Stream inputStream = file.GetInputStream(entry);
 
-                string ext = Path.GetExtension(entry.Name).ToLower();
-                if (ext == ".xml")
+                if (inputStream.CanRead && inputStream.CanSeek)
                 {
-                    ParseBlueprint(inputStream, isScenario);
-                }
-                else if (ext == ".bin")
-                {
-                    SerzReader sr = new SerzReader(inputStream);
-                    if (!isScenario)
+                    string ext = Path.GetExtension(entry.Name).ToLower();
+                    if (ext == ".xml")
                     {
-                        lock (DependenciesLock)
+                        ParseBlueprint(inputStream, isScenario);
+                    }
+                    else if (ext == ".bin")
+                    {
+                        SerzReader sr = new SerzReader(inputStream);
+                        if (!isScenario)
                         {
-                            Dependencies.UnionWith(sr.GetDependencies());
+                            lock (DependenciesLock)
+                            {
+                                Dependencies.UnionWith(sr.GetDependencies());
+                            }
+                        }
+                        else
+                        {
+                            lock (ScenarioDepsLock)
+                            {
+                                ScenarioDeps.UnionWith(sr.GetDependencies());
+                            }
                         }
                     }
-                    else
-                    {
-                        lock (ScenarioDepsLock)
-                        {
-                            ScenarioDeps.UnionWith(sr.GetDependencies());
-                        }
-                    }
-                }
 
-                ReportProgress(entry.Size);
-                lock (DebugReadedLock)
-                {
-                    DebugReadedList.Add(Railworks.NormalizePath(Path.Combine(Path.GetDirectoryName(fname), entry.Name)));
+                    ReportProgress(entry.Size);
+                    lock (DebugReadedLock)
+                    {
+                        DebugReadedList.Add(Railworks.NormalizePath(Path.Combine(Path.GetDirectoryName(fname), entry.Name)));
+                    }
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Desharp.Debug.Log(e);
                 Debug.Assert(false, "Nastala kritická chyba při čtení souboru ZIP Entry!!!");
@@ -781,32 +784,36 @@ namespace RailworksDownloader
                     {
                         try
                         {
-                            //.Where(x => Path.GetExtension(x.FileName).ToLower() == ".xml" || Path.GetExtension(x.FileName).ToLower() == ".bin")
-                            foreach (ZipEntry entry in zipFile)
+                            if (zipFile.TestArchive(true, TestStrategy.FindFirstError, null))
                             {
-                                if (Path.GetExtension(entry.Name).ToLower() == ".xml" || Path.GetExtension(entry.Name).ToLower() == ".bin")
+                                //.Where(x => Path.GetExtension(x.FileName).ToLower() == ".xml" || Path.GetExtension(x.FileName).ToLower() == ".bin")
+                                foreach (ZipEntry entry in zipFile)
                                 {
-                                    string relativePath = Railworks.NormalizePath(Railworks.GetRelativePath(RoutePath, Path.Combine(Path.GetDirectoryName(file), entry.Name)));
-                                    string mainFolder = relativePath.Split(Path.DirectorySeparatorChar)[0];
-                                    if (mainFolder == "networks" || mainFolder == "scenarios" || mainFolder == "scenery") {
-                                        switch (mainFolder)
-                                        {
-                                            case "networks":
-                                                string subFolder = relativePath.Split(Path.DirectorySeparatorChar)[1];
-                                                if (subFolder == "loft tiles" || subFolder == "road tiles" || subFolder == "track tiles")
-                                                    ParseAPEntry(zipFile, entry, false, file);
-                                                break;
-                                            case "scenarios":
-                                                ParseAPEntry(zipFile, entry, true, file);
-                                                break;
-                                            case "scenery":
-                                                ParseAPEntry(zipFile, entry, false, file);
-                                                break;
-                                        }
-                                    }
-                                    else if (Path.GetFileName(entry.Name).ToLower().Contains("routeproperties"))
+                                    if (Path.GetExtension(entry.Name).ToLower() == ".xml" || Path.GetExtension(entry.Name).ToLower() == ".bin")
                                     {
-                                        ParseAPEntry(zipFile, entry, false, file);
+                                        string relativePath = Railworks.NormalizePath(Railworks.GetRelativePath(RoutePath, Path.Combine(Path.GetDirectoryName(file), entry.Name)));
+                                        string mainFolder = relativePath.Split(Path.DirectorySeparatorChar)[0];
+                                        if (mainFolder == "networks" || mainFolder == "scenarios" || mainFolder == "scenery")
+                                        {
+                                            switch (mainFolder)
+                                            {
+                                                case "networks":
+                                                    string subFolder = relativePath.Split(Path.DirectorySeparatorChar)[1];
+                                                    if (subFolder == "loft tiles" || subFolder == "road tiles" || subFolder == "track tiles")
+                                                        ParseAPEntry(zipFile, entry, false, file);
+                                                    break;
+                                                case "scenarios":
+                                                    ParseAPEntry(zipFile, entry, true, file);
+                                                    break;
+                                                case "scenery":
+                                                    ParseAPEntry(zipFile, entry, false, file);
+                                                    break;
+                                            }
+                                        }
+                                        else if (Path.GetFileName(entry.Name).ToLower().Contains("routeproperties"))
+                                        {
+                                            ParseAPEntry(zipFile, entry, false, file);
+                                        }
                                     }
                                 }
                             }
@@ -1023,15 +1030,24 @@ namespace RailworksDownloader
                     byte[] pathBytes = Encoding.UTF8.GetBytes(filePath);
                     md5.TransformBlock(pathBytes, 0, pathBytes.Length, pathBytes, 0);
 
-                    const short buffSize = 4096;
-                    byte[] buffer = new byte[buffSize];
-                    using (FileStream inputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                    long fsize = GetFileSize(filePath);
+                    if (fsize > 0x6400000 || (new ComputerInfo().AvailablePhysicalMemory < 0x40000000 && fsize > 0xA00000)) //File bigger than 100MB or total memory used > 2GB - read chunk by chunk
                     {
-                        int read;
-                        while ((read = inputStream.Read(buffer, 0, buffSize)) > 0)
+                        const int buffSize = 0x402000;
+                        byte[] buffer = new byte[buffSize];
+                        using (FileStream inputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
                         {
-                            md5.TransformBlock(buffer, 0, read, buffer, 0);
+                            int read;
+                            while ((read = inputStream.Read(buffer, 0, buffSize)) > 0)
+                            {
+                                md5.TransformBlock(buffer, 0, read, buffer, 0);
+                            }
                         }
+                    } 
+                    else
+                    {
+                        byte[] fileBytes = File.ReadAllBytes(filePath);
+                        md5.TransformBlock(fileBytes, 0, fileBytes.Length, fileBytes, 0);
                     }
                 }
 

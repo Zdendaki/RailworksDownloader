@@ -234,7 +234,7 @@ CREATE TABLE file_list (
 
             cmd = new SQLiteCommand("INSERT INTO file_list (package_id, file_name) VALUES (@package_id,@file_name);", MemoryConn);
             cmd.Parameters.AddWithValue("package_id", package.PackageId);
-            foreach (string file in package.DepsContained)
+            foreach (string file in package.FilesContained)
             {
                 cmd.Parameters.AddWithValue("file_name", file);
                 cmd.ExecuteNonQuery();
@@ -274,7 +274,7 @@ CREATE TABLE file_list (
                     SQLiteDataReader r = cmd.ExecuteReader();
                     while (r.Read())
                     {
-                        loadedPackage.DepsContained.Add(Railworks.NormalizePath(Convert.ToString(r["file_name"])));
+                        loadedPackage.FilesContained.Add(Railworks.NormalizePath(Convert.ToString(r["file_name"])));
                     }
                     cmd.Dispose();
 

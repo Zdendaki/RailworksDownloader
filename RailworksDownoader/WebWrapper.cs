@@ -24,13 +24,19 @@ namespace RailworksDownloader
         public int id { get; set; }
         public string file_name { get; set; }
         public string display_name { get; set; }
+        public int category { get; set; }
+        public int era { get; set; }
+        public int country { get; set; }
         public int version { get; set; }
         public int owner { get; set; }
         public string created { get; set; }
+        public string description { get; set; }
+        public string target_path { get; set; }
+        public bool paid { get; set; }
+        public int steamappid { get; set; }
         public string[] files { get; set; }
         public int[] dependencies { get; set; }
     }
-
 
     public class GetAllFilesResult
     {
@@ -73,7 +79,6 @@ namespace RailworksDownloader
                 return new HashSet<string>(JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync()).content.Select(x => Railworks.NormalizePath(x)));
 
             return null;
-
         }
 
         public static async Task ReportDLC(List<SteamManager.DLC> dlcList, Uri apiUrl)

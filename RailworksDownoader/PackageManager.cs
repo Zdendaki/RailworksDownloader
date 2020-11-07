@@ -25,8 +25,11 @@ namespace RailworksDownloader
         public DateTime Datetime { get; set; }
         public string Description { get; set; }
         public string TargetPath { get; set; }
-        public List<string> DepsContained { get; set; }
+        public bool IsPaid { get; set; }
+        public int SteamAppID { get; set; }
+        public List<string> FilesContained { get; set; }
         public List<int> Dependencies { get; set; }
+
         public Package(int package_id, string display_name, int category, int era, int country, int owner, string date_time, string target_path, List<string> deps_contained, string file_name = "", string description = "", int version = 1)
         {
             PackageId = package_id;
@@ -40,7 +43,9 @@ namespace RailworksDownloader
             Datetime = Convert.ToDateTime(date_time);
             Description = description;
             TargetPath = target_path;
-            DepsContained = deps_contained;
+            IsPaid = false;
+            SteamAppID = -1;
+            FilesContained = deps_contained;
             Dependencies = new List<int>();
         }
 
@@ -49,12 +54,19 @@ namespace RailworksDownloader
             PackageId = packageJson.id;
             FileName = packageJson.file_name;
             DisplayName = packageJson.display_name;
+            Category = packageJson.category;
+            Era = packageJson.era;
+            Country = packageJson.country;
             Version = packageJson.version;
             Owner = packageJson.owner;
             Datetime = Convert.ToDateTime(packageJson.created);
-            DepsContained = new List<string>();
+            Description = packageJson.description;
+            TargetPath = packageJson.target_path;
+            IsPaid = packageJson.paid;
+            SteamAppID = packageJson.steamappid;
+            FilesContained = new List<string>();
             if (packageJson.files != null)
-                DepsContained = packageJson.files.ToList();
+                FilesContained = packageJson.files.ToList();
             Dependencies = new List<int>();
             if (packageJson.dependencies != null)
                 Dependencies = packageJson.dependencies.ToList();
@@ -98,11 +110,11 @@ namespace RailworksDownloader
 
         public async Task<int> FindFile(string file_name)
         {
-            Package package = CachedPackages.Where(x => x.DepsContained.Contains(file_name)).First();
+            Package package = CachedPackages.Where(x => x.FilesContained.Contains(file_name)).First();
             if (package != null)
                 return package.PackageId;
 
-            package = CachedPackages.Where(x => x.DepsContained.Contains(file_name)).First();
+            package = CachedPackages.Where(x => x.FilesContained.Contains(file_name)).First();
             if (package != null)
                 return package.PackageId;
 
