@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace RailworksDownloader
 {
@@ -20,8 +10,8 @@ namespace RailworksDownloader
     /// </summary>
     public partial class DependencyWindow : Window
     {
-        List<Dependency> Dependencies;
-        List<Dependency> ScenarioDeps;
+        private readonly List<Dependency> Dependencies;
+        private readonly List<Dependency> ScenarioDeps;
         public DependencyWindow(RouteInfo info)
         {
             InitializeComponent();

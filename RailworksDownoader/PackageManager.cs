@@ -2,13 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static System.Environment;
-using SteamKit2;
-using Microsoft.Win32;
-using System.Web.UI;
-using System.IO.Compression;
 
 namespace RailworksDownloader
 {
@@ -83,9 +77,9 @@ namespace RailworksDownloader
 
         public HashSet<string> DownloadableDependencies { get; set; }
 
-        private object CachedLock = new object();
+        private readonly object CachedLock = new object();
 
-        private object DownloadableLock = new object();
+        private readonly object DownloadableLock = new object();
 
         private string RWPath { get; set; }
 

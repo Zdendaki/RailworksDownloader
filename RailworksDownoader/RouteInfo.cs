@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Media;
-using Windows.UI;
 
 namespace RailworksDownloader
 {
@@ -18,14 +12,11 @@ namespace RailworksDownloader
 
         public string Path { get; set; }
 
-        float progress = 0;
-        
-        public float Progress 
-        { 
-            get
-            {
-                return progress;
-            }
+        private float progress = 0;
+
+        public float Progress
+        {
+            get => progress;
             set
             {
                 if (progress != value)
@@ -35,27 +26,18 @@ namespace RailworksDownloader
             }
         }
 
-        
 
-        public Brush ProgressBackground
-        {
-            get
-            {
-                return FromInput(MissingCount, MissingScenariosCount, DownloadableCount, DownloadableScenarioCount);
-            }
-        }
 
-        int count;
-        int downloadableCount;
-        int scenarioCount;
-        int downloadableScenarioCount;
+        public Brush ProgressBackground => FromInput(MissingCount, MissingScenariosCount, DownloadableCount, DownloadableScenarioCount);
+
+        private int count;
+        private int downloadableCount;
+        private int scenarioCount;
+        private int downloadableScenarioCount;
 
         public int DownloadableCount
         {
-            get
-            {
-                return downloadableCount;
-            }
+            get => downloadableCount;
             set
             {
                 if (downloadableCount != value || value == 0)
@@ -70,10 +52,7 @@ namespace RailworksDownloader
 
         public int MissingCount
         {
-            get
-            {
-                return count;
-            }
+            get => count;
             set
             {
                 if (count != value || value == 0)
@@ -88,10 +67,7 @@ namespace RailworksDownloader
 
         public int DownloadableScenarioCount
         {
-            get
-            {
-                return downloadableScenarioCount;
-            }
+            get => downloadableScenarioCount;
             set
             {
                 if (downloadableScenarioCount != value || value == 0)
@@ -106,10 +82,7 @@ namespace RailworksDownloader
 
         public int MissingScenariosCount
         {
-            get
-            {
-                return scenarioCount;
-            }
+            get => scenarioCount;
             set
             {
                 if (scenarioCount != value || value == 0)
@@ -135,7 +108,7 @@ namespace RailworksDownloader
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private void OnPropertyChanged<T>([CallerMemberName]string caller = null)
+        private void OnPropertyChanged<T>([CallerMemberName] string caller = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(caller));
         }

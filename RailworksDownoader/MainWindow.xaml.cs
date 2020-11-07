@@ -1,14 +1,13 @@
-﻿using System;
+﻿using RailworksDownloader.Properties;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using RailworksDownloader.Properties;
 using SWC = System.Windows.Controls;
 
 namespace RailworksDownloader
@@ -28,13 +27,10 @@ namespace RailworksDownloader
 
         private bool Saving = false;
         private bool CheckingDLC = false;
+        private Railworks RW;
+        private PackageManager PM;
+        private bool crawlingComplete = false;
 
-        Railworks RW;
-
-        PackageManager PM;
-
-        bool crawlingComplete = false;
-        
         public MainWindow()
         {
             try
@@ -70,7 +66,7 @@ namespace RailworksDownloader
                 PathChanged();
 
                 Settings.Default.PropertyChanged += PropertyChanged;
-            } 
+            }
             catch (Exception e)
             {
                 Desharp.Debug.Log(e, Desharp.Level.DEBUG);
@@ -91,7 +87,7 @@ namespace RailworksDownloader
                 }
             });
 
-            
+
             /*Stopwatch sw = new Stopwatch();
             sw.Start();
             SerzReader sr = new SerzReader(@"G:\\Steam\\steamapps\\common\\RailWorks\\Content\\Routes\\9cac1720-316c-4a01-a3e6-8c594df5452f\\Scenery\\+000022-000041.bin");
@@ -145,7 +141,8 @@ namespace RailworksDownloader
 
         private void ToggleSavingGrid(string type)
         {
-            SavingGrid.Dispatcher.Invoke(() => {
+            SavingGrid.Dispatcher.Invoke(() =>
+            {
                 SavingLabel.Content = type;
                 SavingGrid.Visibility = (Saving || CheckingDLC) ? Visibility.Visible : Visibility.Hidden;
             });
@@ -215,7 +212,8 @@ namespace RailworksDownloader
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            try {
+            try
+            {
                 Railworks rw = new Railworks();
 
                 Stopwatch sw = new Stopwatch();
@@ -254,7 +252,8 @@ namespace RailworksDownloader
 
         private void ScanRailworks_Click(object sender, RoutedEventArgs e)
         {
-            try {
+            try
+            {
                 ScanRailworks.IsEnabled = false;
                 SelectRailworksLocation.IsEnabled = false;
                 crawlingComplete = false;

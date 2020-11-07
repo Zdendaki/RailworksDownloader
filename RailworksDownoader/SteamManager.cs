@@ -30,7 +30,7 @@ namespace RailworksDownloader
 
         public SteamManager(string rwPath = null)
         {
-            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Valve\\Steam") ??
+            RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Valve\\Steam") ??
                       RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)
                           .OpenSubKey("SOFTWARE\\Valve\\Steam");
 
@@ -88,9 +88,9 @@ namespace RailworksDownloader
                     if (File.Exists(manifestPath))
                     {
                         DLC dlc = new DLC(dlcappid);
-                        var manifest = DepotManifest.Deserialize(File.ReadAllBytes(manifestPath));
+                        DepotManifest manifest = DepotManifest.Deserialize(File.ReadAllBytes(manifestPath));
 
-                        foreach (var file in manifest.Files)
+                        foreach (DepotManifest.FileData file in manifest.Files)
                         {
                             if (file.Flags.HasFlag(EDepotFileFlag.Directory))
                             {
@@ -110,7 +110,7 @@ namespace RailworksDownloader
                                     string absoluteFileName = Path.Combine(RWPath, fileName);
                                     try
                                     {
-                                        var zipFile = ZipFile.OpenRead(absoluteFileName);
+                                        ZipArchive zipFile = ZipFile.OpenRead(absoluteFileName);
                                         dlc.IncludedFiles.AddRange(from x in zipFile.Entries where (x.FullName.Contains(".xml") || x.FullName.Contains(".bin")) select Railworks.NormalizePath(Railworks.GetRelativePath(Path.Combine(RWPath, "Assets"), Path.Combine(Path.GetDirectoryName(absoluteFileName), x.FullName))));
                                     }
                                     catch { }
@@ -129,9 +129,9 @@ namespace RailworksDownloader
 
         private IEnumerable<string> GetLibraries()
         {
-            var libraryFoldersPath = Path.Combine(SteamPath, "steamapps", "libraryfolders.vdf");
-            var libraryFoldersKv = KeyValue.LoadAsText(libraryFoldersPath);
-            var libraryFolders = new List<string>
+            string libraryFoldersPath = Path.Combine(SteamPath, "steamapps", "libraryfolders.vdf");
+            KeyValue libraryFoldersKv = KeyValue.LoadAsText(libraryFoldersPath);
+            List<string> libraryFolders = new List<string>
             {
                 Path.Combine(SteamPath, "steamapps")
             };

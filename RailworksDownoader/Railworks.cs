@@ -1,26 +1,20 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Xml;
 
 namespace RailworksDownloader
 {
-    class Railworks
+    internal class Railworks
     {
         private string rwPath;
-        public string RWPath 
+        public string RWPath
         {
-            get
-            {
-                return rwPath;
-            }
+            get => rwPath;
             set
             {
                 rwPath = value;
@@ -42,15 +36,15 @@ namespace RailworksDownloader
 
         public HashSet<string> MissingDependencies { get; set; }
 
-        int Total = 0;
-        float Elapsed = 0f;
-        int Completed = 0;
-        object PercentLock = new object();
-        object CompleteLock = new object();
-        object SavingLock = new object();
-        object MissingLock = new object();
-        object APDepsLock = new object();
-        int Saving = 0;
+        private int Total = 0;
+        private float Elapsed = 0f;
+        private int Completed = 0;
+        private readonly object PercentLock = new object();
+        private readonly object CompleteLock = new object();
+        private readonly object SavingLock = new object();
+        private readonly object MissingLock = new object();
+        private readonly object APDepsLock = new object();
+        private int Saving = 0;
 
         public delegate void ProgressUpdatedEventHandler(int percent);
         public event ProgressUpdatedEventHandler ProgressUpdated;
@@ -77,7 +71,7 @@ namespace RailworksDownloader
         {
             Routes = GetRoutes().ToList();
         }
-        
+
         public static string GetRWPath()
         {
             string path = (string)Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\RailSimulator.com\RailWorks", false)?.GetValue("install_path");
@@ -88,7 +82,7 @@ namespace RailworksDownloader
                 return (string)Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 24010", false)?.GetValue("InstallLocation");
         }
 
-        private string ParseDisplayNameNode(XmlNode displayNameNode) 
+        private string ParseDisplayNameNode(XmlNode displayNameNode)
         {
             foreach (XmlNode n in displayNameNode.FirstChild)
             {
@@ -150,7 +144,7 @@ namespace RailworksDownloader
             {
                 string rp_path = Path.Combine(dir, "RouteProperties.xml");
 
-                if (File.Exists(rp_path)) 
+                if (File.Exists(rp_path))
                 {
                     yield return new RouteInfo(ParseRouteProperties(rp_path).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar);
                 }
@@ -201,7 +195,8 @@ namespace RailworksDownloader
 
         internal void RunAllCrawlers()
         {
-            try {
+            try
+            {
                 InitCrawlers();
 
                 AllDependencies.Clear();
@@ -211,7 +206,7 @@ namespace RailworksDownloader
 
                 Parallel.ForEach(Routes, ri =>
                 {
-                    var t = Task.Run(() => ri.Crawler.Start());
+                    Task t = Task.Run(() => ri.Crawler.Start());
                 });
             }
             catch (Exception e)
@@ -251,15 +246,16 @@ namespace RailworksDownloader
             {
                 if (Directory.Exists(directory))
                 {
-                    foreach (var file in Directory.GetFiles(directory, "*.ap"))
+                    foreach (string file in Directory.GetFiles(directory, "*.ap"))
                     {
                         try
                         {
-                            var zipFile = ZipFile.OpenRead(file);
+                            ZipArchive zipFile = ZipFile.OpenRead(file);
 
                             lock (APDepsLock)
                                 APDependencies.UnionWith(from x in zipFile.Entries where (x.FullName.Contains(".xml") || x.FullName.Contains(".bin")) select NormalizePath(GetRelativePath(AssetsPath, Path.Combine(directory, x.FullName))));
-                        } catch {}
+                        }
+                        catch { }
                     }
                     if (APDependencies.Contains(fileToFind) || APDependencies.Contains(NormalizePath(fileToFind, "xml")))
                     {
@@ -276,7 +272,7 @@ namespace RailworksDownloader
             {
                 foreach (string dependency in AllDependencies.Union(AllScenarioDeps))
                 {
-                    if (!String.IsNullOrWhiteSpace(dependency))
+                    if (!string.IsNullOrWhiteSpace(dependency))
                     {
                         string path = NormalizePath(Path.Combine(AssetsPath, dependency), "xml");
                         string path_bin = NormalizePath(path, "bin");
@@ -340,8 +336,8 @@ namespace RailworksDownloader
             if (!relativeTo.EndsWith("/") && !relativeTo.EndsWith("\\"))
                 relativeTo += Path.DirectorySeparatorChar;
 
-            var uri = new Uri(relativeTo);
-            var rel = Uri.UnescapeDataString(uri.MakeRelativeUri(new Uri(path)).ToString()).Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            Uri uri = new Uri(relativeTo);
+            string rel = Uri.UnescapeDataString(uri.MakeRelativeUri(new Uri(path)).ToString()).Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             if (rel.Contains(Path.DirectorySeparatorChar.ToString()) == false)
             {
                 rel = $".{ Path.DirectorySeparatorChar }{ rel }";

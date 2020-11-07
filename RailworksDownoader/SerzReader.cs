@@ -1,19 +1,14 @@
-﻿using SteamKit2.GC.Dota.Internal;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using System.Web;
-using System.Web.UI.WebControls;
-using Windows.Storage.Streams;
 
 namespace RailworksDownloader
 {
-    class SerzReader
+    internal class SerzReader
     {
         private abstract class Tag
         {
@@ -157,7 +152,7 @@ namespace RailworksDownloader
             public uint Size { get; set; }
             public byte[] Data { get; set; }
 
-            public BlobTag(uint size, byte[] data) 
+            public BlobTag(uint size, byte[] data)
             {
                 Size = size;
                 Data = data;
@@ -186,13 +181,13 @@ namespace RailworksDownloader
         private Stream InputStream { get; set; }
         private FileStream OutputStream { get; set; }
 
-        private string[] Strings = new string[0xFFFF];
+        private readonly string[] Strings = new string[0xFFFF];
 
-        private Tag[] BinTags = new Tag[BINDEX_MAX];
+        private readonly Tag[] BinTags = new Tag[BINDEX_MAX];
 
-        private List<Tag> AllTags = new List<Tag>();
+        private readonly List<Tag> AllTags = new List<Tag>();
 
-        private List<Dependency> Dependencies = new List<Dependency>();
+        private readonly List<Dependency> Dependencies = new List<Dependency>();
 
         public SerzReader(string inputFile)
         {
@@ -252,7 +247,7 @@ namespace RailworksDownloader
         {
             ushort string_id = br.ReadUInt16(); //read two bytes as short
 
-            Debug.Assert(string_id < SIndex || string_id == 0xFFFF, String.Format("Adding non loaded string id {0} at position {1}, step {2}!", string_id, br.BaseStream.Position, DebugStep));
+            Debug.Assert(string_id < SIndex || string_id == 0xFFFF, string.Format("Adding non loaded string id {0} at position {1}, step {2}!", string_id, br.BaseStream.Position, DebugStep));
 
             if (string_id == 0xFFFF) //if string index == FFFF then it is string itself
             {
@@ -606,9 +601,9 @@ namespace RailworksDownloader
                         uint blobSize = br.ReadUInt32();
                         byte[] blobData = new byte[blobSize];
 
-                        for (int i = 0; i < Math.Ceiling((double)blobSize/int.MaxValue); i++)
+                        for (int i = 0; i < Math.Ceiling((double)blobSize / int.MaxValue); i++)
                         {
-                            int buffer_size = (int) Math.Min(blobSize - int.MaxValue * i, int.MaxValue);
+                            int buffer_size = (int)Math.Min(blobSize - int.MaxValue * i, int.MaxValue);
                             byte[] buffer = br.ReadBytes(buffer_size);
                             Array.Copy(buffer, 0, blobData, int.MaxValue * i, buffer_size);
                         }
@@ -734,7 +729,7 @@ namespace RailworksDownloader
             for (int i = 0; i < AllTags.Count; i++)
             {
                 Tag currentTag = AllTags[i];
-                Tag nextTag = i+1<AllTags.Count?AllTags[i+1]:null;
+                Tag nextTag = i + 1 < AllTags.Count ? AllTags[i + 1] : null;
 
                 Debug.Assert(currentTag.TagNameID < SIndex, "Attempted to flush unreaded string");
 
@@ -752,7 +747,7 @@ namespace RailworksDownloader
                     else
                         WriteString(string.Format("<{0} xmlns:d=\"http://www.kuju.com/TnT/2003/Delta\" d:version=\"1.0\" {1}>\r\n", tag_name, id));
                     CurrentXMLlevel++;
-                } 
+                }
                 else
                 {
                     switch (currentTag.Type)
@@ -771,7 +766,7 @@ namespace RailworksDownloader
                                         WriteString(string.Format("<{0} d:id=\"{1}\"/>\r\n", tag_name, st.ID));
                                     else
                                         WriteString(string.Format("<{0} d:id=\"{1}\">\r\n", tag_name, st.ID));
-                                } 
+                                }
                                 else
                                 {
                                     if (nextTag?.TagNameID == currentTag.TagNameID)
@@ -834,7 +829,7 @@ namespace RailworksDownloader
                                     if (dt.DataType == Tag.DataTypes.String)
                                     {
                                         WriteString(string.Format("<{0} d:type=\"{1}\">{2}</{0}>\r\n", tag_name, format, HttpUtility.HtmlEncode(Strings[(int)dt.IntValue])));
-                                    } 
+                                    }
                                     else if (dt.DataType == Tag.DataTypes.Int8 || dt.DataType == Tag.DataTypes.Int16 || dt.DataType == Tag.DataTypes.Int32 || dt.DataType == Tag.DataTypes.Int64)
                                     {
                                         WriteString(string.Format("<{0} d:type=\"{1}\">{2}</{0}>\r\n", tag_name, format, (long)dt.IntValue + long.MinValue));
@@ -905,7 +900,7 @@ namespace RailworksDownloader
         {
             for (int i = 0; i < CurrentXMLlevel; i++)
             {
-                s = ((char) 0x09) + s;
+                s = ((char)0x09) + s;
             }
             byte[] b = Encoding.UTF8.GetBytes(s);
             //Debug.Assert(!s.Contains("</cRecordSet>\r\n"));

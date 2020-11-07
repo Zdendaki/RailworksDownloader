@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace RailworksDownloader
 {
@@ -12,7 +9,7 @@ namespace RailworksDownloader
     {
         internal string DatabasePath { get; set; }
 
-        private string ConnectionString;
+        private readonly string ConnectionString;
 
         private SQLiteConnection MemoryConn { get; set; }
         private SQLiteConnection FileConn { get; set; }
@@ -92,7 +89,7 @@ namespace RailworksDownloader
                     insertSQL.Parameters.AddWithValue("@path", route.Dependencies[i]);
                     insertSQL.Parameters.AddWithValue("@isScenario", false);
                     insertSQL.ExecuteNonQuery();
-                } 
+                }
                 else
                 {
                     insertSQL.Parameters.AddWithValue("@path", route.ScenarioDeps[i - depsCount]);

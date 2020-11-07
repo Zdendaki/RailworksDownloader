@@ -9,7 +9,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Xml;
 
 namespace RailworksDownloader
@@ -20,30 +19,30 @@ namespace RailworksDownloader
     public class RouteCrawler
     {
         // Route path
-        private string RoutePath;
+        private readonly string RoutePath;
         // Railworks path
-        private string RailworksPath;
+        private readonly string RailworksPath;
         // Size of all route files
         private long AllFilesSize = 0;
         // Size of processed route files
         private long Progress = 0;
         // Thread locks
-        private object DependenciesLock = new object();
-        private object ScenarioDepsLock = new object();
-        private object ProgressLock = new object();
-        private object DebugCountLock = new object();
-        private object DebugReadedLock = new object();
+        private readonly object DependenciesLock = new object();
+        private readonly object ScenarioDepsLock = new object();
+        private readonly object ProgressLock = new object();
+        private readonly object DebugCountLock = new object();
+        private readonly object DebugReadedLock = new object();
         // Total crawling process (%)
         internal float PercentProgress = 0f;
         // Loaded route data
         private LoadedRoute SavedRoute;
         // Database adapter
-        private SqLiteAdapter Adapter;
+        private readonly SqLiteAdapter Adapter;
 
         /// <summary>
         /// Is route from asset pack
         /// </summary>
-        internal bool ContainsAP { get => Directory.GetFiles(RoutePath, "*.ap", SearchOption.AllDirectories).Any(); }
+        internal bool ContainsAP => Directory.GetFiles(RoutePath, "*.ap", SearchOption.AllDirectories).Any();
 
         // Progress updated
         public delegate void ProgressUpdatedEventHandler(float percent);
@@ -160,7 +159,7 @@ namespace RailworksDownloader
 
                 // Crawling complete event
                 Complete?.Invoke();
-            } 
+            }
             catch (Exception e)
             {
                 Desharp.Debug.Log(e, Desharp.Level.DEBUG);
@@ -178,13 +177,13 @@ namespace RailworksDownloader
         private void ReportProgress(string file)
         {
             float delta;
-            
+
             lock (ProgressLock)
             {
                 Progress += GetFileSize(file);
             }
 
-            Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize+"\nRoute: "+RoutePath);
+            Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize + "\nRoute: " + RoutePath);
             if (Progress <= AllFilesSize)
             {
 
@@ -243,11 +242,11 @@ namespace RailworksDownloader
         {
             if (blueprintIDNode != null)
             {
-                var absoluteBlueprintID = blueprintIDNode.FirstChild;
-                var blueprintSetID = absoluteBlueprintID.FirstChild.FirstChild;
+                XmlNode absoluteBlueprintID = blueprintIDNode.FirstChild;
+                XmlNode blueprintSetID = absoluteBlueprintID.FirstChild.FirstChild;
                 string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
-                if (String.IsNullOrWhiteSpace(fname) || !(Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
-                    return String.Empty;
+                if (string.IsNullOrWhiteSpace(fname) || !(Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
+                    return string.Empty;
                 return Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname));
             }
             return null;
@@ -276,8 +275,8 @@ namespace RailworksDownloader
             // Check if route properties exists
             if (!File.Exists(propertiesPath))
                 return new List<string>();
-            
-            var dependencies = new List<string>();
+
+            List<string> dependencies = new List<string>();
 
             // Load route properties file
             XmlDocument doc = new XmlDocument();
@@ -292,7 +291,7 @@ namespace RailworksDownloader
             }*/
             doc.Load(XmlReader.Create(Railworks.RemoveInvalidXmlChars(propertiesPath), new XmlReaderSettings() { CheckCharacters = false }));
 
-            var root = doc.DocumentElement;
+            XmlElement root = doc.DocumentElement;
 
             // Parse route properties entries
             await Task.Run(() =>
@@ -339,10 +338,10 @@ namespace RailworksDownloader
             //Parallel.ForEach(Routes, (ri) => ri.Crawler.Start());
             Parallel.ForEach(doc.SelectNodes("//Provider").Cast<XmlNode>().ToArray(), node =>
             {
-                var blueprintSetID = node.ParentNode;
-                var absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
+                XmlNode blueprintSetID = node.ParentNode;
+                XmlNode absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
                 string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
-                if (!String.IsNullOrWhiteSpace(fname) && (Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
+                if (!string.IsNullOrWhiteSpace(fname) && (Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
                 {
                     if (isScenario)
                     {
@@ -350,7 +349,8 @@ namespace RailworksDownloader
                         {
                             ScenarioDeps.Add(Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
                         }
-                    } else
+                    }
+                    else
                     {
                         lock (Dependencies)
                         {
@@ -385,10 +385,10 @@ namespace RailworksDownloader
 
             Parallel.ForEach(doc.SelectNodes("//Provider").Cast<XmlNode>().ToArray(), node =>
             {
-                var blueprintSetID = node.ParentNode;
-                var absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
+                XmlNode blueprintSetID = node.ParentNode;
+                XmlNode absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
                 string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
-                if (!String.IsNullOrWhiteSpace(fname) && (Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
+                if (!string.IsNullOrWhiteSpace(fname) && (Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
                 {
                     if (isScenario)
                     {
@@ -456,7 +456,7 @@ namespace RailworksDownloader
                             }
 
                             ReportProgress(file);
-                        } 
+                        }
                         else if (ext == ".xml")
                         {
                             lock (ScenarioDepsLock)
@@ -605,7 +605,7 @@ namespace RailworksDownloader
             bool rpChanged = GetFileMD5(Path.Combine(RoutePath, "RouteProperties.xml")) != SavedRoute.RoutePropertiesChecksum;
             bool scenariosChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Scenarios")) != SavedRoute.ScenariosChecksum;
 
-            var md5 = ComputeChecksums();
+            Task md5 = ComputeChecksums();
 
             if (SavedRoute.Dependencies != null)
                 Dependencies.UnionWith(SavedRoute.Dependencies);
@@ -944,7 +944,7 @@ namespace RailworksDownloader
                                             DebugCountList.Add(Railworks.NormalizePath(Path.Combine(Path.GetDirectoryName(file), entry.Name)));
                                         }
                                     }
-                                } 
+                                }
                                 else if (Path.GetFileName(entry.Name).ToLower().Contains("routeproperties"))
                                 {
                                     size += entry.Size;
@@ -970,7 +970,7 @@ namespace RailworksDownloader
             {
                 if (Directory.Exists(directory))
                 {
-                    foreach (var file in Directory.GetFiles(directory, maskArr[i], so))
+                    foreach (string file in Directory.GetFiles(directory, maskArr[i], so))
                     {
                         size += GetFileSize(file);
 
@@ -1002,7 +1002,7 @@ namespace RailworksDownloader
             if (!File.Exists(path))
                 return null;
 
-            using (var md5 = MD5.Create())
+            using (MD5 md5 = MD5.Create())
             {
                 byte[] pathBytes = Encoding.UTF8.GetBytes(path);
                 md5.TransformBlock(pathBytes, 0, pathBytes.Length, pathBytes, 0);
@@ -1020,12 +1020,12 @@ namespace RailworksDownloader
         {
             if (!Directory.Exists(path))
                 return null;
-            
-            var filePaths = isAP ? Directory.GetFiles(path, "*.ap", SearchOption.AllDirectories).OrderBy(p => p).ToArray() : Directory.GetFiles(path, "*.bin").OrderBy(p => p).ToArray();
 
-            using (var md5 = MD5.Create())
+            string[] filePaths = isAP ? Directory.GetFiles(path, "*.ap", SearchOption.AllDirectories).OrderBy(p => p).ToArray() : Directory.GetFiles(path, "*.bin").OrderBy(p => p).ToArray();
+
+            using (MD5 md5 = MD5.Create())
             {
-                foreach (var filePath in filePaths)
+                foreach (string filePath in filePaths)
                 {
                     byte[] pathBytes = Encoding.UTF8.GetBytes(filePath);
                     md5.TransformBlock(pathBytes, 0, pathBytes.Length, pathBytes, 0);
@@ -1043,7 +1043,7 @@ namespace RailworksDownloader
                                 md5.TransformBlock(buffer, 0, read, buffer, 0);
                             }
                         }
-                    } 
+                    }
                     else
                     {
                         byte[] fileBytes = File.ReadAllBytes(filePath);

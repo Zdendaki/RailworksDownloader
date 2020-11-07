@@ -1,19 +1,8 @@
-﻿using ModernWpf.Controls;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+﻿using Microsoft.Win32;
+using ModernWpf.Controls;
 using RailworksDownloader.Properties;
-using Microsoft.Win32;
 using System.IO;
+using System.Windows;
 
 namespace RailworksDownloader
 {
@@ -42,10 +31,12 @@ namespace RailworksDownloader
 
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "RailWorks|RailWorks.exe";
-            ofd.FileName = "RailWorks.exe";
-            ofd.Title = "Select RailWorks installation path";
+            OpenFileDialog ofd = new OpenFileDialog
+            {
+                Filter = "RailWorks|RailWorks.exe",
+                FileName = "RailWorks.exe",
+                Title = "Select RailWorks installation path"
+            };
 
             if (ofd.ShowDialog() == true)
             {
