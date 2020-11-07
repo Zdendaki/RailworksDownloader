@@ -28,21 +28,13 @@ namespace RailworksDownloader
 
         public List<RouteInfo> Routes { get; set; }
 
-        public HashSet<string> AllDependencies { get; set; }
-
-        public HashSet<string> AllScenarioDeps { get; set; }
-
-        public HashSet<string> APDependencies { get; set; }
-
-        public HashSet<string> MissingDependencies { get; set; }
-
+        private readonly HashSet<string> APDependencies = new HashSet<string>();
         private int Total = 0;
         private float Elapsed = 0f;
         private int Completed = 0;
         private readonly object PercentLock = new object();
         private readonly object CompleteLock = new object();
         private readonly object SavingLock = new object();
-        private readonly object MissingLock = new object();
         private readonly object APDepsLock = new object();
         private int Saving = 0;
 
@@ -58,13 +50,11 @@ namespace RailworksDownloader
         public Railworks(string path = null)
         {
             RWPath = string.IsNullOrWhiteSpace(path) ? GetRWPath() : path;
+
             if (RWPath != null)
                 AssetsPath = Path.Combine(RWPath, "Assets");
-            AllDependencies = new HashSet<string>();
-            AllScenarioDeps = new HashSet<string>();
+
             Routes = new List<RouteInfo>();
-            MissingDependencies = new HashSet<string>();
-            APDependencies = new HashSet<string>();
         }
 
         public void InitRoutes()
@@ -170,8 +160,8 @@ namespace RailworksDownloader
             foreach (RouteInfo ri in Routes)
             {
                 ri.Progress = 0;
-                ri.MissingCount = -1;
-                ri.Crawler = new RouteCrawler(ri.Path, RWPath);
+                //ri.MissingCount = -1;
+                ri.Crawler = new RouteCrawler(ri.Path, RWPath, ri.Dependencies);
                 ri.Crawler.DeltaProgress += OnProgress;
                 ri.Crawler.ProgressUpdated += ri.ProgressUpdated;
                 ri.Crawler.Complete += Complete;
@@ -199,9 +189,6 @@ namespace RailworksDownloader
             {
                 InitCrawlers();
 
-                AllDependencies.Clear();
-                AllScenarioDeps.Clear();
-                MissingDependencies.Clear();
                 APDependencies.Clear();
 
                 Parallel.ForEach(Routes, ri =>
@@ -238,7 +225,7 @@ namespace RailworksDownloader
 
         private bool CheckForFileInAP(string directory, string fileToFind)
         {
-            if (NormalizePath(directory) == NormalizePath(AssetsPath)) //Directory.GetParent(parDir).FullName.EndsWith("Assets") || 
+            if (NormalizePath(directory) == NormalizePath(AssetsPath))
             {
                 return false;
             }
@@ -270,22 +257,23 @@ namespace RailworksDownloader
         {
             await Task.Run(() =>
             {
-                foreach (string dependency in AllDependencies.Union(AllScenarioDeps))
+                foreach (RouteInfo route in Routes)
                 {
-                    if (!string.IsNullOrWhiteSpace(dependency))
+                    foreach (Dependency dep in route.Dependencies)
                     {
-                        string path = NormalizePath(Path.Combine(AssetsPath, dependency), "xml");
-                        string path_bin = NormalizePath(path, "bin");
-                        string relative_path = NormalizePath(GetRelativePath(AssetsPath, path));
-                        string relative_path_bin = NormalizePath(relative_path, ".bin");
+                        string dependency = dep.Name;
 
-                        if (File.Exists(path_bin) || File.Exists(path) || APDependencies.Contains(relative_path_bin) || APDependencies.Contains(relative_path) || CheckForFileInAP(Directory.GetParent(path).FullName, relative_path))
+                        if (!string.IsNullOrWhiteSpace(dependency))
                         {
-                            continue;
-                        }
+                            string path = NormalizePath(Path.Combine(AssetsPath, dependency), "xml");
+                            string path_bin = NormalizePath(path, "bin");
+                            string relative_path = NormalizePath(GetRelativePath(AssetsPath, path));
+                            string relative_path_bin = NormalizePath(relative_path, ".bin");
 
-                        lock (MissingLock)
-                            MissingDependencies.Add(NormalizePath(dependency));
+                            bool exists = File.Exists(path_bin) || File.Exists(path) || APDependencies.Contains(relative_path_bin) || APDependencies.Contains(relative_path) || CheckForFileInAP(Directory.GetParent(path).FullName, relative_path);
+
+                            dep.State = exists ? DependencyState.Downloaded : DependencyState.Unknown;
+                        }
                     }
                 }
             });

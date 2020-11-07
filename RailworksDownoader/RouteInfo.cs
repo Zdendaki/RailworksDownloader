@@ -12,6 +12,8 @@ namespace RailworksDownloader
 
         public string Path { get; set; }
 
+        public DependencyList Dependencies { get; set; }
+
         private float progress = 0;
 
         public float Progress
@@ -26,74 +28,20 @@ namespace RailworksDownloader
             }
         }
 
+        public Brush ProgressBackground => GetBrush();
 
+        private readonly int count;
+        private readonly int downloadableCount;
+        private readonly int scenarioCount;
+        private readonly int downloadableScenarioCount;
 
-        public Brush ProgressBackground => FromInput(MissingCount, MissingScenariosCount, DownloadableCount, DownloadableScenarioCount);
+        public int DownloadableCount => Dependencies.Downloadable;
 
-        private int count;
-        private int downloadableCount;
-        private int scenarioCount;
-        private int downloadableScenarioCount;
+        public int MissingCount => Dependencies.Missing;
 
-        public int DownloadableCount
-        {
-            get => downloadableCount;
-            set
-            {
-                if (downloadableCount != value || value == 0)
-                {
-                    OnPropertyChanged<Brush>("ProgressBackground");
-                    OnPropertyChanged<int>();
-                }
+        public int DownloadableScenarioCount => Dependencies.DownloadableScenario;
 
-                downloadableCount = value;
-            }
-        }
-
-        public int MissingCount
-        {
-            get => count;
-            set
-            {
-                if (count != value || value == 0)
-                {
-                    OnPropertyChanged<Brush>("ProgressBackground");
-                    OnPropertyChanged<int>();
-                }
-
-                count = value;
-            }
-        }
-
-        public int DownloadableScenarioCount
-        {
-            get => downloadableScenarioCount;
-            set
-            {
-                if (downloadableScenarioCount != value || value == 0)
-                {
-                    OnPropertyChanged<Brush>("ProgressBackground");
-                    OnPropertyChanged<int>();
-                }
-
-                downloadableScenarioCount = value;
-            }
-        }
-
-        public int MissingScenariosCount
-        {
-            get => scenarioCount;
-            set
-            {
-                if (scenarioCount != value || value == 0)
-                {
-                    OnPropertyChanged<Brush>("ProgressBackground");
-                    OnPropertyChanged<int>();
-                }
-
-                scenarioCount = value;
-            }
-        }
+        public int MissingScenariosCount => Dependencies.MissingScenario;
 
         public RouteCrawler Crawler { get; set; }
 
@@ -102,8 +50,24 @@ namespace RailworksDownloader
             Name = name;
             Hash = hash;
             Path = path;
+            Dependencies = new DependencyList();
+            Dependencies.DependenciesChanged += Dependencies_DependenciesChanged;
             Crawler = null;
             count = -1;
+        }
+
+        private void Dependencies_DependenciesChanged()
+        {
+            Redraw();
+        }
+
+        public void Redraw()
+        {
+            OnPropertyChanged<Brush>("ProgressBackground");
+            OnPropertyChanged<int>("DownloadableCount");
+            OnPropertyChanged<int>("MissingCount");
+            OnPropertyChanged<int>("DownloadableScenarioCount");
+            OnPropertyChanged<int>("MissingScenariosCount");
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -118,15 +82,15 @@ namespace RailworksDownloader
             Progress = progress;
         }
 
-        public Brush FromInput(int depsCount, int scenarioDepsCount, int downloadableCount, int downloadableScenarioCount)
+        public Brush GetBrush()
         {
-            if (depsCount > 0 && downloadableCount < depsCount)
-                return MainWindow.Red;
-            else if (depsCount == -1)
+            if (Dependencies.Unknown)
                 return MainWindow.Blue;
-            else if (scenarioDepsCount > 0 && downloadableScenarioCount < scenarioDepsCount)
+            else if (Dependencies.Count > 0 && Dependencies.Downloadable < Dependencies.Count)
+                return MainWindow.Red;
+            else if (Dependencies.ScenariosCount > 0 && Dependencies.DownloadableScenario < Dependencies.ScenariosCount)
                 return MainWindow.Purple;
-            else if (downloadableCount > 0 || downloadableScenarioCount > 0)
+            else if (Dependencies.Downloadable + Dependencies.DownloadableScenario > 0)
                 return MainWindow.Yellow;
             else
                 return MainWindow.Green;

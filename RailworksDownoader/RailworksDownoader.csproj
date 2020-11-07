@@ -97,7 +97,6 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Dependency.cs" />
-    <Compile Include="DependencyState.cs" />
     <Compile Include="DependencyWindow.xaml.cs">
       <DependentUpon>DependencyWindow.xaml</DependentUpon>
     </Compile>

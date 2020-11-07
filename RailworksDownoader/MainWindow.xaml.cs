@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -121,18 +120,11 @@ namespace RailworksDownloader
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.Value = 100);
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = true);
             await RW.GetMissing();
-            await PM.GetDownloadableDependencies();
+            //await PM.GetDownloadableDependencies();
 
             foreach (RouteInfo route in RW.Routes)
             {
-                route.Crawler.ParseRouteMissingAssets(RW.MissingDependencies);
-                route.Crawler.ParseRouteDownloadableAssets(PM.DownloadableDependencies);
-
-                route.MissingCount = route.Crawler.MissingDependencies.Count;
-                route.DownloadableCount = route.Crawler.DownloadableDependencies.Count;
-
-                route.MissingScenariosCount = route.Crawler.MissingScenarioDeps.Count;
-                route.DownloadableScenarioCount = route.Crawler.DownloadableScenarioDeps.Count;
+                route.Redraw();
             }
 
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = false);
@@ -204,44 +196,6 @@ namespace RailworksDownloader
             RW.InitRoutes();
 
             RoutesList.ItemsSource = RW.Routes.OrderBy(x => x.Name);
-            /*foreach (var r in RW.Routes.OrderBy(x => x.Name))
-            {
-                RoutesList.Items.Add(r);
-            }*/
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                Railworks rw = new Railworks();
-
-                Stopwatch sw = new Stopwatch();
-
-                rw.InitCrawlers();
-
-                //rw.ProgressUpdated += (perc) => { PB.Dispatcher.Invoke(() => { PB.Value = perc; }); };
-
-                rw.RunAllCrawlers();
-
-                //RouteCrawler rc = new RouteCrawler(@"D:\Hry\Steam\steamapps\common\RailWorks\Content\Routes\bd4aae03-09b5-4149-a133-297420197356", rw.RWPath);
-                /*RouteCrawler rc = new RouteCrawler(Path.Combine(rw.RWPath, "Content", "Routes", "bd4aae03-09b5-4149-a133-297420197356"), rw.RWPath);
-
-
-                rc.ProgressUpdated += (perc) => { PB.Value = perc; };
-                rc.Complete += () => 
-                { 
-                    sw.Stop();
-                    MessageBox.Show(sw.Elapsed.ToString());
-                };
-
-                sw.Start();
-                await rc.Start();*/
-            }
-            catch (Exception ex)
-            {
-                Desharp.Debug.Log(ex, Desharp.Level.DEBUG);
-            }
         }
 
         private void SelectRailworksLocation_Click(object sender, RoutedEventArgs e)
