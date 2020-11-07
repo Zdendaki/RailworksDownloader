@@ -183,6 +183,15 @@ namespace RailworksDownloader
 
             if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
             {
+                TotalProgress.Dispatcher.Invoke(() => TotalProgress.Value = 0);
+
+                App.Railworks = new Railworks(RW.RWPath);
+                App.Railworks.ProgressUpdated += RW_ProgressUpdated;
+                App.Railworks.RouteSaving += RW_RouteSaving;
+                App.Railworks.CrawlingComplete += RW_CrawlingComplete;
+
+                RW = App.Railworks;
+
                 App.PackageManager = new PackageManager(RW.RWPath, ApiUrl);
                 PM = App.PackageManager;
 
@@ -197,10 +206,11 @@ namespace RailworksDownloader
 
             RW.InitRoutes();
 
-            foreach (var r in RW.Routes.OrderBy(x => x.Name))
+            RoutesList.ItemsSource = RW.Routes.OrderBy(x => x.Name);
+            /*foreach (var r in RW.Routes.OrderBy(x => x.Name))
             {
                 RoutesList.Items.Add(r);
-            }
+            }*/
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -246,6 +256,7 @@ namespace RailworksDownloader
         {
             try {
                 ScanRailworks.IsEnabled = false;
+                SelectRailworksLocation.IsEnabled = false;
                 crawlingComplete = false;
                 TotalProgress.Value = 0;
                 RW.RunAllCrawlers();

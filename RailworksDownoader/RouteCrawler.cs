@@ -682,23 +682,24 @@ namespace RailworksDownloader
                 {
                     Dependencies.UnionWith(routeProperties1);
                 }
-
-                Dependencies.RemoveWhere(x => string.IsNullOrWhiteSpace(x));
-
-                await md5;
-
-                SavedRoute.Dependencies = Dependencies.ToList();
-                SavedRoute.ScenarioDeps = ScenarioDeps.ToList();
-
-                Thread tt = new Thread(() => 
-                {
-                    RouteSaving?.Invoke(false);
-                    Adapter.SaveRoute(SavedRoute);
-                    RouteSaving?.Invoke(true);
-                });
-
-                tt.Start();
             }
+
+            Dependencies.RemoveWhere(x => string.IsNullOrWhiteSpace(x));
+
+            await md5;
+
+            SavedRoute.Dependencies = Dependencies.ToList();
+            SavedRoute.ScenarioDeps = ScenarioDeps.ToList();
+
+            Thread tt = new Thread(() =>
+            {
+                RouteSaving?.Invoke(false);
+                Adapter.SaveRoute(SavedRoute);
+                Adapter.FlushToFile();
+                RouteSaving?.Invoke(true);
+            });
+
+            tt.Start();
         }
 
         private async Task ComputeChecksums()
@@ -1022,8 +1023,16 @@ namespace RailworksDownloader
                     byte[] pathBytes = Encoding.UTF8.GetBytes(filePath);
                     md5.TransformBlock(pathBytes, 0, pathBytes.Length, pathBytes, 0);
 
-                    byte[] contentBytes = File.ReadAllBytes(filePath);
-                    md5.TransformBlock(contentBytes, 0, contentBytes.Length, contentBytes, 0);
+                    const short buffSize = 4096;
+                    byte[] buffer = new byte[buffSize];
+                    using (FileStream inputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                    {
+                        int read;
+                        while ((read = inputStream.Read(buffer, 0, buffSize)) > 0)
+                        {
+                            md5.TransformBlock(buffer, 0, read, buffer, 0);
+                        }
+                    }
                 }
 
                 md5.TransformFinalBlock(new byte[0], 0, 0);
