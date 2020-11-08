@@ -122,8 +122,9 @@ namespace RailworksDownloader
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = true);
             
             await RW.GetMissing();
-            DependenciesList downloadable = await PM.GetDownloadableDependencies();
-            DependenciesList paid = await PM.GetPaidDependencies();
+
+            HashSet<string> downloadable = await PM.GetDownloadableDependencies();
+            HashSet<string> paid = await PM.GetPaidDependencies();
 
             foreach (RouteInfo route in RW.Routes)
             {
@@ -131,14 +132,15 @@ namespace RailworksDownloader
                 {
                     if (route.Dependencies[i].State == DependencyState.Unavailable)
                     {
-                        string dep_name = route.Dependencies[i].Name;
+                        string depName = route.Dependencies[i].Name;
 
-                        if (downloadable?.Any(x => x.Name == dep_name) == true)
+                        if (downloadable?.Contains(depName) == true)
                             route.Dependencies[i].State = DependencyState.Available;
-                        else if (paid?.Any(x => x.Name == dep_name) == true)
+                        else if (paid?.Contains(depName) == true)
                             route.Dependencies[i].State = DependencyState.Paid;
                     }
                 }
+
                 route.Redraw();
             }
 

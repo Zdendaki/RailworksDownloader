@@ -65,7 +65,7 @@ namespace RailworksDownloader
             return null;
         }
 
-        public async Task<DependenciesList> GetAllFiles()
+        public async Task<HashSet<string>> GetAllFiles()
         {
             Dictionary<string, string> content = new Dictionary<string, string> { { "listFiles", null } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
@@ -75,13 +75,22 @@ namespace RailworksDownloader
             {
                 GetAllFilesResult jsonObject = JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync());
                 if (jsonObject.code > 0)
-                    return new DependenciesList(jsonObject.content);
+                {
+                    HashSet<string> buffer = new HashSet<string>();
+
+                    for (int i = 0; i < jsonObject.content.Length; i++)
+                    {
+                        buffer.Add(Railworks.NormalizePath(jsonObject.content[i]));
+                    }
+
+                    return buffer;
+                }
             }
 
             return null;
         }
 
-        public async Task<DependenciesList> GetPaidFiles()
+        public async Task<HashSet<string>> GetPaidFiles()
         {
             Dictionary<string, string> content = new Dictionary<string, string> { { "listPaid", null } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
@@ -91,7 +100,16 @@ namespace RailworksDownloader
             {
                 GetAllFilesResult jsonObject = JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync());
                 if (jsonObject.code > 0)
-                    return new DependenciesList(jsonObject.content);
+                {
+                    HashSet<string> buffer = new HashSet<string>();
+
+                    for (int i = 0; i < jsonObject.content.Length; i++)
+                    {
+                        buffer.Add(Railworks.NormalizePath(jsonObject.content[i]));
+                    }
+
+                    return buffer;
+                }
             }
 
             return null;

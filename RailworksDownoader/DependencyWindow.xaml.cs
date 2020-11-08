@@ -30,15 +30,6 @@ namespace RailworksDownloader
                     else
                         ScenarioDeps.Add(dep);
                 }
-                /*info.Crawler?.DownloadableDependencies.ForEach(x => Dependencies.Add(new Dependency(x, DependencyState.Available)));
-                info.Crawler?.MissingDependencies.Except(info.Crawler?.DownloadableDependencies).ToList().ForEach(x => Dependencies.Add(new Dependency(x, DependencyState.Unavailable)));
-                info.Crawler?.OldDependencies.Except(info.Crawler?.MissingDependencies).ToList().ForEach(x => Dependencies.Add(new Dependency(x, DependencyState.Downloaded)));
-
-                info.Crawler?.DownloadableScenarioDeps.ForEach(x => ScenarioDeps.Add(new Dependency(x, DependencyState.Available)));
-                info.Crawler?.MissingScenarioDeps.Except(info.Crawler?.DownloadableScenarioDeps).ToList().ForEach(x => ScenarioDeps.Add(new Dependency(x, DependencyState.Unavailable)));
-                info.Crawler?.ScenarioDeps.Except(info.Crawler?.MissingScenarioDeps).ToList().ForEach(x => ScenarioDeps.Add(new Dependency(x, DependencyState.Downloaded)));*/
-
-                //TODO: EDIT
 
                 Title = info.Name;
             }

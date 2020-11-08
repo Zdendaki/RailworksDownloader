@@ -28,7 +28,6 @@ namespace RailworksDownloader
         private long Progress = 0;
         // Thread locks
         private readonly object DependenciesLock = new object();
-        private readonly object ScenarioDepsLock = new object();
         private readonly object ProgressLock = new object();
         // Total crawling process (%)
         internal float PercentProgress = 0f;
@@ -127,9 +126,6 @@ namespace RailworksDownloader
                         PercentProgress = 100;
                         ProgressUpdated?.Invoke(PercentProgress);
                     }
-
-                    //App.Railworks.AllDependencies.UnionWith(OldDependencies);
-                    //App.Railworks.AllScenarioDeps.UnionWith(ScenarioDeps);
                 }
 
                 // Crawling complete event
@@ -256,14 +252,6 @@ namespace RailworksDownloader
             // Load route properties file
             XmlDocument doc = new XmlDocument();
 
-            /*try
-            {
-                doc.Load(propertiesPath);
-            }
-            catch
-            {
-                return new List<string>();
-            }*/
             doc.Load(XmlReader.Create(Railworks.RemoveInvalidXmlChars(propertiesPath), new XmlReaderSettings() { CheckCharacters = false }));
 
             XmlElement root = doc.DocumentElement;
@@ -381,10 +369,8 @@ namespace RailworksDownloader
                         }
                         else if (ext == ".xml")
                         {
-                            lock (ScenarioDepsLock)
-                            {
-                                ParseBlueprint(file, true);
-                            }
+                            ParseBlueprint(file, true);
+
                             ReportProgress(file);
                         }
                     });
@@ -536,7 +522,7 @@ namespace RailworksDownloader
                 }
             }
 
-            //OldDependencies.RemoveWhere(x => string.IsNullOrWhiteSpace(x));
+            Dependencies.RemoveBlank();
 
             await md5;
 
