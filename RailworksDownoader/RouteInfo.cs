@@ -12,7 +12,7 @@ namespace RailworksDownloader
 
         public string Path { get; set; }
 
-        public DependencyList Dependencies { get; set; }
+        public DependenciesList Dependencies { get; set; }
 
         private float progress = 0;
 
@@ -30,19 +30,6 @@ namespace RailworksDownloader
 
         public Brush ProgressBackground => GetBrush();
 
-        private readonly int count;
-        private readonly int downloadableCount;
-        private readonly int scenarioCount;
-        private readonly int downloadableScenarioCount;
-
-        public int DownloadableCount => Dependencies.Downloadable;
-
-        public int MissingCount => Dependencies.Missing;
-
-        public int DownloadableScenarioCount => Dependencies.DownloadableScenario;
-
-        public int MissingScenariosCount => Dependencies.MissingScenario;
-
         public RouteCrawler Crawler { get; set; }
 
         internal RouteInfo(string name, string hash, string path)
@@ -50,10 +37,9 @@ namespace RailworksDownloader
             Name = name;
             Hash = hash;
             Path = path;
-            Dependencies = new DependencyList();
+            Dependencies = new DependenciesList();
             Dependencies.DependenciesChanged += Dependencies_DependenciesChanged;
             Crawler = null;
-            count = -1;
         }
 
         private void Dependencies_DependenciesChanged()
@@ -64,10 +50,6 @@ namespace RailworksDownloader
         public void Redraw()
         {
             OnPropertyChanged<Brush>("ProgressBackground");
-            OnPropertyChanged<int>("DownloadableCount");
-            OnPropertyChanged<int>("MissingCount");
-            OnPropertyChanged<int>("DownloadableScenarioCount");
-            OnPropertyChanged<int>("MissingScenariosCount");
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -86,9 +68,9 @@ namespace RailworksDownloader
         {
             if (Dependencies.Unknown)
                 return MainWindow.Blue;
-            else if (Dependencies.Count > 0 && Dependencies.Downloadable < Dependencies.Count)
+            else if (Dependencies.Missing > 0 && Dependencies.Downloadable < Dependencies.Missing)
                 return MainWindow.Red;
-            else if (Dependencies.ScenariosCount > 0 && Dependencies.DownloadableScenario < Dependencies.ScenariosCount)
+            else if (Dependencies.ScenariosCount > 0 && Dependencies.DownloadableScenario < Dependencies.MissingScenario)
                 return MainWindow.Purple;
             else if (Dependencies.Downloadable + Dependencies.DownloadableScenario > 0)
                 return MainWindow.Yellow;

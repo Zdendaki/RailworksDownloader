@@ -65,26 +65,34 @@ namespace RailworksDownloader
             return null;
         }
 
-        public async Task<HashSet<string>> GetAllFiles()
+        public async Task<DependenciesList> GetAllFiles()
         {
             Dictionary<string, string> content = new Dictionary<string, string> { { "listFiles", null } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
             HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
-            if (response.IsSuccessStatusCode && response.StatusCode > 0)
-                return new HashSet<string>(JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync()).content.Select(x => Railworks.NormalizePath(x)));
+            if (response.IsSuccessStatusCode)
+            {
+                GetAllFilesResult jsonObject = JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync());
+                if (jsonObject.code > 0)
+                    return new DependenciesList(jsonObject.content);
+            }
 
             return null;
         }
 
-        public async Task<HashSet<string>> GetPaidFiles()
+        public async Task<DependenciesList> GetPaidFiles()
         {
             Dictionary<string, string> content = new Dictionary<string, string> { { "listPaid", null } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
             HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
-            if (response.IsSuccessStatusCode && response.StatusCode > 0)
-                return new HashSet<string>(JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync()).content.Select(x => Railworks.NormalizePath(x)));
+            if (response.IsSuccessStatusCode)
+            {
+                GetAllFilesResult jsonObject = JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync());
+                if (jsonObject.code > 0)
+                    return new DependenciesList(jsonObject.content);
+            }
 
             return null;
         }

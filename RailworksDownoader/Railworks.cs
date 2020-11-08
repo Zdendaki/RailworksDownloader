@@ -272,7 +272,7 @@ namespace RailworksDownloader
 
                             bool exists = File.Exists(path_bin) || File.Exists(path) || APDependencies.Contains(relative_path_bin) || APDependencies.Contains(relative_path) || CheckForFileInAP(Directory.GetParent(path).FullName, relative_path);
 
-                            dep.State = exists ? DependencyState.Downloaded : DependencyState.Unknown;
+                            dep.State = exists ? DependencyState.Downloaded : DependencyState.Unavailable;
                         }
                     }
                 }

@@ -22,20 +22,17 @@ namespace RailworksDownloader
 
         public bool Scenario { get; set; }
 
-        public bool Paid { get; set; }
-
         public HashSet<string> Presence { get; set; }
 
         public Dependency(string name) : this(name, false) { }
 
-        public Dependency(string name, bool scenario) : this(name, DependencyState.Unknown, scenario, false) { }
+        public Dependency(string name, bool scenario) : this(name, DependencyState.Unknown, scenario) { }
 
-        public Dependency(string name, DependencyState state, bool scenario, bool paid)
+        public Dependency(string name, DependencyState state, bool scenario)
         {
             Name = name;
             State = state;
             Scenario = scenario;
-            Paid = paid;
         }
     }
 
@@ -52,7 +49,7 @@ namespace RailworksDownloader
         }
     }
 
-    public class DependencyList : IList<Dependency>, IEnumerable<Dependency>, IEnumerable
+    public class DependenciesList : IList<Dependency>, IEnumerable<Dependency>, IEnumerable
     {
         private readonly List<Dependency> Items;
 
@@ -62,7 +59,9 @@ namespace RailworksDownloader
             set => Items[index] = value;
         }
 
-        public int Count => Items.Count(x => !x.Scenario);
+        public int Count => Items.Count;
+
+        public int RouteCount => Items.Count(x => !x.Scenario);
 
         public int ScenariosCount => Items.Count(x => x.Scenario);
 
@@ -76,21 +75,28 @@ namespace RailworksDownloader
 
         public int DownloadableScenario => Items.Count(x => x.State == DependencyState.Available && x.Scenario);
 
-        public int Downloaded => Items.Count(x => x.State == DependencyState.Downloaded && !x.Scenario);
-
         public bool Unknown => Items.Any(x => x.State == DependencyState.Unknown);
 
         public delegate void DependenciesChangedEventHandler();
         public event DependenciesChangedEventHandler DependenciesChanged;
 
-        public DependencyList()
+        public DependenciesList()
         {
             Items = new List<Dependency>();
         }
 
-        public DependencyList(IEnumerable<Dependency> input)
+        public DependenciesList(IEnumerable<Dependency> input)
         {
             Items = input.ToList();
+        }
+
+        public DependenciesList(IEnumerable<string> input)
+        {
+            Items = new List<Dependency>();
+            for (int i = 0; i < input.Count(); i++)
+            {
+                Items.Add(new Dependency(Railworks.NormalizePath(input.ElementAt(i)), DependencyState.Unknown, false));
+            }
         }
 
         public void Add(Dependency item)

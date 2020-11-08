@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -119,11 +120,22 @@ namespace RailworksDownloader
         {
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.Value = 100);
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = true);
+            
             await RW.GetMissing();
-            //await PM.GetDownloadableDependencies();
+            DependenciesList downloadable = await PM.GetDownloadableDependencies();
+            DependenciesList paid = await PM.GetPaidDependencies();
 
             foreach (RouteInfo route in RW.Routes)
             {
+                for (int i = 0; i < route.Dependencies.RouteCount; i++)
+                {
+                    string dep_name = route.Dependencies[i].Name;
+
+                    if (downloadable?.Any(x => x.Name == dep_name) == true)
+                        route.Dependencies[i].State = DependencyState.Available;
+                    else if (paid?.Any(x => x.Name == dep_name) == true)
+                        route.Dependencies[i].State = DependencyState.Paid;
+                }
                 route.Redraw();
             }
 

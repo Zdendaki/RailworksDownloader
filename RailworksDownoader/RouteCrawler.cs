@@ -68,7 +68,7 @@ namespace RailworksDownloader
         /// <summary>
         /// All route dependencies
         /// </summary>
-        public DependencyList Dependencies { get; set; }
+        public DependenciesList Dependencies { get; set; }
 
         /// <summary>
         /// All route missing dependencies
@@ -85,7 +85,7 @@ namespace RailworksDownloader
         /// </summary>
         /// <param name="path">Route path</param>
         /// <param name="railworksPath">RailWorks path</param>
-        public RouteCrawler(string path, string railworksPath, DependencyList dependencies)
+        public RouteCrawler(string path, string railworksPath, DependenciesList dependencies)
         {
             RoutePath = path;
             RailworksPath = railworksPath;

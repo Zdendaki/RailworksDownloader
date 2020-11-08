@@ -75,11 +75,7 @@ namespace RailworksDownloader
 
         public HashSet<Package> CachedPackages = new HashSet<Package>();
 
-        public HashSet<string> DownloadableDependencies = new HashSet<string>();
-
         private readonly object CachedLock = new object();
-
-        private readonly object DownloadableLock = new object();
 
         private string RWPath { get; set; }
 
@@ -127,24 +123,14 @@ namespace RailworksDownloader
             return -1;
         }
 
-        public async Task GetDownloadableDependencies()
+        public async Task<DependenciesList> GetDownloadableDependencies()
         {
-            HashSet<string> downloadableDeps = await WebWrapper.GetAllFiles();
-            if (downloadableDeps != null)
-            {
-                lock (DownloadableLock)
-                    DownloadableDependencies = downloadableDeps;
-            }
+            return await WebWrapper.GetAllFiles();
         }
 
-        public async Task GetSteamDependencies()
+        public async Task<DependenciesList> GetPaidDependencies()
         {
-            HashSet<string> paidDeps = await WebWrapper.GetPaidFiles();
-            if (paidDeps != null)
-            {
-                lock (DownloadableLock)
-                    DownloadableDependencies = paidDeps;
-            }
+            return await WebWrapper.GetPaidFiles();
         }
     }
 
