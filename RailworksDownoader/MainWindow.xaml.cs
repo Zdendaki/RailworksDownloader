@@ -129,12 +129,15 @@ namespace RailworksDownloader
             {
                 for (int i = 0; i < route.Dependencies.RouteCount; i++)
                 {
-                    string dep_name = route.Dependencies[i].Name;
+                    if (route.Dependencies[i].State == DependencyState.Unavailable)
+                    {
+                        string dep_name = route.Dependencies[i].Name;
 
-                    if (downloadable?.Any(x => x.Name == dep_name) == true)
-                        route.Dependencies[i].State = DependencyState.Available;
-                    else if (paid?.Any(x => x.Name == dep_name) == true)
-                        route.Dependencies[i].State = DependencyState.Paid;
+                        if (downloadable?.Any(x => x.Name == dep_name) == true)
+                            route.Dependencies[i].State = DependencyState.Available;
+                        else if (paid?.Any(x => x.Name == dep_name) == true)
+                            route.Dependencies[i].State = DependencyState.Paid;
+                    }
                 }
                 route.Redraw();
             }
@@ -147,7 +150,8 @@ namespace RailworksDownloader
         {
             SavingGrid.Dispatcher.Invoke(() =>
             {
-                SavingLabel.Content = type;
+                if (!Saving && !CheckingDLC)
+                    SavingLabel.Content = type;
                 SavingGrid.Visibility = (Saving || CheckingDLC) ? Visibility.Visible : Visibility.Hidden;
             });
         }
