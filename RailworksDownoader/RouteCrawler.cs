@@ -522,8 +522,6 @@ namespace RailworksDownloader
                 }
             }
 
-            Dependencies.RemoveBlank();
-
             await md5;
 
             SavedRoute.Dependencies = Dependencies.Where(x => !x.Scenario).Select(x => x.Name).ToList();

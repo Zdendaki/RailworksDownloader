@@ -101,7 +101,7 @@ namespace RailworksDownloader
 
         public void Add(Dependency item)
         {
-            if (Items.Any(x => x.Name == item?.Name))
+            if (Items.Any(x => x.Name == item?.Name) && !string.IsNullOrWhiteSpace(item?.Name))
             {
                 Dependency dependency = Items.First(x => x.Name == item.Name);
                 if (item.Presence != null)
@@ -162,7 +162,7 @@ namespace RailworksDownloader
             {
                 string dep = dependencies[i];
 
-                if (!Items.Any(x => x.Name == dep))
+                if (!Items.Any(x => x.Name == dep) && !string.IsNullOrWhiteSpace(dep))
                 {
                     Items.Add(new Dependency(dep, scenario));
                 }
@@ -176,17 +176,11 @@ namespace RailworksDownloader
             {
                 string dep = dependencies[i];
 
-                if (!Items.Any(x => x.Name == dep))
+                if (!Items.Any(x => x.Name == dep) && !string.IsNullOrWhiteSpace(dep))
                 {
                     Items.Add(new Dependency(dep, scenario));
                 }
             }
-            DependenciesChanged?.Invoke();
-        }
-
-        public void RemoveBlank()
-        {
-            Items.RemoveAll(x => string.IsNullOrWhiteSpace(x.Name));
             DependenciesChanged?.Invoke();
         }
 
