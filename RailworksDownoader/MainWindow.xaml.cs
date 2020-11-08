@@ -40,6 +40,7 @@ namespace RailworksDownloader
                 App.Window = this;
 
                 App.SteamManager = new SteamManager();
+                App.Dependencies = new GlobalDependencies();
 
                 Closing += MainWindowDialog_Closing;
 

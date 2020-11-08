@@ -160,7 +160,6 @@ namespace RailworksDownloader
             foreach (RouteInfo ri in Routes)
             {
                 ri.Progress = 0;
-                //ri.MissingCount = -1;
                 ri.Crawler = new RouteCrawler(ri.Path, RWPath, ri.Dependencies);
                 ri.Crawler.DeltaProgress += OnProgress;
                 ri.Crawler.ProgressUpdated += ri.ProgressUpdated;
@@ -256,10 +255,10 @@ namespace RailworksDownloader
         public async Task GetMissing()
         {
             await Task.Run(() =>
-            {
-                foreach (RouteInfo route in Routes)
-                {
-                    foreach (Dependency dep in route.Dependencies)
+            {                              
+                /*foreach (RouteInfo route in Routes)
+                {*/
+                    foreach (Dependency dep in App.Dependencies)
                     {
                         string dependency = dep.Name;
 
@@ -275,7 +274,7 @@ namespace RailworksDownloader
                             dep.State = exists ? DependencyState.Downloaded : DependencyState.Unavailable;
                         }
                     }
-                }
+                //}
             });
         }
 
