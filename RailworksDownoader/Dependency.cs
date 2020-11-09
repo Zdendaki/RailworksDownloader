@@ -1,4 +1,4 @@
-﻿using Desharp;
+using Desharp;
 using RailworksDownloader;
 using SteamKit2.Internal;
 using System;

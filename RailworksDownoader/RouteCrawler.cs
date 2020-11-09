@@ -513,8 +513,6 @@ namespace RailworksDownloader
                 }
             }
 
-            //Dependencies.RemoveBlank();
-
             await md5;
 
             SavedRoute.Dependencies = Dependencies;
