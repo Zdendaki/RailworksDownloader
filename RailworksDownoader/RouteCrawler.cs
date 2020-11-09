@@ -295,19 +295,11 @@ namespace RailworksDownloader
                 if (!string.IsNullOrWhiteSpace(fname) && (Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
                 {
                     if (isScenario)
-                    {
                         lock (ScenarioDeps)
-                        {
                             ScenarioDeps.Add(Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
-                        }
-                    }
                     else
-                    {
                         lock (Dependencies)
-                        {
                             Dependencies.Add(Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
-                        }
-                    }
                 }
             }
         }
@@ -335,19 +327,11 @@ namespace RailworksDownloader
                 if (!string.IsNullOrWhiteSpace(fname) && (Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
                 {
                     if (isScenario)
-                    {
                         lock (ScenarioDeps)
-                        {
                             ScenarioDeps.Add(Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
-                        }
-                    }
                     else
-                    {
                         lock (Dependencies)
-                        {
                             Dependencies.Add(Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
-                        }
-                    }
                 }
             }
         }
@@ -377,10 +361,8 @@ namespace RailworksDownloader
                             {
                                 SerzReader sr = new SerzReader(file);
 
-                                lock (Dependencies)
-                                {
-                                    Dependencies.UnionWith(sr.GetDependencies());
-                                }
+                                lock (ScenarioDeps)
+                                    ScenarioDeps.UnionWith(sr.GetDependencies());
 
                                 ReportProgress(file);
                             }
@@ -411,9 +393,7 @@ namespace RailworksDownloader
                     SerzReader sr = new SerzReader(file);
 
                     lock (Dependencies)
-                    {
                         Dependencies.UnionWith(sr.GetDependencies());
-                    }
 
                     ReportProgress(file);
                 }
@@ -435,9 +415,7 @@ namespace RailworksDownloader
                     SerzReader sr = new SerzReader(file);
 
                     lock (Dependencies)
-                    {
                         Dependencies.UnionWith(sr.GetDependencies());
-                    }
 
                     ReportProgress(file);
                 }
@@ -458,20 +436,12 @@ namespace RailworksDownloader
             lock (Dependencies)
             {
                 if (SavedRoute.Dependencies != null)
-                {
                     lock (Dependencies)
-                    {
                         Dependencies.UnionWith(SavedRoute.Dependencies);
-                    }
-                }
 
                 if (SavedRoute.ScenarioDeps != null)
-                {
                     lock (ScenarioDeps)
-                    {
                         ScenarioDeps.UnionWith(SavedRoute.ScenarioDeps);
-                    }
-                }
             }
 
             if (loftsChanged || roadsChanged || tracksChanged || sceneryChanged || rpChanged || scenariosChanged)
@@ -483,11 +453,9 @@ namespace RailworksDownloader
                 Task t = null;
                 Task<List<string>> prop = null;
 
+                if (rpChanged)
+                    prop = GetRoutePropertiesDependencies(Path.Combine(RoutePath, "RouteProperties.xml"));
                 
-                    if (rpChanged)
-                        prop = GetRoutePropertiesDependencies(Path.Combine(RoutePath, "RouteProperties.xml"));
-                
-
                 Parallel.ForEach(Directory.GetDirectories(RoutePath), dir =>
                 {
                     switch (Path.GetFileName(dir).ToLower())
@@ -541,9 +509,7 @@ namespace RailworksDownloader
                     routeProperties = await prop;
 
                     lock (Dependencies)
-                    {
                         Dependencies.UnionWith(routeProperties);
-                    }
                 }
             }
 
@@ -570,9 +536,7 @@ namespace RailworksDownloader
             await Task.Run(() =>
             {
                 if (ContainsAP)
-                {
                     SavedRoute.APChecksum = GetDirectoryMD5(RoutePath, true);
-                }
                 SavedRoute.RoutePropertiesChecksum = GetFileMD5(Path.Combine(RoutePath, "RouteProperties.xml"));
                 SavedRoute.LoftChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Loft Tiles"));
                 SavedRoute.RoadChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Road Tiles"));
@@ -600,19 +564,11 @@ namespace RailworksDownloader
                         SerzReader sr = new SerzReader(inputStream);
 
                         if (isScenario)
-                        {
                             lock (ScenarioDeps)
-                            {
                                 ScenarioDeps.UnionWith(sr.GetDependencies());
-                            }
-                        } 
                         else
-                        {
                             lock (Dependencies)
-                            {
                                 Dependencies.UnionWith(sr.GetDependencies());
-                            }
-                        }
                     }
 
                     ReportProgress(entry.Size);
