@@ -22,10 +22,9 @@ namespace RailworksDownloader
 
             if (info != null)
             {
-                for (int i = 0; i < info.Dependencies.Count; i++)
+                foreach (Dependency dep in info.ParsedDependencies.Items)
                 {
-                    Dependency dep = info.Dependencies[i];
-                    if (!dep.Scenario)
+                    if (!dep.IsScenario)
                         Dependencies.Add(dep);
                     else
                         ScenarioDeps.Add(dep);

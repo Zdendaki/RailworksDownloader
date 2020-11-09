@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Collections.Generic;
+using System.Windows;
 
 namespace RailworksDownloader
 {
@@ -10,8 +11,6 @@ namespace RailworksDownloader
         internal static MainWindow Window { get; set; }
 
         internal static Railworks Railworks { get; set; }
-
-        internal static GlobalDependencies Dependencies { get; set; }
 
         internal static SteamManager SteamManager { get; set; }
 

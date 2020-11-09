@@ -123,14 +123,14 @@ namespace RailworksDownloader
             return -1;
         }
 
-        public async Task<HashSet<string>> GetDownloadableDependencies()
+        public async Task<HashSet<string>> GetDownloadableDependencies(HashSet<string> globalDependencies)
         {
-            return await WebWrapper.GetAllFiles();
+            return (await WebWrapper.GetAllFiles()).Intersect(globalDependencies).ToHashSet();
         }
 
-        public async Task<HashSet<string>> GetPaidDependencies()
+        public async Task<HashSet<string>> GetPaidDependencies(HashSet<string> globalDependencies)
         {
-            return await WebWrapper.GetPaidFiles();
+            return (await WebWrapper.GetPaidFiles()).Intersect(globalDependencies).ToHashSet();
         }
     }
 

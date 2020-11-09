@@ -1,6 +1,8 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
+using System.Linq;
 
 namespace RailworksDownloader
 {
@@ -12,7 +14,10 @@ namespace RailworksDownloader
 
         public string Path { get; set; }
 
-        public DependenciesList Dependencies { get; set; }
+        public DependenciesList ParsedDependencies { get; set; } = new DependenciesList();
+        public readonly HashSet<string> Dependencies = new HashSet<string>();
+        public readonly HashSet<string> ScenarioDeps = new HashSet<string>();
+        public string[] AllDependencies { get; set; }
 
         private float progress = 0;
 
@@ -37,14 +42,7 @@ namespace RailworksDownloader
             Name = name;
             Hash = hash;
             Path = path;
-            Dependencies = new DependenciesList();
-            Dependencies.DependenciesChanged += Dependencies_DependenciesChanged;
             Crawler = null;
-        }
-
-        private void Dependencies_DependenciesChanged()
-        {
-            Redraw();
         }
 
         public void Redraw()
@@ -66,13 +64,13 @@ namespace RailworksDownloader
 
         public Brush GetBrush()
         {
-            if (Dependencies.Unknown)
+            if (ParsedDependencies.Unknown || ParsedDependencies.Items.Count == 0)
                 return MainWindow.Blue;
-            else if (Dependencies.Missing > 0 && Dependencies.Downloadable < Dependencies.Missing)
+            else if (ParsedDependencies.Missing > 0 && ParsedDependencies.Downloadable < ParsedDependencies.Missing)
                 return MainWindow.Red;
-            else if (Dependencies.ScenariosCount > 0 && Dependencies.DownloadableScenario < Dependencies.MissingScenario)
+            else if (ParsedDependencies.ScenariosCount > 0 && ParsedDependencies.DownloadableScenario < ParsedDependencies.MissingScenario)
                 return MainWindow.Purple;
-            else if (Dependencies.Downloadable + Dependencies.DownloadableScenario > 0)
+            else if (ParsedDependencies.Downloadable + ParsedDependencies.DownloadableScenario > 0)
                 return MainWindow.Yellow;
             else
                 return MainWindow.Green;

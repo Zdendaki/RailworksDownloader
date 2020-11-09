@@ -159,7 +159,7 @@ namespace RailworksDownloader
             }
         }
 
-        private class Dependency
+        private class SerzDependency
         {
             public string Provider { get; set; }
             public string Product { get; set; }
@@ -187,7 +187,7 @@ namespace RailworksDownloader
 
         private readonly List<Tag> AllTags = new List<Tag>();
 
-        private readonly List<Dependency> Dependencies = new List<Dependency>();
+        private readonly List<SerzDependency> Dependencies = new List<SerzDependency>();
 
         public SerzReader(string inputFile)
         {
@@ -282,7 +282,7 @@ namespace RailworksDownloader
                             {
                                 case "Provider":
                                     {
-                                        Dependencies.Add(new Dependency());
+                                        Dependencies.Add(new SerzDependency());
                                         Dependencies.Last().Provider = elemContent;
                                         break;
                                     }
@@ -390,7 +390,7 @@ namespace RailworksDownloader
                             {
                                 case "Provider":
                                     {
-                                        Dependencies.Add(new Dependency());
+                                        Dependencies.Add(new SerzDependency());
                                         Dependencies.Last().Provider = elemContent;
                                         break;
                                     }
@@ -705,15 +705,15 @@ namespace RailworksDownloader
 
         public string[] GetDependencies()
         {
-            Dependency[] deps = Dependencies.Where(x => !string.IsNullOrWhiteSpace(x.Asset) && (Path.GetExtension(x.Asset.ToLower()) == ".xml" || Path.GetExtension(x.Asset.ToLower()) == ".bin")).ToArray();
+            SerzDependency[] deps = Dependencies.Where(x => !string.IsNullOrWhiteSpace(x.Asset) && (Path.GetExtension(x.Asset.ToLower()) == ".xml" || Path.GetExtension(x.Asset.ToLower()) == ".bin")).ToArray();
             int depsCount = deps.Length;
 
             string[] outDeps = new string[depsCount];
 
             for (int i = 0; i < depsCount; i++)
             {
-                ref Dependency depRef = ref deps[i];
-                outDeps[i] = Railworks.NormalizePath(Path.Combine(depRef.Provider, depRef.Product, depRef.Asset));
+                ref SerzDependency serzDep = ref deps[i];
+                outDeps[i] = Railworks.NormalizePath(Path.Combine(serzDep.Provider, serzDep.Product, serzDep.Asset));
             }
 
             return outDeps;

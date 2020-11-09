@@ -4,11 +4,51 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Xml;
 
 namespace RailworksDownloader
 {
+    public static class LinqExtension
+    {
+        public static IEnumerable<TSource> Intersect<TSource>(this HashSet<TSource> first, HashSet<TSource> second)
+        {
+            if (first == null) throw new ArgumentException("first");
+            if (second == null) throw new ArgumentException("second");
+
+            return (first.Count > second.Count) ?
+                first.IntersectEnumerator(second, EqualityComparer<TSource>.Default) :
+                second.IntersectEnumerator(first, EqualityComparer<TSource>.Default);
+        }
+
+        public static IEnumerable<TSource> Intersect<TSource>(this HashSet<TSource> first, HashSet<TSource> second, EqualityComparer<TSource> comparer)
+        {
+            if (first == null) throw new ArgumentException("first");
+            if (second == null) throw new ArgumentException("second");
+
+            return (first.Count > second.Count) ?
+                first.IntersectEnumerator(second, comparer) :
+                    second.IntersectEnumerator(first, comparer);
+        }
+
+        private static IEnumerable<TSource> IntersectEnumerator<TSource>(this HashSet<TSource> first, HashSet<TSource> second, EqualityComparer<TSource> comparer)
+        {
+            if (first.Comparer != comparer)
+                return Intersect(first, second, comparer);
+            else
+                return IntersectEnumerator(first, second);
+        }
+
+        private static IEnumerable<TSource> IntersectEnumerator<TSource>(this HashSet<TSource> first, HashSet<TSource> second)
+        {
+            foreach (var tmp in second)
+            {
+                if (first.Contains(tmp)) { yield return tmp; }
+            }
+        }
+    }
+
     internal class Railworks
     {
         private string rwPath;
@@ -157,16 +197,24 @@ namespace RailworksDownloader
         internal void InitCrawlers()
         {
             Total = 0;
-            foreach (RouteInfo ri in Routes)
+            object total_lock = new object();
+            int maxThreads = Math.Min(Environment.ProcessorCount, Routes.Count);
+            Parallel.For(0, maxThreads, workerId =>
             {
-                ri.Progress = 0;
-                ri.Crawler = new RouteCrawler(ri.Path, RWPath, ri.Dependencies);
-                ri.Crawler.DeltaProgress += OnProgress;
-                ri.Crawler.ProgressUpdated += ri.ProgressUpdated;
-                ri.Crawler.Complete += Complete;
-                ri.Crawler.RouteSaving += Crawler_RouteSaving;
-                Total += 100;
-            }
+                var max = Routes.Count * (workerId + 1) / maxThreads;
+                for (int i = Routes.Count * workerId / maxThreads; i < max; i++)
+                {
+                    RouteInfo ri = Routes[i];
+                    ri.Progress = 0;
+                    ri.Crawler = new RouteCrawler(ri.Path, RWPath, ri.Dependencies, ri.ScenarioDeps);
+                    ri.Crawler.DeltaProgress += OnProgress;
+                    ri.Crawler.ProgressUpdated += ri.ProgressUpdated;
+                    ri.Crawler.Complete += Complete;
+                    ri.Crawler.RouteSaving += Crawler_RouteSaving;
+                    lock (total_lock)
+                        Total += 100;
+                }
+            });
         }
 
         private void Crawler_RouteSaving(bool saved)
@@ -190,9 +238,14 @@ namespace RailworksDownloader
 
                 APDependencies.Clear();
 
-                Parallel.ForEach(Routes, ri =>
+                int maxThreads = Math.Min(Environment.ProcessorCount, Routes.Count);
+                Parallel.For(0, maxThreads, workerId =>
                 {
-                    Task t = Task.Run(() => ri.Crawler.Start());
+                    var max = Routes.Count * (workerId + 1) / maxThreads;
+                    for (int i = Routes.Count * workerId / maxThreads; i < max; i++)
+                    {
+                        Routes[i].Crawler.Start();
+                    }
                 });
             }
             catch (Exception e)
@@ -252,16 +305,19 @@ namespace RailworksDownloader
             }
         }
 
-        public async Task GetMissing()
+        public async Task<HashSet<string>> GetMissing(HashSet<string> globalDeps)
         {
-            await Task.Run(() =>
-            {                              
-                /*foreach (RouteInfo route in Routes)
-                {*/
-                    foreach (Dependency dep in App.Dependencies)
-                    {
-                        string dependency = dep.Name;
+            HashSet<string> existingDeps = new HashSet<string>();
 
+            await Task.Run(() =>
+            {
+                int maxThreads = Math.Min(Environment.ProcessorCount, globalDeps.Count);
+                Parallel.For(0, maxThreads, workerId =>
+                {
+                    var max = globalDeps.Count * (workerId + 1) / maxThreads;
+                    for (int i = globalDeps.Count * workerId / maxThreads; i < max; i++)
+                    {
+                        string dependency = globalDeps.ElementAt(i);
                         if (!string.IsNullOrWhiteSpace(dependency))
                         {
                             string path = NormalizePath(Path.Combine(AssetsPath, dependency), "xml");
@@ -271,11 +327,15 @@ namespace RailworksDownloader
 
                             bool exists = File.Exists(path_bin) || File.Exists(path) || APDependencies.Contains(relative_path_bin) || APDependencies.Contains(relative_path) || CheckForFileInAP(Directory.GetParent(path).FullName, relative_path);
 
-                            dep.State = exists ? DependencyState.Downloaded : DependencyState.Unavailable;
+                            if (exists)
+                                lock(existingDeps)
+                                    existingDeps.Add(dependency);
                         }
                     }
-                //}
+                });
             });
+
+            return existingDeps;
         }
 
         public static string NormalizePath(string path, string ext = null)
@@ -357,6 +417,49 @@ namespace RailworksDownloader
                     ostream.Write(buffer, 0, read);
                 }
                 return ostream.ToArray();
+            }
+        }
+
+        public class MemoryInformation
+        {
+            [DllImport("KERNEL32.DLL")]
+            private static extern int OpenProcess(uint dwDesiredAccess, int bInheritHandle, uint dwProcessId);
+            [DllImport("KERNEL32.DLL")]
+            private static extern int CloseHandle(int handle);
+
+            [StructLayout(LayoutKind.Sequential)]
+            private class PROCESS_MEMORY_COUNTERS
+            {
+                public int cb;
+                public int PageFaultCount;
+                public int PeakWorkingSetSize;
+                public int WorkingSetSize;
+                public int QuotaPeakPagedPoolUsage;
+                public int QuotaPagedPoolUsage;
+                public int QuotaPeakNonPagedPoolUsage;
+                public int QuotaNonPagedPoolUsage;
+                public int PagefileUsage;
+                public int PeakPagefileUsage;
+            }
+
+            [DllImport("psapi.dll")]
+            private static extern int GetProcessMemoryInfo(int hProcess, [Out] PROCESS_MEMORY_COUNTERS counters, int size);
+
+            public static long GetMemoryUsageForProcess(long pid)
+            {
+                long mem = 0;
+                int pHandle = OpenProcess(0x0400 | 0x0010, 0, (uint)pid);
+                try
+                {
+                    var pmc = new PROCESS_MEMORY_COUNTERS();
+                    if (GetProcessMemoryInfo(pHandle, pmc, 40) != 0)
+                        mem = pmc.WorkingSetSize;
+                }
+                finally
+                {
+                    CloseHandle(pHandle);
+                }
+                return mem;
             }
         }
     }
