@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web.Routing;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -99,9 +100,6 @@ namespace RailworksDownloader
             string[] deps = sr.GetDependencies();
             sw.Stop();
             MessageBox.Show(sw.Elapsed.ToString());*/
-
-            if (!string.IsNullOrWhiteSpace(RW.RWPath))
-                ScanRailworks_Click(this, null);
         }
 
         private void MainWindowDialog_Closing(object sender, CancelEventArgs e)
@@ -120,29 +118,59 @@ namespace RailworksDownloader
         {
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.Value = 100);
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = true);
-            
-            await RW.GetMissing();
 
-            HashSet<string> downloadable = await PM.GetDownloadableDependencies();
-            HashSet<string> paid = await PM.GetPaidDependencies();
+            HashSet<string> globalDeps = new HashSet<string>();
 
-            foreach (RouteInfo route in RW.Routes)
+            for (int i = 0; i < RW.Routes.Count; i++)
             {
-                for (int i = 0; i < route.Dependencies.RouteCount; i++)
-                {
-                    if (route.Dependencies[i].State == DependencyState.Unavailable)
-                    {
-                        string depName = route.Dependencies[i].Name;
-
-                        if (downloadable?.Contains(depName) == true)
-                            route.Dependencies[i].State = DependencyState.Available;
-                        else if (paid?.Contains(depName) == true)
-                            route.Dependencies[i].State = DependencyState.Paid;
-                    }
-                }
-
-                route.Redraw();
+                RW.Routes[i].AllDependencies = RW.Routes[i].Dependencies.Union(RW.Routes[i].ScenarioDeps).ToArray();
+                globalDeps.UnionWith(RW.Routes[i].AllDependencies);
             }
+
+            HashSet<string> existing = await RW.GetMissing(globalDeps);
+            HashSet<string> downloadable = await PM.GetDownloadableDependencies(globalDeps);
+            HashSet<string> paid = await PM.GetPaidDependencies(globalDeps);
+
+            RW.Routes.Sort(delegate(RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); });
+
+            int maxThreads = Math.Min(Environment.ProcessorCount, RW.Routes.Count);
+            Parallel.For(0, maxThreads, workerId =>
+            {
+                var max = RW.Routes.Count * (workerId + 1) / maxThreads;
+                for (int i = RW.Routes.Count * workerId / maxThreads; i < max; i++)
+                {
+                    List<Dependency> deps = new List<Dependency>();
+
+                    int _i = ((i & 1) != 0) ? (i - 1) / 2 : (RW.Routes.Count - 1) - i / 2;
+                    for (int j = 0; j < RW.Routes[_i].AllDependencies.Length; j++)
+                    {
+                        string dep = RW.Routes[_i].AllDependencies[j];
+
+                        if (dep != string.Empty)
+                        {
+                            bool isRoute = RW.Routes[_i].Dependencies.Contains(dep);
+                            bool isScenario = RW.Routes[_i].ScenarioDeps.Contains(dep);
+
+                            DependencyState state = DependencyState.Unknown;
+                            if (existing.Contains(dep))
+                                state = DependencyState.Downloaded;
+                            else if (downloadable.Contains(dep))
+                                state = DependencyState.Available;
+                            else if (paid.Contains(dep))
+                                state = DependencyState.Paid;
+                            else
+                                state = DependencyState.Unavailable;
+
+                            deps.Add(new Dependency(dep, state, isScenario, isRoute));
+                        }
+                    }
+                    RW.Routes[_i].Dependencies.Clear();
+                    RW.Routes[_i].ScenarioDeps.Clear();
+                    RW.Routes[_i].AllDependencies = null;
+                    RW.Routes[_i].ParsedDependencies = new DependenciesList(deps);
+                    RW.Routes[_i].Redraw();
+                }
+            });
 
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = false);
             crawlingComplete = true;
@@ -226,10 +254,12 @@ namespace RailworksDownloader
         {
             try
             {
-                ScanRailworks.IsEnabled = false;
-                SelectRailworksLocation.IsEnabled = false;
+                ScanRailworks.Dispatcher.Invoke(() => { 
+                    ScanRailworks.IsEnabled = false;
+                    SelectRailworksLocation.IsEnabled = false;
+                    TotalProgress.Value = 0;
+                });
                 crawlingComplete = false;
-                TotalProgress.Value = 0;
                 RW.RunAllCrawlers();
             }
             catch (Exception ex)
@@ -253,6 +283,14 @@ namespace RailworksDownloader
         {
             PackageManagerWindow pmw = new PackageManagerWindow();
             pmw.ShowDialog();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            Task.Run(() => {
+                if (!string.IsNullOrWhiteSpace(RW.RWPath))
+                    ScanRailworks_Click(this, null);
+            });
         }
     }
 }

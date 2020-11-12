@@ -18,11 +18,11 @@ namespace RailworksDownloader
 
         public string APChecksum { get; set; }
 
-        public List<string> Dependencies { get; set; }
+        public HashSet<string> Dependencies { get; set; }
 
-        public List<string> ScenarioDeps { get; set; }
+        public HashSet<string> ScenarioDeps { get; set; }
 
-        public LoadedRoute(string loftChecksum, string roadChecksum, string trackChecksum, string sceneryChecksum, string routePropertiesChecksum, string apChecksum, string scenariosChecksum, List<string> dependencies, List<string> scenarioDeps)
+        public LoadedRoute(string loftChecksum, string roadChecksum, string trackChecksum, string sceneryChecksum, string routePropertiesChecksum, string apChecksum, string scenariosChecksum, HashSet<string> dependencies, HashSet<string> scenarioDeps)
         {
             LoftChecksum = loftChecksum;
             RoadChecksum = roadChecksum;

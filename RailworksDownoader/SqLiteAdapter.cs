@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
+using System.Linq;
 
 namespace RailworksDownloader
 {
@@ -86,13 +87,17 @@ namespace RailworksDownloader
             {
                 if (i < depsCount)
                 {
-                    insertSQL.Parameters.AddWithValue("@path", route.Dependencies[i]);
+                    if (string.IsNullOrWhiteSpace(route.Dependencies.ElementAt(i)))
+                        continue;
+                    insertSQL.Parameters.AddWithValue("@path", route.Dependencies.ElementAt(i));
                     insertSQL.Parameters.AddWithValue("@isScenario", false);
                     insertSQL.ExecuteNonQuery();
                 }
                 else
                 {
-                    insertSQL.Parameters.AddWithValue("@path", route.ScenarioDeps[i - depsCount]);
+                    if (string.IsNullOrWhiteSpace(route.ScenarioDeps.ElementAt(i - depsCount)))
+                        continue;
+                    insertSQL.Parameters.AddWithValue("@path", route.ScenarioDeps.ElementAt(i - depsCount));
                     insertSQL.Parameters.AddWithValue("@isScenario", true);
                     insertSQL.ExecuteNonQuery();
                 }
@@ -139,8 +144,8 @@ namespace RailworksDownloader
                 }
                 command.Dispose();
 
-                loadedRoute.Dependencies = new List<string>();
-                loadedRoute.ScenarioDeps = new List<string>();
+                loadedRoute.Dependencies = new HashSet<string>();
+                loadedRoute.ScenarioDeps = new HashSet<string>();
                 command = new SQLiteCommand(MemoryConn)
                 {
                     CommandText = "SELECT * FROM dependencies"
