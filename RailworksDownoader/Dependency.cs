@@ -1,12 +1,5 @@
-using Desharp;
-using RailworksDownloader;
-using SteamKit2.Internal;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Windows.AI.MachineLearning;
-using Windows.UI.Xaml.Automation;
 
 namespace RailworksDownloader
 {
@@ -62,11 +55,11 @@ namespace RailworksDownloader
 
         public bool Unknown => Items.Any(x => x.State == DependencyState.Unknown);
 
-        public DependenciesList(IEnumerable<Dependency> dependencies) 
+        public DependenciesList(IEnumerable<Dependency> dependencies)
         {
             Items = dependencies.ToList();
         }
-        
+
         public DependenciesList()
         {
             Items = new List<Dependency>();

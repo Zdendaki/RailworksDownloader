@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using static RailworksDownloader.Utils;
 
 namespace RailworksDownloader
 {
@@ -103,7 +104,7 @@ namespace RailworksDownloader
                             if (fileName.Contains("assets"))
                             {
                                 if (extension.Contains("xml") || extension.Contains("bin"))
-                                    dlc.IncludedFiles.Add(Railworks.NormalizePath(fileName));
+                                    dlc.IncludedFiles.Add(NormalizePath(fileName));
 
                                 if (extension == ".ap")
                                 {
@@ -111,7 +112,7 @@ namespace RailworksDownloader
                                     try
                                     {
                                         ZipArchive zipFile = ZipFile.OpenRead(absoluteFileName);
-                                        dlc.IncludedFiles.AddRange(from x in zipFile.Entries where (x.FullName.Contains(".xml") || x.FullName.Contains(".bin")) select Railworks.NormalizePath(Railworks.GetRelativePath(Path.Combine(RWPath, "Assets"), Path.Combine(Path.GetDirectoryName(absoluteFileName), x.FullName))));
+                                        dlc.IncludedFiles.AddRange(from x in zipFile.Entries where (x.FullName.Contains(".xml") || x.FullName.Contains(".bin")) select NormalizePath(GetRelativePath(Path.Combine(RWPath, "Assets"), Path.Combine(Path.GetDirectoryName(absoluteFileName), x.FullName))));
                                     }
                                     catch { }
                                 }

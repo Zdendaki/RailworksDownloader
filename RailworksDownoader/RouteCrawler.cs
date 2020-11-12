@@ -1,5 +1,4 @@
 ﻿using ICSharpCode.SharpZipLib.Zip;
-using Microsoft.VisualBasic.Devices;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using static RailworksDownloader.Utils;
 
 namespace RailworksDownloader
 {
@@ -104,19 +104,19 @@ namespace RailworksDownloader
                     // If route directory exists
                     if (Directory.Exists(RoutePath))
                     {
-                            // Counts size of all files
-                            AllFilesSize = CountAllFiles();
+                        // Counts size of all files
+                        AllFilesSize = CountAllFiles();
 
-                            // Find all dependencies
-                            await GetDependencies();
+                        // Find all dependencies
+                        await GetDependencies();
 
-                            // If crawling skipped because cache or inaccuracy, adds to 100 %
-                            if (PercentProgress != 100)
-                            {
-                                DeltaProgress?.Invoke(100f - PercentProgress);
-                                PercentProgress = 100;
-                                ProgressUpdated?.Invoke(PercentProgress);
-                            }
+                        // If crawling skipped because cache or inaccuracy, adds to 100 %
+                        if (PercentProgress != 100)
+                        {
+                            DeltaProgress?.Invoke(100f - PercentProgress);
+                            PercentProgress = 100;
+                            ProgressUpdated?.Invoke(PercentProgress);
+                        }
                     }
 
                     // Crawling complete event
@@ -210,7 +210,7 @@ namespace RailworksDownloader
                 string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
                 if (string.IsNullOrWhiteSpace(fname) || !(Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
                     return string.Empty;
-                return Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname));
+                return NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname));
             }
             return null;
         }
@@ -244,18 +244,18 @@ namespace RailworksDownloader
             // Load route properties file
             XmlDocument doc = new XmlDocument();
 
-            doc.Load(XmlReader.Create(Railworks.RemoveInvalidXmlChars(propertiesPath), new XmlReaderSettings() { CheckCharacters = false }));
+            doc.Load(XmlReader.Create(RemoveInvalidXmlChars(propertiesPath), new XmlReaderSettings() { CheckCharacters = false }));
 
             XmlElement root = doc.DocumentElement;
 
             // Parse route properties entries
             await Task.Run(() =>
             {
-                dependencies.Add(Railworks.NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("BlueprintID"))));
+                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("BlueprintID"))));
                 dependencies.AddRange(ParseSkiesNode(root.SelectSingleNode("Skies")));
-                dependencies.Add(Railworks.NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("WeatherBlueprint"))));
-                dependencies.Add(Railworks.NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("TerrainBlueprint"))));
-                dependencies.Add(Railworks.NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("MapBlueprint"))));
+                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("WeatherBlueprint"))));
+                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("TerrainBlueprint"))));
+                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("MapBlueprint"))));
             });
 
             ReportProgress(propertiesPath);
@@ -278,7 +278,7 @@ namespace RailworksDownloader
 
             try
             {
-                doc.Load(XmlReader.Create(Railworks.RemoveInvalidXmlChars(blueprintPath), new XmlReaderSettings() { CheckCharacters = false }));
+                doc.Load(XmlReader.Create(RemoveInvalidXmlChars(blueprintPath), new XmlReaderSettings() { CheckCharacters = false }));
             }
             catch
             {
@@ -296,10 +296,10 @@ namespace RailworksDownloader
                 {
                     if (isScenario)
                         lock (ScenarioDeps)
-                            ScenarioDeps.Add(Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
+                            ScenarioDeps.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
                     else
                         lock (Dependencies)
-                            Dependencies.Add(Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
+                            Dependencies.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
                 }
             }
         }
@@ -312,7 +312,7 @@ namespace RailworksDownloader
 
             try
             {
-                doc.Load(XmlReader.Create(Railworks.RemoveInvalidXmlChars(stream), new XmlReaderSettings() { CheckCharacters = false }));
+                doc.Load(XmlReader.Create(RemoveInvalidXmlChars(stream), new XmlReaderSettings() { CheckCharacters = false }));
             }
             catch
             {
@@ -328,10 +328,10 @@ namespace RailworksDownloader
                 {
                     if (isScenario)
                         lock (ScenarioDeps)
-                            ScenarioDeps.Add(Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
+                            ScenarioDeps.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
                     else
                         lock (Dependencies)
-                            Dependencies.Add(Railworks.NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
+                            Dependencies.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
                 }
             }
         }
@@ -350,7 +350,7 @@ namespace RailworksDownloader
                 int maxThreads = Math.Min(Environment.ProcessorCount, dirs.Length);
                 Parallel.For(0, maxThreads, workerId =>
                 {
-                    var max = dirs.Length * (workerId + 1) / maxThreads;
+                    int max = dirs.Length * (workerId + 1) / maxThreads;
                     for (int i = dirs.Length * workerId / maxThreads; i < max; i++)
                     {
                         // Foreach all scenario files
@@ -455,7 +455,7 @@ namespace RailworksDownloader
 
                 if (rpChanged)
                     prop = GetRoutePropertiesDependencies(Path.Combine(RoutePath, "RouteProperties.xml"));
-                
+
                 Parallel.ForEach(Directory.GetDirectories(RoutePath), dir =>
                 {
                     switch (Path.GetFileName(dir).ToLower())
@@ -597,7 +597,7 @@ namespace RailworksDownloader
                                 {
                                     if (Path.GetExtension(entry.Name).ToLower() == ".xml" || Path.GetExtension(entry.Name).ToLower() == ".bin")
                                     {
-                                        string relativePath = Railworks.NormalizePath(Railworks.GetRelativePath(RoutePath, Path.Combine(Path.GetDirectoryName(file), entry.Name)));
+                                        string relativePath = NormalizePath(GetRelativePath(RoutePath, Path.Combine(Path.GetDirectoryName(file), entry.Name)));
                                         string mainFolder = relativePath.Split(Path.DirectorySeparatorChar)[0];
                                         if (mainFolder == "networks" || mainFolder == "scenarios" || mainFolder == "scenery")
                                         {
@@ -703,7 +703,7 @@ namespace RailworksDownloader
                             string ext = Path.GetExtension(entry.Name).ToLower();
                             if (ext == ".xml" || ext == ".bin")
                             {
-                                string relativePath = Railworks.NormalizePath(Railworks.GetRelativePath(RoutePath, Path.Combine(Path.GetDirectoryName(file), entry.Name)));
+                                string relativePath = NormalizePath(GetRelativePath(RoutePath, Path.Combine(Path.GetDirectoryName(file), entry.Name)));
                                 string mainFolder = relativePath.Split(Path.DirectorySeparatorChar)[0];
                                 if (mainFolder == "scenarios" || mainFolder == "scenery")
                                 {
@@ -795,7 +795,7 @@ namespace RailworksDownloader
                     md5.TransformBlock(pathBytes, 0, pathBytes.Length, pathBytes, 0);
 
                     /*ulong fsize = (ulong)GetFileSize(filePath);
-                    ulong freeMem = Math.Min(new ComputerInfo().AvailablePhysicalMemory, (ulong)(0x100000000 - Railworks.MemoryInformation.GetMemoryUsageForProcess(nProcessID)));
+                    ulong freeMem = Math.Min(new ComputerInfo().AvailablePhysicalMemory, (ulong)(0x100000000 - MemoryInformation.GetMemoryUsageForProcess(nProcessID)));
                     if (fsize > 0x1F400000 || (new ComputerInfo().AvailablePhysicalMemory < fsize*20)) //File bigger than 10MB or total memory used > 2GB - read chunk by chunk
                     {
                         const int buffSize = 0x402000;

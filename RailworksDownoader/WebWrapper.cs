@@ -1,10 +1,10 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using static RailworksDownloader.Utils;
 
 namespace RailworksDownloader
 {
@@ -80,7 +80,7 @@ namespace RailworksDownloader
 
                     for (int i = 0; i < jsonObject.content.Length; i++)
                     {
-                        buffer.Add(Railworks.NormalizePath(jsonObject.content[i]));
+                        buffer.Add(NormalizePath(jsonObject.content[i]));
                     }
 
                     return buffer;
@@ -105,7 +105,7 @@ namespace RailworksDownloader
 
                     for (int i = 0; i < jsonObject.content.Length; i++)
                     {
-                        buffer.Add(Railworks.NormalizePath(jsonObject.content[i]));
+                        buffer.Add(NormalizePath(jsonObject.content[i]));
                     }
 
                     return buffer;
@@ -114,6 +114,8 @@ namespace RailworksDownloader
 
             return null;
         }
+
+
 
         public static async Task ReportDLC(List<SteamManager.DLC> dlcList, Uri apiUrl)
         {

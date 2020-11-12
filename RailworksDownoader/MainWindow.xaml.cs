@@ -2,10 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Web.Routing;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -131,12 +129,12 @@ namespace RailworksDownloader
             HashSet<string> downloadable = await PM.GetDownloadableDependencies(globalDeps);
             HashSet<string> paid = await PM.GetPaidDependencies(globalDeps);
 
-            RW.Routes.Sort(delegate(RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); });
+            RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); });
 
             int maxThreads = Math.Min(Environment.ProcessorCount, RW.Routes.Count);
             Parallel.For(0, maxThreads, workerId =>
             {
-                var max = RW.Routes.Count * (workerId + 1) / maxThreads;
+                int max = RW.Routes.Count * (workerId + 1) / maxThreads;
                 for (int i = RW.Routes.Count * workerId / maxThreads; i < max; i++)
                 {
                     List<Dependency> deps = new List<Dependency>();
@@ -254,7 +252,8 @@ namespace RailworksDownloader
         {
             try
             {
-                ScanRailworks.Dispatcher.Invoke(() => { 
+                ScanRailworks.Dispatcher.Invoke(() =>
+                {
                     ScanRailworks.IsEnabled = false;
                     SelectRailworksLocation.IsEnabled = false;
                     TotalProgress.Value = 0;
@@ -287,7 +286,8 @@ namespace RailworksDownloader
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            Task.Run(() => {
+            Task.Run(() =>
+            {
                 if (!string.IsNullOrWhiteSpace(RW.RWPath))
                     ScanRailworks_Click(this, null);
             });

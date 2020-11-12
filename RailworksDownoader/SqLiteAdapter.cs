@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
 using System.Linq;
+using static RailworksDownloader.Utils;
 
 namespace RailworksDownloader
 {
@@ -156,10 +157,10 @@ namespace RailworksDownloader
                     switch (Convert.ToInt32(reader["isScenario"]))
                     {
                         case 1:
-                            loadedRoute.ScenarioDeps.Add(Railworks.NormalizePath(Convert.ToString(reader["path"])));
+                            loadedRoute.ScenarioDeps.Add(NormalizePath(Convert.ToString(reader["path"])));
                             break;
                         default:
-                            loadedRoute.Dependencies.Add(Railworks.NormalizePath(Convert.ToString(reader["path"])));
+                            loadedRoute.Dependencies.Add(NormalizePath(Convert.ToString(reader["path"])));
                             break;
                     }
                 }
@@ -276,7 +277,7 @@ CREATE TABLE file_list (
                     SQLiteDataReader r = cmd.ExecuteReader();
                     while (r.Read())
                     {
-                        loadedPackage.FilesContained.Add(Railworks.NormalizePath(Convert.ToString(r["file_name"])));
+                        loadedPackage.FilesContained.Add(NormalizePath(Convert.ToString(r["file_name"])));
                     }
                     cmd.Dispose();
 

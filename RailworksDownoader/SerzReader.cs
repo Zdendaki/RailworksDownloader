@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Web;
+using static RailworksDownloader.Utils;
 
 namespace RailworksDownloader
 {
@@ -713,7 +714,7 @@ namespace RailworksDownloader
             for (int i = 0; i < depsCount; i++)
             {
                 ref SerzDependency serzDep = ref deps[i];
-                outDeps[i] = Railworks.NormalizePath(Path.Combine(serzDep.Provider, serzDep.Product, serzDep.Asset));
+                outDeps[i] = NormalizePath(Path.Combine(serzDep.Provider, serzDep.Product, serzDep.Asset));
             }
 
             return outDeps;

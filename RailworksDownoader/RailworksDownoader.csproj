@@ -35,7 +35,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
+    <DebugType>embedded</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -100,6 +100,9 @@
     <Compile Include="DependencyWindow.xaml.cs">
       <DependentUpon>DependencyWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DownloadDialog.xaml.cs">
+      <DependentUpon>DownloadDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Extensions.cs" />
     <Compile Include="LoadedRoute.cs" />
     <Compile Include="PackageManager.cs" />
@@ -124,8 +127,13 @@
       <DependentUpon>StartupWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="SteamManager.cs" />
+    <Compile Include="Utils.cs" />
     <Compile Include="WebWrapper.cs" />
     <Page Include="DependencyWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DownloadDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
