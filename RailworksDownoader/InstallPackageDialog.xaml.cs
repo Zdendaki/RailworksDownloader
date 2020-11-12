@@ -27,6 +27,7 @@ namespace RailworksDownloader
         private void ListViewItem_Selected(object sender, RoutedEventArgs e)
         {
             (sender as ListViewItem).IsSelected = true;
+            (sender as ListViewItem).UpdateLayout();
         }
 
         private void ListViewItem_Unselected(object sender, RoutedEventArgs e)

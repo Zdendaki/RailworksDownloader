@@ -1,4 +1,5 @@
-﻿using RailworksDownloader.Properties;
+﻿using ModernWpf.Controls;
+using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -29,6 +30,7 @@ namespace RailworksDownloader
         private Railworks RW;
         private PackageManager PM;
         private bool crawlingComplete = false;
+        private bool exitConfirmed = false;
 
         public MainWindow()
         {
@@ -85,29 +87,31 @@ namespace RailworksDownloader
                     Desharp.Debug.Log(e, Desharp.Level.DEBUG);
                 }
             });
-
-
-            /*Stopwatch sw = new Stopwatch();
-            sw.Start();
-            SerzReader sr = new SerzReader(@"G:\\Steam\\steamapps\\common\\RailWorks\\Content\\Routes\\9cac1720-316c-4a01-a3e6-8c594df5452f\\Scenery\\+000022-000041.bin");
-            sw.Stop();
-            MessageBox.Show(sw.Elapsed.ToString());
-
-            sw = new Stopwatch();
-            sw.Start();
-            string[] deps = sr.GetDependencies();
-            sw.Stop();
-            MessageBox.Show(sw.Elapsed.ToString());*/
         }
 
-        private void MainWindowDialog_Closing(object sender, CancelEventArgs e)
+        private async void MainWindowDialog_Closing(object sender, CancelEventArgs e)
         {
+            if (exitConfirmed == true)
+                return;
+            
             if (Saving || CheckingDLC)
             {
-                MessageBoxResult result = MessageBox.Show("Some operation are still running.\nDo you really want to close this app?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                if (result == MessageBoxResult.No)
+                e.Cancel = true;
+
+                ContentDialog dialog = new ContentDialog
                 {
-                    e.Cancel = true;
+                    Title = "Warning",
+                    Content = "Some operation are still running.\nDo you really want to close this app?",
+                    PrimaryButtonText = "Yes",
+                    SecondaryButtonText = "No"
+                };
+
+                var result = dialog.ShowAsync();
+
+                exitConfirmed = (await result) == ContentDialogResult.Primary;
+                if (exitConfirmed)
+                {
+                    Close();
                 }
             }
         }
@@ -176,12 +180,15 @@ namespace RailworksDownloader
 
         private void ToggleSavingGrid(string type)
         {
-            SavingGrid.Dispatcher.Invoke(() =>
+            if (!SavingGrid.Dispatcher.HasShutdownStarted)
             {
-                if (!Saving && !CheckingDLC)
-                    SavingLabel.Content = type;
-                SavingGrid.Visibility = (Saving || CheckingDLC) ? Visibility.Visible : Visibility.Hidden;
-            });
+                SavingGrid.Dispatcher.Invoke(() =>
+                {
+                    if (!Saving && !CheckingDLC)
+                        SavingLabel.Content = type;
+                    SavingGrid.Visibility = (Saving || CheckingDLC) ? Visibility.Visible : Visibility.Hidden;
+                });
+            }
         }
 
         private void RW_CheckingDLC(bool @checked)
@@ -198,7 +205,10 @@ namespace RailworksDownloader
 
         private void RW_ProgressUpdated(int percent)
         {
-            TotalProgress.Dispatcher.Invoke(() => { TotalProgress.Value = percent; });
+            if (!TotalProgress.Dispatcher.HasShutdownStarted)
+            {
+                TotalProgress.Dispatcher.Invoke(() => { TotalProgress.Value = percent; });
+            }
         }
 
         private void PropertyChanged(object sender, PropertyChangedEventArgs e)

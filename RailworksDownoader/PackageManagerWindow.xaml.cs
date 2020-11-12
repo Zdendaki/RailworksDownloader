@@ -7,15 +7,17 @@ namespace RailworksDownloader
     /// </summary>
     public partial class PackageManagerWindow : Window
     {
+        InstallPackageDialog IPD;
+
         public PackageManagerWindow()
         {
             InitializeComponent();
+            IPD = new InstallPackageDialog();
         }
 
         private void InstallPackage_Click(object sender, RoutedEventArgs e)
         {
-            InstallPackageDialog ipd = new InstallPackageDialog();
-            ipd.ShowAsync();
+            IPD.ShowAsync();
         }
     }
 }
