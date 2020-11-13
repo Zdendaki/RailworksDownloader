@@ -105,14 +105,14 @@
     </Compile>
     <Compile Include="Extensions.cs" />
     <Compile Include="LoadedRoute.cs" />
+    <Compile Include="LoginDialog.xaml.cs">
+      <DependentUpon>LoginDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="PackageManager.cs" />
     <Compile Include="PackageManagerWindow.xaml.cs">
       <DependentUpon>PackageManagerWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Railworks.cs" />
-    <Compile Include="FindPath.xaml.cs">
-      <DependentUpon>FindPath.xaml</DependentUpon>
-    </Compile>
     <Compile Include="InstallPackageDialog.xaml.cs">
       <DependentUpon>InstallPackageDialog.xaml</DependentUpon>
     </Compile>
@@ -137,7 +137,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="FindPath.xaml">
+    <Page Include="LoginDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

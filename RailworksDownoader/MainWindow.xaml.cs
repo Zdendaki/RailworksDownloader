@@ -101,7 +101,7 @@ namespace RailworksDownloader
                 ContentDialog dialog = new ContentDialog
                 {
                     Title = "Warning",
-                    Content = "Some operation are still running.\nDo you really want to close this app?",
+                    Content = "Some operations are still running.\nDo you really want to close the app?",
                     PrimaryButtonText = "Yes",
                     SecondaryButtonText = "No"
                 };
