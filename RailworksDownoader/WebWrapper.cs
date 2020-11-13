@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,12 +10,26 @@ using static RailworksDownloader.Utils;
 
 namespace RailworksDownloader
 {
-
-    public class QueryResult
+    public class ObjectResult
     {
-        public int code { get; set; }
-        public string message { get; set; }
-        public QueryContent content { get; set; }
+        public int code { get; set; } = -1;
+        public string message { get; set; } = string.Empty;
+        public object content { get; set; }
+
+        public ObjectResult() {}
+
+        public ObjectResult(int code, string message)
+        {
+            this.code = code;
+            this.message = message;
+        }
+
+        public ObjectResult(int code, string message, object content)
+        {
+            this.code = code;
+            this.message = message;
+            this.content = content;
+        }
     }
 
     public class QueryContent
@@ -35,7 +51,17 @@ namespace RailworksDownloader
         public int[] dependencies { get; set; }
     }
 
-    public class GetAllFilesResult
+    public class LoginContent
+    {
+        public int userid { get; set; }
+        public string realname { get; set; }
+        public string email { get; set; }
+        public int privileges { get; set; }
+        public string token { get; set; }
+    }
+
+
+    public class ArrayResult
     {
         public int code { get; set; }
         public string message { get; set; }
@@ -53,14 +79,64 @@ namespace RailworksDownloader
             ApiUrl = apiUrl;
         }
 
+        public async Task<ObjectResult> DownloadPackage(int packageId, string token)
+        {
+            Dictionary<string, string> content = new Dictionary<string, string> { { "token", token }, { "package_id", packageId.ToString() } };
+            FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
+
+            HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
+            if (response.IsSuccessStatusCode && response.StatusCode > 0)
+            {
+                if (response.Headers.GetValues("Content-Type").FirstOrDefault() == "application/json")
+                {
+                    return JsonConvert.DeserializeObject<ObjectResult>(await response.Content.ReadAsStringAsync());
+                }
+                else
+                {
+                    string tempFname = Path.GetTempFileName();
+                    ushort BUFF_SIZE = 16 * 1024;
+
+                    using (FileStream oStream = File.OpenWrite(tempFname))
+                    {
+                        using (Stream iStream = await response.Content.ReadAsStreamAsync())
+                        {
+                            byte[] buffer = new byte[BUFF_SIZE];
+                            int bytesRead;
+
+                            while ((bytesRead = iStream.Read(buffer, 0, BUFF_SIZE)) > 0)
+                            {
+                                oStream.Write(buffer, 0, bytesRead);
+                            }
+                        }
+                    }
+
+                    return new ObjectResult(1, tempFname);
+                }
+            }
+
+            return new ObjectResult();
+        }
+
         public async Task<Package> SearchForFile(string fileToFind)
         {
             Dictionary<string, string> content = new Dictionary<string, string> { { "file", fileToFind } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
             HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
-            if (response.IsSuccessStatusCode && response.StatusCode > 0)
-                return new Package(JsonConvert.DeserializeObject<QueryResult>(await response.Content.ReadAsStringAsync()).content);
+            if (response.IsSuccessStatusCode)
+                return new Package((QueryContent)JsonConvert.DeserializeObject<ObjectResult>(await response.Content.ReadAsStringAsync()).content);
+
+            return null;
+        }
+
+        public async Task<LoginContent> Login(string fileToFind)
+        {
+            Dictionary<string, string> content = new Dictionary<string, string> { { "file", fileToFind } };
+            FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
+
+            HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
+            if (response.IsSuccessStatusCode)
+                return (LoginContent)JsonConvert.DeserializeObject<ObjectResult>(await response.Content.ReadAsStringAsync()).content;
 
             return null;
         }
@@ -73,7 +149,7 @@ namespace RailworksDownloader
             HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
             if (response.IsSuccessStatusCode)
             {
-                GetAllFilesResult jsonObject = JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync());
+                ArrayResult jsonObject = JsonConvert.DeserializeObject<ArrayResult>(await response.Content.ReadAsStringAsync());
                 if (jsonObject.code > 0)
                 {
                     HashSet<string> buffer = new HashSet<string>();
@@ -98,7 +174,7 @@ namespace RailworksDownloader
             HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
             if (response.IsSuccessStatusCode)
             {
-                GetAllFilesResult jsonObject = JsonConvert.DeserializeObject<GetAllFilesResult>(await response.Content.ReadAsStringAsync());
+                ArrayResult jsonObject = JsonConvert.DeserializeObject<ArrayResult>(await response.Content.ReadAsStringAsync());
                 if (jsonObject.code > 0)
                 {
                     HashSet<string> buffer = new HashSet<string>();
@@ -114,8 +190,6 @@ namespace RailworksDownloader
 
             return null;
         }
-
-
 
         public static async Task ReportDLC(List<SteamManager.DLC> dlcList, Uri apiUrl)
         {
