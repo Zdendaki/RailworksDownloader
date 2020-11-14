@@ -174,7 +174,10 @@ namespace RailworksDownloader
                 }
             });
 
-            TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = false);
+            TotalProgress.Dispatcher.Invoke(() => {
+                TotalProgress.IsIndeterminate = false;
+                DownloadMissing.IsEnabled = true;
+            });
             crawlingComplete = true;
         }
 
@@ -184,7 +187,7 @@ namespace RailworksDownloader
             {
                 SavingGrid.Dispatcher.Invoke(() =>
                 {
-                    if (!Saving && !CheckingDLC)
+                    if (SavingGrid.Visibility == Visibility.Hidden)
                         SavingLabel.Content = type;
                     SavingGrid.Visibility = (Saving || CheckingDLC) ? Visibility.Visible : Visibility.Hidden;
                 });
@@ -222,7 +225,7 @@ namespace RailworksDownloader
 
         private void PathChanged()
         {
-            PathSelected.IsChecked = DownloadMissing.IsEnabled = ScanRailworks.IsEnabled = !string.IsNullOrWhiteSpace(RW.RWPath);
+            PathSelected.IsChecked = ScanRailworks.IsEnabled = !string.IsNullOrWhiteSpace(RW.RWPath);
 
             if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
             {
@@ -235,7 +238,7 @@ namespace RailworksDownloader
 
                 RW = App.Railworks;
 
-                App.PackageManager = new PackageManager(RW.RWPath, ApiUrl);
+                App.PackageManager = new PackageManager(RW.RWPath, ApiUrl, this);
                 PM = App.PackageManager;
 
                 LoadRoutes();
@@ -290,7 +293,7 @@ namespace RailworksDownloader
 
         private void ManagePackages_Click(object sender, RoutedEventArgs e)
         {
-            PackageManagerWindow pmw = new PackageManagerWindow();
+            PackageManagerWindow pmw = new PackageManagerWindow(PM);
             pmw.ShowDialog();
         }
 
@@ -301,6 +304,11 @@ namespace RailworksDownloader
                 if (!string.IsNullOrWhiteSpace(RW.RWPath))
                     ScanRailworks_Click(this, null);
             });
+        }
+
+        private void DownloadMissing_Click(object sender, RoutedEventArgs e)
+        {
+            PM.DownloadDependencies();
         }
     }
 }

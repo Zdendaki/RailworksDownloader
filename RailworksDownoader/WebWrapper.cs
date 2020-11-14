@@ -60,7 +60,6 @@ namespace RailworksDownloader
         public string token { get; set; }
     }
 
-
     public class ArrayResult
     {
         public int code { get; set; }
@@ -72,11 +71,16 @@ namespace RailworksDownloader
     {
         private Uri ApiUrl { get; set; }
 
-        private static readonly HttpClient client = new HttpClient();
+        private static HttpClient Client { get; set; }
 
         public WebWrapper(Uri apiUrl)
         {
             ApiUrl = apiUrl;
+
+            Client = new HttpClient(new HttpClientHandler()
+            {
+                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+            });
         }
 
         public async Task<ObjectResult> DownloadPackage(int packageId, string token)
@@ -84,7 +88,7 @@ namespace RailworksDownloader
             Dictionary<string, string> content = new Dictionary<string, string> { { "token", token }, { "package_id", packageId.ToString() } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
-            HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
+            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
             if (response.IsSuccessStatusCode && response.StatusCode > 0)
             {
                 if (response.Headers.GetValues("Content-Type").FirstOrDefault() == "application/json")
@@ -122,56 +126,31 @@ namespace RailworksDownloader
             Dictionary<string, string> content = new Dictionary<string, string> { { "file", fileToFind } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
-            HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
+            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
             if (response.IsSuccessStatusCode)
                 return new Package((QueryContent)JsonConvert.DeserializeObject<ObjectResult>(await response.Content.ReadAsStringAsync()).content);
 
             return null;
         }
 
-        public async Task<LoginContent> Login(string fileToFind)
+        public static async Task<ObjectResult> Login(string email, string password, Uri ApiUrl)
         {
-            Dictionary<string, string> content = new Dictionary<string, string> { { "file", fileToFind } };
+            Dictionary<string, string> content = new Dictionary<string, string> { { "email", email }, { "password", password} };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
-            HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
+            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "login", encodedContent);
             if (response.IsSuccessStatusCode)
-                return (LoginContent)JsonConvert.DeserializeObject<ObjectResult>(await response.Content.ReadAsStringAsync()).content;
+                return JsonConvert.DeserializeObject<ObjectResult>(await response.Content.ReadAsStringAsync());
 
             return null;
         }
 
-        public async Task<HashSet<string>> GetAllFiles()
+        public async Task<HashSet<string>> QueryArray(string query)
         {
-            Dictionary<string, string> content = new Dictionary<string, string> { { "listFiles", null } };
+            Dictionary<string, string> content = new Dictionary<string, string> { { query, null } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
-            HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
-            if (response.IsSuccessStatusCode)
-            {
-                ArrayResult jsonObject = JsonConvert.DeserializeObject<ArrayResult>(await response.Content.ReadAsStringAsync());
-                if (jsonObject.code > 0)
-                {
-                    HashSet<string> buffer = new HashSet<string>();
-
-                    for (int i = 0; i < jsonObject.content.Length; i++)
-                    {
-                        buffer.Add(NormalizePath(jsonObject.content[i]));
-                    }
-
-                    return buffer;
-                }
-            }
-
-            return null;
-        }
-
-        public async Task<HashSet<string>> GetPaidFiles()
-        {
-            Dictionary<string, string> content = new Dictionary<string, string> { { "listPaid", null } };
-            FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
-
-            HttpResponseMessage response = await client.PostAsync(ApiUrl + "query", encodedContent);
+            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
             if (response.IsSuccessStatusCode)
             {
                 ArrayResult jsonObject = JsonConvert.DeserializeObject<ArrayResult>(await response.Content.ReadAsStringAsync());
@@ -195,7 +174,7 @@ namespace RailworksDownloader
         {
             StringContent encodedContent = new StringContent(JsonConvert.SerializeObject(dlcList), Encoding.UTF8, "application/json");
 
-            await client.PostAsync(apiUrl + "reportDLC", encodedContent);
+            await Client.PostAsync(apiUrl + "reportDLC", encodedContent);
         }
     }
 }

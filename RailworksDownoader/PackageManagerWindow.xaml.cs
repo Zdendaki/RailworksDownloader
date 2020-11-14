@@ -8,10 +8,12 @@ namespace RailworksDownloader
     public partial class PackageManagerWindow : Window
     {
         InstallPackageDialog IPD;
+        PackageManager PM { get; set; }
 
-        public PackageManagerWindow()
+        public PackageManagerWindow(PackageManager pm)
         {
             InitializeComponent();
+            PM = pm;
             IPD = new InstallPackageDialog();
         }
 

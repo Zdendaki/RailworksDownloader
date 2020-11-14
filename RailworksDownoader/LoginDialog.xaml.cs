@@ -1,4 +1,5 @@
 ﻿using ModernWpf.Controls;
+using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,9 +22,14 @@ namespace RailworksDownloader
     /// </summary>
     public partial class LoginDialog : ContentDialog
     {
-        public LoginDialog()
+        PackageManager PM { get; set; }
+        Uri ApiUrl { get; set; }
+        public LoginDialog(PackageManager pm, Uri apiUrl)
         {
             InitializeComponent();
+            PM = pm;
+            ApiUrl = apiUrl;
+            ShowAsync();
         }
 
         private void ContentDialog_SecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
@@ -37,7 +43,18 @@ namespace RailworksDownloader
             }
             else
             {
-
+                Task.Run(async () =>
+                {
+                    ObjectResult result = await WebWrapper.Login(login.Trim(), pass, ApiUrl);
+                    if (result != null && result.code == 1 && ((LoginContent)result.content).privileges >= 0)
+                    {
+                        Settings.Default.Username = login.Trim();
+                        Settings.Default.Password = pass;
+                        Settings.Default.Save();
+                        PM.DownloadDependencies();
+                    } else
+                        args.Cancel = true;
+                }).Wait();
             }
         }
     }
