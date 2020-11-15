@@ -1,4 +1,5 @@
-﻿using RailworksDownloader.Properties;
+﻿using Newtonsoft.Json.Linq;
+using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -108,12 +109,13 @@ namespace RailworksDownloader
 
         public async Task<int> FindFile(string file_name)
         {
-            Package package = InstalledPackages.Where(x => x.FilesContained.Contains(file_name)).First();
-            if (package != null)
+            Package package = InstalledPackages.FirstOrDefault(x => x.FilesContained.Contains(file_name));
+
+            if (package != default)
                 return package.PackageId;
 
-            package = CachedPackages.Where(x => x.FilesContained.Contains(file_name)).First();
-            if (package != null)
+            package = CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(file_name));
+            if (package != default)
                 return package.PackageId;
 
             Package onlinePackage = await WebWrapper.SearchForFile(file_name);
@@ -149,18 +151,19 @@ namespace RailworksDownloader
                     MainWindow.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(this, ApiUrl); });
                     return;
                 }
+
                 string login = Settings.Default.Username;
-                string passwd = Settings.Default.Password;
+                string passwd = Utils.PasswordEncryptor.Decrypt(Settings.Default.Password, login.Trim());
 
-                ObjectResult result = await WebWrapper.Login(login, passwd, ApiUrl);
+                ObjectResult<LoginContent> result = await WebWrapper.Login(login, passwd, ApiUrl);
 
-                if (result == null || result.code != 1 || ((LoginContent)result.content).privileges < 0)
+                if (result == null || result.code != 1 || result.content == null || result.content.privileges < 0)
                 {
                     MainWindow.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(this, ApiUrl); });
                     return;
                 }
 
-                LoginContent loginContent = (LoginContent)result.content;
+                LoginContent loginContent = result.content;
                 string token = loginContent.token;
 
                 HashSet<int> pkgsToDownload = new HashSet<int>();
@@ -192,7 +195,7 @@ namespace RailworksDownloader
                     Task.Run(async () =>
                     {
                         int pkgId = pkgsToDownload.ElementAt(i);
-                        ObjectResult dl_result = await WebWrapper.DownloadPackage(pkgId, token);
+                        ObjectResult<JObject> dl_result = await WebWrapper.DownloadPackage(pkgId, token);
 
                         if (dl_result.code == 1)
                         {

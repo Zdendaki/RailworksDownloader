@@ -28,7 +28,10 @@
                                     <ColumnDefinition Width="7*" />
                                     <ColumnDefinition Width="3*" />
                                 </Grid.ColumnDefinitions>
-                                <Label Grid.Column="0" Content="{Binding Name}" Margin="10,0" VerticalContentAlignment="Center" />
+                                <Label Grid.Column="0" Margin="10,0" VerticalContentAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" />
+                                </Label>
+                                
                                 <Label Grid.Column="1" Content="{Binding State}" Margin="10,0" VerticalContentAlignment="Center" />
                             </Grid>
                         </DataTemplate>
@@ -53,7 +56,9 @@
                                     <ColumnDefinition Width="7*" />
                                     <ColumnDefinition Width="3*" />
                                 </Grid.ColumnDefinitions>
-                                <Label Grid.Column="0" Content="{Binding Name}" Margin="10,0" VerticalContentAlignment="Center" />
+                                <Label Grid.Column="0" Margin="10,0" VerticalContentAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" />
+                                </Label>
                                 <Label Grid.Column="1" Content="{Binding State}" Margin="10,0" VerticalContentAlignment="Center" />
                             </Grid>
                         </DataTemplate>

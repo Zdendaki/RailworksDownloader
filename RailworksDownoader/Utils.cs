@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Xml;
 
 namespace RailworksDownloader
 {
-    public class Utils
+    public static class Utils
     {
-        public class MemoryInformation
+        public static class MemoryInformation
         {
             [DllImport("KERNEL32.DLL")]
             private static extern int OpenProcess(uint dwDesiredAccess, int bInheritHandle, uint dwProcessId);
@@ -49,6 +50,45 @@ namespace RailworksDownloader
                     CloseHandle(pHandle);
                 }
                 return mem;
+            }
+        }
+
+        public static class PasswordEncryptor
+        {
+            public static string Encrypt(string input, string password)
+            {
+                if (string.IsNullOrWhiteSpace(input))
+                    return "";
+                
+                string output = "";
+                
+                for (int i = 0; i < input.Length; i++)
+                {
+                    int inp = input[i];
+                    int pas = password[i % password.Length];
+
+                    output += (char)(inp + pas);
+                }
+
+                return output;
+            }
+
+            public static string Decrypt(string input, string password)
+            {
+                if (string.IsNullOrWhiteSpace(input))
+                    return "";
+
+                string output = "";
+
+                for (int i = 0; i < input.Length; i++)
+                {
+                    int inp = input[i];
+                    int pas = password[i % password.Length];
+
+                    output += (char)(inp - pas);
+                }
+
+                return output;
             }
         }
 

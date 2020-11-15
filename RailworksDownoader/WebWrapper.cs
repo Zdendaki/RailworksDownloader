@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,11 +11,11 @@ using static RailworksDownloader.Utils;
 
 namespace RailworksDownloader
 {
-    public class ObjectResult
+    public class ObjectResult<T>
     {
         public int code { get; set; } = -1;
         public string message { get; set; } = string.Empty;
-        public object content { get; set; }
+        public T content { get; set; }
 
         public ObjectResult() {}
 
@@ -24,7 +25,7 @@ namespace RailworksDownloader
             this.message = message;
         }
 
-        public ObjectResult(int code, string message, object content)
+        public ObjectResult(int code, string message, T content)
         {
             this.code = code;
             this.message = message;
@@ -35,35 +36,55 @@ namespace RailworksDownloader
     public class QueryContent
     {
         public int id { get; set; }
+
         public string file_name { get; set; }
+
         public string display_name { get; set; }
+
         public int category { get; set; }
+
         public int era { get; set; }
+
         public int country { get; set; }
+
         public int version { get; set; }
+
         public int owner { get; set; }
+
         public string created { get; set; }
+
         public string description { get; set; }
+
         public string target_path { get; set; }
+
         public bool paid { get; set; }
+
         public int steamappid { get; set; }
+
         public string[] files { get; set; }
+
         public int[] dependencies { get; set; }
     }
 
     public class LoginContent
     {
         public int userid { get; set; }
+
         public string realname { get; set; }
+
         public string email { get; set; }
+
         public int privileges { get; set; }
+
         public string token { get; set; }
     }
 
     public class ArrayResult
     {
         public int code { get; set; }
+
         public string message { get; set; }
+
         public string[] content { get; set; }
     }
 
@@ -83,7 +104,7 @@ namespace RailworksDownloader
             });
         }
 
-        public async Task<ObjectResult> DownloadPackage(int packageId, string token)
+        public async Task<ObjectResult<JObject>> DownloadPackage(int packageId, string token)
         {
             Dictionary<string, string> content = new Dictionary<string, string> { { "token", token }, { "package_id", packageId.ToString() } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
@@ -93,7 +114,7 @@ namespace RailworksDownloader
             {
                 if (response.Headers.GetValues("Content-Type").FirstOrDefault() == "application/json")
                 {
-                    return JsonConvert.DeserializeObject<ObjectResult>(await response.Content.ReadAsStringAsync());
+                    return JsonConvert.DeserializeObject<ObjectResult<JObject>>(await response.Content.ReadAsStringAsync());
                 }
                 else
                 {
@@ -114,11 +135,11 @@ namespace RailworksDownloader
                         }
                     }
 
-                    return new ObjectResult(1, tempFname);
+                    return new ObjectResult<JObject>(1, tempFname);
                 }
             }
 
-            return new ObjectResult();
+            return new ObjectResult<JObject>();
         }
 
         public async Task<Package> SearchForFile(string fileToFind)
@@ -128,19 +149,19 @@ namespace RailworksDownloader
 
             HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
             if (response.IsSuccessStatusCode)
-                return new Package((QueryContent)JsonConvert.DeserializeObject<ObjectResult>(await response.Content.ReadAsStringAsync()).content);
+                return new Package(JsonConvert.DeserializeObject<ObjectResult<QueryContent>>(await response.Content.ReadAsStringAsync()).content);
 
             return null;
         }
 
-        public static async Task<ObjectResult> Login(string email, string password, Uri ApiUrl)
+        public static async Task<ObjectResult<LoginContent>> Login(string email, string password, Uri ApiUrl)
         {
             Dictionary<string, string> content = new Dictionary<string, string> { { "email", email }, { "password", password} };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
             HttpResponseMessage response = await Client.PostAsync(ApiUrl + "login", encodedContent);
             if (response.IsSuccessStatusCode)
-                return JsonConvert.DeserializeObject<ObjectResult>(await response.Content.ReadAsStringAsync());
+                return JsonConvert.DeserializeObject<ObjectResult<LoginContent>>(await response.Content.ReadAsStringAsync());
 
             return null;
         }

@@ -43,7 +43,9 @@
                                 <ColumnDefinition Width="6*" />
                                 <ColumnDefinition Width="3*" />
                             </Grid.ColumnDefinitions>
-                            <Label Grid.Column="0" Content="{Binding Name}" Margin="10,0" VerticalContentAlignment="Center" />
+                            <Label Grid.Column="0" Margin="10,0" VerticalContentAlignment="Center">
+                                <TextBlock Text="{Binding Name}" />
+                            </Label>
                             <ProgressBar Value="{Binding Progress, Mode=OneWay}" Foreground="{Binding ProgressBackground, Mode=OneWay}" HorizontalAlignment="Stretch" Grid.Column="1" Margin="10,0,25,0" />
                         </Grid>
                     </DataTemplate>

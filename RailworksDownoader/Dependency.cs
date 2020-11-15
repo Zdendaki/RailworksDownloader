@@ -5,10 +5,10 @@ namespace RailworksDownloader
 {
     public enum DependencyState
     {
+        Available,
         Unknown,
         Unavailable,
         Paid,
-        Available,
         Downloaded
     }
 

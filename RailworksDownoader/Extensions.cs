@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,7 +19,7 @@ namespace RailworksDownloader
 
             return (first.Count > second.Count) ?
                 first.IntersectEnumerator(second, EqualityComparer<TSource>.Default) :
-                second.IntersectEnumerator(first, EqualityComparer<TSource>.Default);
+                    second.IntersectEnumerator(first, EqualityComparer<TSource>.Default);
         }
 
         public static IEnumerable<TSource> Intersect<TSource>(this HashSet<TSource> first, HashSet<TSource> second, EqualityComparer<TSource> comparer)
@@ -43,7 +44,10 @@ namespace RailworksDownloader
         {
             foreach (TSource tmp in second)
             {
-                if (first.Contains(tmp)) { yield return tmp; }
+                if (first.Contains(tmp)) 
+                { 
+                    yield return tmp;
+                }
             }
         }
     }

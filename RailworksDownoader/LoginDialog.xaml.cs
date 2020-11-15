@@ -1,4 +1,5 @@
 ﻿using ModernWpf.Controls;
+using Newtonsoft.Json.Linq;
 using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
@@ -45,11 +46,11 @@ namespace RailworksDownloader
             {
                 Task.Run(async () =>
                 {
-                    ObjectResult result = await WebWrapper.Login(login.Trim(), pass, ApiUrl);
-                    if (result != null && result.code == 1 && ((LoginContent)result.content).privileges >= 0)
+                    ObjectResult<LoginContent> result = await WebWrapper.Login(login.Trim(), pass, ApiUrl);
+                    if (result != null && result.code == 1 && result.content?.privileges >= 0)
                     {
                         Settings.Default.Username = login.Trim();
-                        Settings.Default.Password = pass;
+                        Settings.Default.Password = Utils.PasswordEncryptor.Encrypt(pass, login.Trim());
                         Settings.Default.Save();
                         PM.DownloadDependencies();
                     } else
