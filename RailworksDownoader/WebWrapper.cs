@@ -59,7 +59,7 @@ namespace RailworksDownloader
 
         public bool paid { get; set; }
 
-        public int steamappid { get; set; }
+        public int? steamappid { get; set; }
 
         public string[] files { get; set; }
 
@@ -104,7 +104,7 @@ namespace RailworksDownloader
             });
         }
 
-        public async Task<ObjectResult<JObject>> DownloadPackage(int packageId, string token)
+        public async Task<ObjectResult<object>> DownloadPackage(int packageId, string token)
         {
             Dictionary<string, string> content = new Dictionary<string, string> { { "token", token }, { "package_id", packageId.ToString() } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
@@ -112,9 +112,9 @@ namespace RailworksDownloader
             HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
             if (response.IsSuccessStatusCode && response.StatusCode > 0)
             {
-                if (response.Headers.GetValues("Content-Type").FirstOrDefault() == "application/json")
+                if (response.Content.Headers.GetValues("Content-Type").Contains("application/json"))
                 {
-                    return JsonConvert.DeserializeObject<ObjectResult<JObject>>(await response.Content.ReadAsStringAsync());
+                    return JsonConvert.DeserializeObject<ObjectResult<object>>(await response.Content.ReadAsStringAsync());
                 }
                 else
                 {
@@ -135,11 +135,11 @@ namespace RailworksDownloader
                         }
                     }
 
-                    return new ObjectResult<JObject>(1, tempFname);
+                    return new ObjectResult<object>(1, "Package succesfully downloaded!", tempFname);
                 }
             }
 
-            return new ObjectResult<JObject>();
+            return new ObjectResult<object>();
         }
 
         public async Task<Package> SearchForFile(string fileToFind)

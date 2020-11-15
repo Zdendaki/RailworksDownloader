@@ -60,7 +60,7 @@ namespace RailworksDownloader
             Description = packageJson.description;
             TargetPath = packageJson.target_path;
             IsPaid = packageJson.paid;
-            SteamAppID = packageJson.steamappid;
+            SteamAppID = packageJson.steamappid ?? 0;
             FilesContained = new List<string>();
             if (packageJson.files != null)
                 FilesContained = packageJson.files.ToList();
@@ -82,6 +82,8 @@ namespace RailworksDownloader
         public HashSet<string> MissingDeps { get; set; }
 
         private readonly object CachedLock = new object();
+
+        private string Token { get; set; }
 
         private string RWPath { get; set; }
 
@@ -146,25 +148,28 @@ namespace RailworksDownloader
         {
             Task.Run(async () =>
             {
-                if (string.IsNullOrWhiteSpace(Settings.Default.Username) || string.IsNullOrWhiteSpace(Settings.Default.Password))
+                if (Token != default)
                 {
-                    MainWindow.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(this, ApiUrl); });
-                    return;
+                    if (string.IsNullOrWhiteSpace(Settings.Default.Username) || string.IsNullOrWhiteSpace(Settings.Default.Password))
+                    {
+                        MainWindow.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(this, ApiUrl); });
+                        return;
+                    }
+
+                    string login = Settings.Default.Username;
+                    string passwd = Utils.PasswordEncryptor.Decrypt(Settings.Default.Password, login.Trim());
+
+                    ObjectResult<LoginContent> result = await WebWrapper.Login(login, passwd, ApiUrl);
+
+                    if (result == null || result.code != 1 || result.content == null || result.content.privileges < 0)
+                    {
+                        MainWindow.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(this, ApiUrl); });
+                        return;
+                    }
+
+                    LoginContent loginContent = result.content;
+                    Token = loginContent.token;
                 }
-
-                string login = Settings.Default.Username;
-                string passwd = Utils.PasswordEncryptor.Decrypt(Settings.Default.Password, login.Trim());
-
-                ObjectResult<LoginContent> result = await WebWrapper.Login(login, passwd, ApiUrl);
-
-                if (result == null || result.code != 1 || result.content == null || result.content.privileges < 0)
-                {
-                    MainWindow.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(this, ApiUrl); });
-                    return;
-                }
-
-                LoginContent loginContent = result.content;
-                string token = loginContent.token;
 
                 HashSet<int> pkgsToDownload = new HashSet<int>();
 
@@ -195,11 +200,11 @@ namespace RailworksDownloader
                     Task.Run(async () =>
                     {
                         int pkgId = pkgsToDownload.ElementAt(i);
-                        ObjectResult<JObject> dl_result = await WebWrapper.DownloadPackage(pkgId, token);
+                        ObjectResult<object> dl_result = await WebWrapper.DownloadPackage(pkgId, Token);
 
                         if (dl_result.code == 1)
                         {
-                            ZipFile.ExtractToDirectory(dl_result.message, Path.Combine(AssetsPath, CachedPackages.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).Single()));
+                            ZipFile.ExtractToDirectory((string)dl_result.content, Path.Combine(AssetsPath, CachedPackages.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).Single()));
                         }
                     }).Wait();
                 }

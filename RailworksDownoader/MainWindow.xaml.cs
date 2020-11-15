@@ -130,6 +130,8 @@ namespace RailworksDownloader
             }
 
             HashSet<string> existing = await RW.GetMissing(globalDeps);
+
+            globalDeps.ExceptWith(existing);
             HashSet<string> downloadable = await PM.GetDownloadableDependencies(globalDeps);
             HashSet<string> paid = await PM.GetPaidDependencies(globalDeps);
 
