@@ -26,6 +26,7 @@ namespace RailworksDownloader
         internal static Brush Purple = new SolidColorBrush(Color.FromArgb(255, 190, 46, 221));
 
         internal static DownloadDialog DownloadDialog = new DownloadDialog();
+        internal static ContentDialog ContentDialog = new ContentDialog();
 
         private bool Saving = false;
         private bool CheckingDLC = false;
@@ -69,6 +70,8 @@ namespace RailworksDownloader
                 PathChanged();
 
                 Settings.Default.PropertyChanged += PropertyChanged;
+
+                DownloadDialog.Owner = this;
             }
             catch (Exception e)
             {
@@ -134,7 +137,7 @@ namespace RailworksDownloader
             HashSet<string> existing = await RW.GetMissing(globalDeps);
 
             globalDeps.ExceptWith(existing);
-            HashSet<string> downloadable = await PM.GetDownloadableDependencies(globalDeps);
+            HashSet<string> downloadable = await PM.GetDownloadableDependencies(globalDeps, existing, this);
             HashSet<string> paid = await PM.GetPaidDependencies(globalDeps);
 
             RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); });
@@ -242,7 +245,7 @@ namespace RailworksDownloader
 
                 RW = App.Railworks;
 
-                App.PackageManager = new PackageManager(RW.RWPath, ApiUrl, this);
+                App.PackageManager = new PackageManager(ApiUrl, this);
                 PM = App.PackageManager;
 
                 Title = "Railworks download station client - " + RW.RWPath;

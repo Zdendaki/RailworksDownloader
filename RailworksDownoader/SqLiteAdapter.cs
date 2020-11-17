@@ -7,7 +7,7 @@ using static RailworksDownloader.Utils;
 
 namespace RailworksDownloader
 {
-    internal class SqLiteAdapter
+    public class SqLiteAdapter
     {
         internal string DatabasePath { get; set; }
 

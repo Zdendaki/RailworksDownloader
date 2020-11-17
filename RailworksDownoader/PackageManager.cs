@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using ModernWpf.Controls;
+using Newtonsoft.Json.Linq;
 using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
@@ -72,20 +73,16 @@ namespace RailworksDownloader
 
     public class PackageManager
     {
+        public List<Package> InstalledPackages { get; set; }
+
+        public HashSet<Package> CachedPackages { get; set; } = new HashSet<Package>();
+        public HashSet<string> MissingDeps { get; set; }
+
         private readonly SqLiteAdapter SqLiteAdapter = new SqLiteAdapter(Path.GetFullPath("packages.mcf"));
 
         private HashSet<string> DownloadableDeps { get; set; }
 
-        public List<Package> InstalledPackages { get; set; }
-
-        public HashSet<Package> CachedPackages = new HashSet<Package>();
-        public HashSet<string> MissingDeps { get; set; }
-
-        private readonly object CachedLock = new object();
-
-        private string RWPath { get; set; }
-
-        private string AssetsPath { get; set; }
+        private HashSet<int> PkgsToDownload { get; set;} = new HashSet<int>();
 
         private Uri ApiUrl { get; set; }
 
@@ -93,11 +90,9 @@ namespace RailworksDownloader
 
         private MainWindow MainWindow { get; set; }
 
-        public PackageManager(string rwPath, Uri apiUrl, MainWindow mw)
+        public PackageManager(Uri apiUrl, MainWindow mw)
         {
-            RWPath = rwPath;
             ApiUrl = apiUrl;
-            AssetsPath = Path.Combine(RWPath, "Assets");
             MainWindow = mw;
 
             //string commonpath = GetFolderPath(SpecialFolder.CommonApplicationData);
@@ -114,14 +109,16 @@ namespace RailworksDownloader
             if (package != default)
                 return package.PackageId;
 
-            package = CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(file_name));
+            lock (CachedPackages)
+                package = CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(file_name));
+
             if (package != default)
                 return package.PackageId;
 
             Package onlinePackage = await WebWrapper.SearchForFile(file_name);
             if (onlinePackage != null && onlinePackage.PackageId > 0)
             {
-                lock (CachedLock)
+                lock (CachedPackages)
                 {
                     CachedPackages.Add(onlinePackage);
                 }
@@ -131,9 +128,54 @@ namespace RailworksDownloader
             return -1;
         }
 
-        public async Task<HashSet<string>> GetDownloadableDependencies(HashSet<string> globalDependencies)
+        public async Task<HashSet<string>> GetDownloadableDependencies(HashSet<string> globalDependencies, HashSet<string> existing, MainWindow mw)
         {
-            DownloadableDeps = (await WebWrapper.QueryArray("listFiles")).Intersect(globalDependencies).ToHashSet();
+            HashSet<string> allDownloadableDeps = await WebWrapper.QueryArray("listFiles");
+
+            HashSet<string> conflictDeps = existing.Intersect(allDownloadableDeps).Except(InstalledPackages.SelectMany(x => x.FilesContained)).ToHashSet();
+
+            HashSet<int> conflictPackages = new HashSet<int>();
+
+            int maxThreads = Math.Min(Environment.ProcessorCount, conflictDeps.Count);
+            Parallel.For(0, maxThreads, workerId =>
+            {
+                Task.Run(async () =>
+                {
+                    int max = conflictDeps.Count * (workerId + 1) / maxThreads;
+                    for (int i = conflictDeps.Count * workerId / maxThreads; i < max; i++)
+                    {
+                        int id = await FindFile(conflictDeps.ElementAt(i));
+                        if (conflictPackages.Contains(id))
+                            continue;
+
+                        conflictPackages.Add(id);
+                    }
+                }).Wait();
+            });
+
+            for (int i = 0; i < conflictPackages.Count; i++)
+            {
+                int id = conflictPackages.ElementAt(i);
+
+                Task<ContentDialogResult> t = null;
+                mw.Dispatcher.Invoke(() =>
+                {
+                    MainWindow.ContentDialog.Title = "Conflict file found!";
+                    MainWindow.ContentDialog.Content = string.Format("Following package seems to be controlled by DLS but not installed through this app:\n{0}\nPlease decide how to continue!", CachedPackages.FirstOrDefault(x => x.PackageId == id).DisplayName);
+                    MainWindow.ContentDialog.PrimaryButtonText = "Overwrite local";
+                    MainWindow.ContentDialog.SecondaryButtonText = "Keep local";
+                    MainWindow.ContentDialog.Owner = mw;
+                    t = MainWindow.ContentDialog.ShowAsync();
+                });
+
+                ContentDialogResult result = await t;
+                if (result == ContentDialogResult.Primary)
+                {
+                    PkgsToDownload.Add(id);
+                }
+            }
+
+            DownloadableDeps = allDownloadableDeps.Intersect(globalDependencies).ToHashSet();
             return DownloadableDeps;
         }
 
@@ -146,6 +188,8 @@ namespace RailworksDownloader
         {
             Task.Run(async () =>
             {
+                await MainWindow.DownloadDialog.ShowAsync();
+
                 if (App.Token != default)
                 {
                     if (string.IsNullOrWhiteSpace(Settings.Default.Username) || string.IsNullOrWhiteSpace(Settings.Default.Password))
@@ -169,8 +213,6 @@ namespace RailworksDownloader
                     App.Token = loginContent.token;
                 }
 
-                HashSet<int> pkgsToDownload = new HashSet<int>();
-
                 int maxThreads = Math.Min(Environment.ProcessorCount, DownloadableDeps.Count);
                 Parallel.For(0, maxThreads, workerId =>
                 {
@@ -184,17 +226,16 @@ namespace RailworksDownloader
 
                             if (pkgId >= 0)
                             {
-                                lock (pkgsToDownload)
+                                lock (PkgsToDownload)
                                 {
-                                    pkgsToDownload.Add(pkgId);
+                                    PkgsToDownload.Add(pkgId);
                                 }
                             }
                         }).Wait();
                     }
                 });
 
-                MainWindow.DownloadDialog.ShowAsync();
-                MainWindow.DownloadDialog.DownloadFile(pkgsToDownload, CachedPackages, WebWrapper).Wait();
+                MainWindow.DownloadDialog.DownloadFile(PkgsToDownload, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
             });
 
         }

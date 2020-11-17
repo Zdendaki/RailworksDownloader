@@ -18,16 +18,19 @@ namespace RailworksDownloader
         public DownloadDialog()
         {
             InitializeComponent();
+            Title = "Preparing download!";
+            //FileName.Content = "";
         }
 
-        public async Task DownloadFile(HashSet<int> download, HashSet<Package> cached, WebWrapper wrapper)
+        public async Task DownloadFile(HashSet<int> download, HashSet<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
         {           
             for (int i = 0; i < download.Count; i++)
             {
+                Package p = cached.FirstOrDefault(x => x.PackageId == download.ElementAt(i));
                 Dispatcher.Invoke(() =>
                 {
                     Title = $"Downloading packages {i + 1}/{download.Count}";
-                    FileName.Content = cached.FirstOrDefault(x => x.PackageId == download.ElementAt(i))?.DisplayName ?? "#INVALID FILE NAME";
+                    FileName.Content = p?.DisplayName ?? "#INVALID FILE NAME";
                 });
 
                 await Task.Run(async () =>
@@ -37,7 +40,15 @@ namespace RailworksDownloader
 
                     if (dl_result.code == 1)
                     {
-                        ZipFile.ExtractToDirectory((string)dl_result.content, Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First())); // TODO: Overwrite,
+                        using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content)) {
+                            foreach (ZipArchiveEntry e in a.Entries)
+                            {
+                                e.ExtractToFile(Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First()), true);
+                            }
+                        }
+
+                        installedPackages.Add(p);
+                        sqLiteAdapter.SaveInstalledPackage(p);
                     }
                 });
             }
