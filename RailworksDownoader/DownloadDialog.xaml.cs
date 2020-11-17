@@ -2,6 +2,11 @@
 using System.Net;
 using System;
 using System.Windows;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
+using System.IO;
+using System.IO.Compression;
 
 namespace RailworksDownloader
 {
@@ -15,24 +20,29 @@ namespace RailworksDownloader
             InitializeComponent();
         }
 
-        private void DownloadFile()
-        {
-            string filename = "";
-            string path = "";
-
-            try
+        public async Task DownloadFile(HashSet<int> download, HashSet<Package> cached, WebWrapper wrapper)
+        {           
+            for (int i = 0; i < download.Count; i++)
             {
-                using (WebClient wc = new WebClient())
+                Dispatcher.Invoke(() =>
                 {
-                    wc.DownloadProgressChanged += Wc_DownloadProgressChanged;
-                    wc.DownloadFileCompleted += Wc_DownloadFileCompleted;
-                    wc.DownloadFileAsync(new Uri(""), path);
-                }
+                    Title = $"Downloading packages {i + 1}/{download.Count}";
+                    FileName.Content = cached.FirstOrDefault(x => x.PackageId == download.ElementAt(i))?.DisplayName ?? "#INVALID FILE NAME";
+                });
+
+                await Task.Run(async () =>
+                {
+                    int pkgId = download.ElementAt(i);
+                    ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
+
+                    if (dl_result.code == 1)
+                    {
+                        ZipFile.ExtractToDirectory((string)dl_result.content, Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First())); // TODO: Overwrite,
+                    }
+                });
             }
-            catch
-            {
-                MessageBox.Show("Unable to download file", "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+
+            Hide();
         }
 
         private void Wc_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
@@ -52,7 +62,7 @@ namespace RailworksDownloader
 
         private void ContentDialog_SecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
-
+            args.Cancel = true; // TODO: Cancel downloading
         }
     }
 }

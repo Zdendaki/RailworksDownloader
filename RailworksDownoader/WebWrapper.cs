@@ -88,7 +88,7 @@ namespace RailworksDownloader
         public string[] content { get; set; }
     }
 
-    internal class WebWrapper
+    public class WebWrapper
     {
         private Uri ApiUrl { get; set; }
 
@@ -109,12 +109,14 @@ namespace RailworksDownloader
             Dictionary<string, string> content = new Dictionary<string, string> { { "token", token }, { "package_id", packageId.ToString() } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
-            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
+            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "download", encodedContent);
             if (response.IsSuccessStatusCode && response.StatusCode > 0)
             {
-                if (response.Content.Headers.GetValues("Content-Type").Contains("application/json"))
+                if (response.Content.Headers.GetValues("Content-Type").Any(x => x.ToLower().Contains("application/json")))
                 {
-                    return JsonConvert.DeserializeObject<ObjectResult<object>>(await response.Content.ReadAsStringAsync());
+                    var obj =  JsonConvert.DeserializeObject<ObjectResult<object>>(await response.Content.ReadAsStringAsync());
+                    obj.code = 0;
+                    return obj;
                 }
                 else
                 {

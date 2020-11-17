@@ -25,6 +25,8 @@ namespace RailworksDownloader
         internal static Brush Red = new SolidColorBrush(Color.FromArgb(255, 232, 65, 24));
         internal static Brush Purple = new SolidColorBrush(Color.FromArgb(255, 190, 46, 221));
 
+        internal static DownloadDialog DownloadDialog = new DownloadDialog();
+
         private bool Saving = false;
         private bool CheckingDLC = false;
         private Railworks RW;

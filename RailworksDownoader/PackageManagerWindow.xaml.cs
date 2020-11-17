@@ -15,6 +15,8 @@ namespace RailworksDownloader
             InitializeComponent();
             PM = pm;
             IPD = new InstallPackageDialog();
+
+            PackagesList.ItemsSource = pm.InstalledPackages;
         }
 
         private void InstallPackage_Click(object sender, RoutedEventArgs e)

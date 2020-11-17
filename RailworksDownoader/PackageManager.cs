@@ -83,8 +83,6 @@ namespace RailworksDownloader
 
         private readonly object CachedLock = new object();
 
-        private string Token { get; set; }
-
         private string RWPath { get; set; }
 
         private string AssetsPath { get; set; }
@@ -148,7 +146,7 @@ namespace RailworksDownloader
         {
             Task.Run(async () =>
             {
-                if (Token != default)
+                if (App.Token != default)
                 {
                     if (string.IsNullOrWhiteSpace(Settings.Default.Username) || string.IsNullOrWhiteSpace(Settings.Default.Password))
                     {
@@ -168,7 +166,7 @@ namespace RailworksDownloader
                     }
 
                     LoginContent loginContent = result.content;
-                    Token = loginContent.token;
+                    App.Token = loginContent.token;
                 }
 
                 HashSet<int> pkgsToDownload = new HashSet<int>();
@@ -195,19 +193,8 @@ namespace RailworksDownloader
                     }
                 });
 
-                for (int i = 0; i < pkgsToDownload.Count; i++)
-                {
-                    Task.Run(async () =>
-                    {
-                        int pkgId = pkgsToDownload.ElementAt(i);
-                        ObjectResult<object> dl_result = await WebWrapper.DownloadPackage(pkgId, Token);
-
-                        if (dl_result.code == 1)
-                        {
-                            ZipFile.ExtractToDirectory((string)dl_result.content, Path.Combine(AssetsPath, CachedPackages.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).Single()));
-                        }
-                    }).Wait();
-                }
+                MainWindow.DownloadDialog.ShowAsync();
+                MainWindow.DownloadDialog.DownloadFile(pkgsToDownload, CachedPackages, WebWrapper).Wait();
             });
 
         }

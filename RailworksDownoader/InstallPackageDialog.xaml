@@ -9,8 +9,18 @@
     SecondaryButtonClick="ContentDialog_SecondaryButtonClick"
     Margin="10">
 
-    <Grid Height="Auto" MinWidth="450">
-        <ListView MinHeight="100" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+    <Grid Height="Auto" MinWidth="450" Margin="0,0,0,10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="5*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <TextBox x:Name="Search" Grid.Row="0" Margin="0,0,0,10" ui:ControlHelper.PlaceholderText="Search for packages..." />
+        <Button x:Name="SearchButton" Content="Search" Grid.Row="0" Grid.Column="1" Margin="5,0,0,10" HorizontalAlignment="Stretch" />
+        <ListView MinHeight="100" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Row="1" Grid.ColumnSpan="2">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
