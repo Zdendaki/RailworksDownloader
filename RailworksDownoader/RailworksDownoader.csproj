@@ -124,9 +124,6 @@
     <Compile Include="RouteInfo.cs" />
     <Compile Include="SerzReader.cs" />
     <Compile Include="SqLiteAdapter.cs" />
-    <Compile Include="StartupWindow.xaml.cs">
-      <DependentUpon>StartupWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="SteamManager.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="WebWrapper.cs" />
@@ -165,10 +162,6 @@
     <Page Include="RailworksPathDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="StartupWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
   <ItemGroup>

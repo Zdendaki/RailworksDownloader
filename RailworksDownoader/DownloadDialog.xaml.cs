@@ -37,7 +37,7 @@ namespace RailworksDownloader
 
                     if (dl_result.code == 1)
                     {
-                        ZipFile.ExtractToDirectory((string)dl_result.content, Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First())); // TODO: Overwrite
+                        ZipFile.ExtractToDirectory((string)dl_result.content, Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First())); // TODO: Overwrite,
                     }
                 });
             }

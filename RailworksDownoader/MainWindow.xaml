@@ -17,7 +17,7 @@
             <CheckBox x:Name="PathSelected" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="32" IsEnabled="False"/>
             <Button x:Name="SelectRailworksLocation" Content="Select Railworks folder location" HorizontalAlignment="Left" Margin="38,10,0,0" VerticalAlignment="Top" Click="SelectRailworksLocation_Click" />
             <Button x:Name="ScanRailworks" Content="Scan for missing assets" HorizontalAlignment="Left" Margin="254,10,0,10" VerticalAlignment="Top" Click="ScanRailworks_Click" />
-            <ProgressBar x:Name="TotalProgress" VerticalContentAlignment="Stretch" Margin="425,24,35,0" VerticalAlignment="Top" />
+            <ProgressBar x:Name="TotalProgress" VerticalContentAlignment="Stretch" Margin="425,24,10,0" VerticalAlignment="Top" />
         </Grid>
 
         <Grid Grid.Row="1">
@@ -62,10 +62,10 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Label x:Name="SavingLabel" Content="Saving" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="0,10" VerticalAlignment="Center" Height="26" />
+                    <Label x:Name="SavingLabel" Content="Saving" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="10,10,0,10" VerticalAlignment="Center" Height="26" />
                     <ProgressBar Margin="10,0,10,0" VerticalAlignment="Center" IsIndeterminate="True" Grid.Column="1" Height="2" HorizontalAlignment="Stretch"/>
                 </Grid>
-                <Button x:Name="DownloadMissing" Grid.Column="2" IsEnabled="False" Content="Download missing assets" Margin="5,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="32" Click="DownloadMissing_Click" />
+                <Button x:Name="DownloadMissing" Grid.Column="2" IsEnabled="False" Content="Download missing assets" Margin="5,10,10,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="32" Click="DownloadMissing_Click" />
                 <Button x:Name="ManagePackages" Grid.Column="1" IsEnabled="true" Content="Manage packages" HorizontalAlignment="Left" Margin="5,10" VerticalAlignment="Bottom" Click="ManagePackages_Click" Height="32" />
             </Grid>
         </Grid>
