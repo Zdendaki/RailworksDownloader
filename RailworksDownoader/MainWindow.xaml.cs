@@ -243,6 +243,8 @@ namespace RailworksDownloader
                 App.PackageManager = new PackageManager(RW.RWPath, ApiUrl, this);
                 PM = App.PackageManager;
 
+                Title = "Railworks download station client - " + RW.RWPath;
+
                 LoadRoutes();
             }
         }

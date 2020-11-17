@@ -216,7 +216,8 @@ CREATE TABLE file_list (
             if (!File.Exists(DatabasePath))
                 CreateMainCacheFile();
 
-            SQLiteCommand cmd = new SQLiteCommand("DELETE FROM file_list;", MemoryConn);
+            SQLiteCommand cmd = new SQLiteCommand("DELETE FROM file_list WHERE `id` = @id;", MemoryConn);
+            cmd.Parameters.AddWithValue("id", package.PackageId);
             cmd.ExecuteNonQuery();
             cmd.Dispose();
 
