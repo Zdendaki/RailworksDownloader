@@ -43,7 +43,15 @@ namespace RailworksDownloader
                         using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content)) {
                             foreach (ZipArchiveEntry e in a.Entries)
                             {
-                                e.ExtractToFile(Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First()), true);
+                                if (e.Name == string.Empty)
+                                    continue;
+                                
+                                string path = Utils.NormalizePath(Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First()));
+
+                                if (!Directory.Exists(Path.GetDirectoryName(path)))
+                                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+                                e.ExtractToFile(Path.Combine(path, e.FullName), true);
                             }
                         }
 

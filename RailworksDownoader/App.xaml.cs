@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using static RailworksDownloader.Properties.Settings;
 
 namespace RailworksDownloader
 {
@@ -16,5 +17,15 @@ namespace RailworksDownloader
         internal static PackageManager PackageManager { get; set; }
 
         internal static string Token { get; set; }
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            if (Default.UpgradeRequired)
+            {
+                Default.Upgrade();
+                Default.UpgradeRequired = false;
+                Default.Save();
+            }
+        }
     }
 }

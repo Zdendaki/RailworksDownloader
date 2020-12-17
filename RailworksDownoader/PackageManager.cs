@@ -157,6 +157,9 @@ namespace RailworksDownloader
             {
                 int id = conflictPackages.ElementAt(i);
 
+                if (Settings.Default.IgnoredPackages?.Contains(id) == true)
+                    continue;
+
                 Task<ContentDialogResult> t = null;
                 mw.Dispatcher.Invoke(() =>
                 {
@@ -173,6 +176,14 @@ namespace RailworksDownloader
                 {
                     PkgsToDownload.Add(id);
                 }
+                else
+                {
+                    if (Settings.Default.IgnoredPackages == null)
+                        Settings.Default.IgnoredPackages = new List<int>();
+
+                    Settings.Default.IgnoredPackages.Add(id);
+                    Settings.Default.Save();
+                }
             }
 
             DownloadableDeps = allDownloadableDeps.Intersect(globalDependencies).ToHashSet();
@@ -188,9 +199,9 @@ namespace RailworksDownloader
         {
             Task.Run(async () =>
             {
-                await MainWindow.DownloadDialog.ShowAsync();
+                
 
-                if (App.Token != default)
+                if (App.Token == default)
                 {
                     if (string.IsNullOrWhiteSpace(Settings.Default.Username) || string.IsNullOrWhiteSpace(Settings.Default.Password))
                     {
@@ -235,6 +246,7 @@ namespace RailworksDownloader
                     }
                 });
 
+                await MainWindow.Dispatcher.Invoke(async () => { MainWindow.DownloadDialog.ShowAsync(); });
                 MainWindow.DownloadDialog.DownloadFile(PkgsToDownload, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
             });
 
