@@ -14,8 +14,8 @@
             <ColumnDefinition Width="5*" />
             <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
-        <ProgressBar x:Name="DownloadProgress" Grid.Row="0" Grid.ColumnSpan="2" IsIndeterminate="True" />
+        <ProgressBar x:Name="DownloadProgress" Grid.Row="0" Grid.ColumnSpan="2" Value="0"/>
         <Label x:Name="FileName" Content="Downloading Some very large fucking Damo's broken package" Grid.Column="0" Grid.Row="1" />
-        <Label x:Name="Progress" Content="0 %" Grid.Column="1" Grid.Row="1" HorizontalContentAlignment="Right" Visibility="Hidden" />
+        <Label x:Name="Progress" Content="0 %" Grid.Column="1" Grid.Row="1" HorizontalContentAlignment="Right" />
     </Grid>
 </ui:ContentDialog>

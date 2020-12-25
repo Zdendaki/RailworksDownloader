@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Desharp;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -94,6 +95,9 @@ namespace RailworksDownloader
 
         private static HttpClient Client { get; set; }
 
+        internal delegate void OnDownloadProgressChangedEventHandler(float progress);
+        internal event OnDownloadProgressChangedEventHandler OnDownloadProgressChanged;
+
         public WebWrapper(Uri apiUrl)
         {
             ApiUrl = apiUrl;
@@ -109,8 +113,10 @@ namespace RailworksDownloader
             Dictionary<string, string> content = new Dictionary<string, string> { { "token", token }, { "package_id", packageId.ToString() } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
-            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "download", encodedContent);
-            if (response.IsSuccessStatusCode && response.StatusCode > 0)
+            OnDownloadProgressChanged?.Invoke(0);
+            //FIXME: report progress of downloading file with Client.PostAsync
+            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "download", encodedContent).ConfigureAwait(false);
+            if (response.IsSuccessStatusCode)
             {
                 if (response.Content.Headers.GetValues("Content-Type").Any(x => x.ToLower().Contains("application/json")))
                 {
@@ -123,16 +129,39 @@ namespace RailworksDownloader
                     string tempFname = Path.GetTempFileName();
                     ushort BUFF_SIZE = 16 * 1024;
 
+                    long? responseLength = response.Content.Headers.ContentLength;
+                    long responseReadBytes = 0;
+                    float progress = 0;
+
                     using (FileStream oStream = File.OpenWrite(tempFname))
                     {
-                        using (Stream iStream = await response.Content.ReadAsStreamAsync())
+                        if (responseLength.HasValue)
                         {
-                            byte[] buffer = new byte[BUFF_SIZE];
-                            int bytesRead;
-
-                            while ((bytesRead = iStream.Read(buffer, 0, BUFF_SIZE)) > 0)
+                            using (Stream iStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
                             {
-                                oStream.Write(buffer, 0, bytesRead);
+                                byte[] buffer = new byte[BUFF_SIZE];
+                                int bytesRead;
+                                while ((bytesRead = iStream.Read(buffer, 0, BUFF_SIZE)) > 0)
+                                {
+                                    oStream.Write(buffer, 0, bytesRead);
+                                    responseReadBytes += bytesRead;
+                                    progress = ((float)responseReadBytes/responseLength??0)*100;
+                                    OnDownloadProgressChanged?.Invoke(progress);
+                                    //TODO: report progress
+                                }
+                            }
+                        }
+                        else
+                        {
+                            using (Stream iStream = await response.Content.ReadAsStreamAsync())
+                            {
+                                byte[] buffer = new byte[BUFF_SIZE];
+                                int bytesRead;
+
+                                while ((bytesRead = iStream.Read(buffer, 0, BUFF_SIZE)) > 0)
+                                {
+                                    oStream.Write(buffer, 0, bytesRead);
+                                }
                             }
                         }
                     }

@@ -36,6 +36,7 @@ namespace RailworksDownloader
                 await Task.Run(async () =>
                 {
                     int pkgId = download.ElementAt(i);
+                    wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
                     ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
                     if (dl_result.code == 1)
@@ -46,22 +47,39 @@ namespace RailworksDownloader
                                 if (e.Name == string.Empty)
                                     continue;
                                 
-                                string path = Utils.NormalizePath(Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First()));
+                                string path = Path.GetDirectoryName(Utils.NormalizePath(Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName)));
 
-                                if (!Directory.Exists(Path.GetDirectoryName(path)))
-                                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+                                if (!Directory.Exists(path))
+                                    Directory.CreateDirectory(path);
 
-                                e.ExtractToFile(Path.Combine(path, e.FullName), true);
+                                e.ExtractToFile(Path.Combine(path, e.Name), true);
                             }
                         }
 
+                        File.Delete((string)dl_result.content);
                         installedPackages.Add(p);
                         sqLiteAdapter.SaveInstalledPackage(p);
                     }
                 });
             }
 
-            Hide();
+            App.Window.Dispatcher.Invoke(() => Hide());
+        }
+
+        private void Wrapper_OnDownloadProgressChanged(float progress)
+        {
+            App.Window.Dispatcher.Invoke(() =>
+            {
+                if (progress >= 1)
+                {
+                    DownloadProgress.IsIndeterminate = true;
+                } else
+                {
+                    DownloadProgress.IsIndeterminate = false;
+                    DownloadProgress.Value = progress;
+                    Progress.Content = $"{progress} %";
+                }
+            });
         }
 
         private void Wc_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
@@ -70,13 +88,6 @@ namespace RailworksDownloader
                 MessageBox.Show(e.Error.Message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
             else if (!e.Cancelled)
                 MessageBox.Show("File downloaded!", "Download complete", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            
-        }
-
-        private void Wc_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
-        {
-            
         }
 
         private void ContentDialog_SecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)

@@ -221,7 +221,7 @@ CREATE TABLE file_list (
             cmd.ExecuteNonQuery();
             cmd.Dispose();
 
-            cmd = new SQLiteCommand("INSERT INTO package_list (id, file_name, display_name, category, era, country, version, owner, datetime, description, target_path) VALUES (@id,@file_name,@display_name,@category,@era,@country,@version,@owner,@datetime,@desription,@target_path) ON CONFLICT(folder) DO UPDATE SET file_name = @file_name, display_name = @display_name, category = @category, era = @era, country = @country, version = @version, owner = @owner, datetime = @datetime, description = @description, version = @version;", MemoryConn);
+            cmd = new SQLiteCommand("INSERT INTO package_list (id, file_name, display_name, category, era, country, version, owner, datetime, description, target_path) VALUES (@id,@file_name,@display_name,@category,@era,@country,@version,@owner,@datetime,@description,@target_path) ON CONFLICT(id) DO UPDATE SET file_name = @file_name, display_name = @display_name, category = @category, era = @era, country = @country, version = @version, owner = @owner, datetime = @datetime, description = @description, version = @version;", MemoryConn);
             cmd.Parameters.AddWithValue("id", package.PackageId);
             cmd.Parameters.AddWithValue("file_name", package.FileName);
             cmd.Parameters.AddWithValue("display_name", package.DisplayName);
