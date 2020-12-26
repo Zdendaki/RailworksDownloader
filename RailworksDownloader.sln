@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30611.23
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RailworksDownoader", "RailworksDownoader\RailworksDownoader.csproj", "{98F41F75-FB1A-4053-B6F1-2166D31E080A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RailworksDownloader", "RailworksDownloader\RailworksDownloader.csproj", "{98F41F75-FB1A-4053-B6F1-2166D31E080A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
