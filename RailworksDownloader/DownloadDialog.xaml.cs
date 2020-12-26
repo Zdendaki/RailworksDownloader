@@ -102,6 +102,23 @@ namespace RailworksDownloader
             {
                 Package p = cached.FirstOrDefault(x => x.PackageId == download.ElementAt(i));
 
+                if (p == null)
+                {
+                    App.Window.Dispatcher.Invoke(() =>
+                    {
+                        MainWindow.ErrorDialog = new ContentDialog()
+                        {
+                            Title = "Critical error",
+                            Content = "Attempted to download non cached package!",
+                            SecondaryButtonText = "OK",
+                            Owner = App.Window
+                        };
+
+                        MainWindow.ErrorDialog.ShowAsync();
+                    });
+                    continue;
+                }
+
                 Dispatcher.Invoke(() =>
                 {
                     Title = $"Downloading packages {i + 1}/{download.Count}";

@@ -35,6 +35,7 @@ namespace RailworksDownloader
         private Railworks RW;
         private PackageManager PM;
         private bool crawlingComplete = false;
+        private bool loadingComplete = false;
         private bool exitConfirmed = false;
 
         public MainWindow()
@@ -116,6 +117,8 @@ namespace RailworksDownloader
 
         internal async void RW_CrawlingComplete()
         {
+            crawlingComplete = true;
+
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.Value = 100);
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = true);
 
@@ -166,20 +169,22 @@ namespace RailworksDownloader
                             deps.Add(new Dependency(dep, state, isScenario, isRoute));
                         }
                     }
-                    RW.Routes[_i].Dependencies.Clear();
-                    RW.Routes[_i].ScenarioDeps.Clear();
+                    /*RW.Routes[_i].Dependencies.Clear();
+                    RW.Routes[_i].ScenarioDeps.Clear();*/
                     RW.Routes[_i].AllDependencies = null;
                     RW.Routes[_i].ParsedDependencies = new DependenciesList(deps);
                     RW.Routes[_i].Redraw();
                 }
             });
 
+            loadingComplete = true;
             TotalProgress.Dispatcher.Invoke(() =>
             {
                 TotalProgress.IsIndeterminate = false;
                 DownloadMissing.IsEnabled = true;
+                ScanRailworks.IsEnabled = true;
+                ScanRailworks.Content = "Rescan assets...";
             });
-            crawlingComplete = true;
 
             new Task(() =>
             {
@@ -277,15 +282,22 @@ namespace RailworksDownloader
                 SelectRailworksLocation.IsEnabled = false;
                 TotalProgress.Value = 0;
             });
-            crawlingComplete = false;
-            RW.RunAllCrawlers();
+            loadingComplete = false;
+            if (!crawlingComplete)
+            {
+                crawlingComplete = false;
+                RW.RunAllCrawlers();
+            } else
+            {
+                RW_CrawlingComplete();
+            }
         }
 
         private void ListViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             SWC.ListViewItem item = (SWC.ListViewItem)sender;
 
-            if (item?.IsSelected == true && crawlingComplete)
+            if (item?.IsSelected == true && crawlingComplete && loadingComplete)
             {
                 DependencyWindow dw = new DependencyWindow((RouteInfo)item.Content);
                 dw.ShowDialog();

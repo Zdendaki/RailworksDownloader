@@ -451,13 +451,13 @@ namespace RailworksDownloader
         public void ReceiveMSMQ()
         {
             string queueFile = Path.Combine(Path.GetTempPath(), "DLS.queue");
-            List<string> queuedPkgs = File.Exists(queueFile) ? File.ReadAllText(queueFile).Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList() : new List<string>();
+            HashSet<string> queuedPkgs = File.Exists(queueFile) ? File.ReadAllText(queueFile).Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToHashSet() : new HashSet<string>();
             int numElems = queuedPkgs.Count;
 
             if (numElems > 0)
             {
                 MainWindow.Dispatcher.Invoke(() => { MainWindow.Activate(); });
-                int idToDownload = Convert.ToInt32(queuedPkgs[0]);
+                int idToDownload = Convert.ToInt32(queuedPkgs.First());
                 if (!InstalledPackages.Exists(x => x.PackageId == idToDownload))
                 {
                     Task.Run(async () =>
@@ -497,12 +497,25 @@ namespace RailworksDownloader
                 }
                 else
                 {
-                    //FIXME: replace message box with better designed one
-                    MessageBox.Show("This package is already downloaded!");
-                }
-                queuedPkgs.RemoveAt(0);
+                    App.Window.Dispatcher.Invoke(() =>
+                    {
+                        MainWindow.ErrorDialog = new ContentDialog()
+                        {
+                            Title = "Cannot download package",
+                            Content = "This package is already downloaded.",
+                            SecondaryButtonText = "OK",
+                            Owner = App.Window
+                        };
 
-                System.IO.File.WriteAllText(queueFile, string.Join(",", queuedPkgs));
+                        MainWindow.ErrorDialog.ShowAsync();
+                    });
+                }
+                queuedPkgs.Remove(queuedPkgs.First());
+
+                File.WriteAllText(queueFile, string.Join(",", queuedPkgs));
+
+                if (numElems > 1)
+                    ReceiveMSMQ();
             }
         }
     }

@@ -1,7 +1,9 @@
-﻿using System;
+﻿using ModernWpf.Controls;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using static RailworksDownloader.Properties.Settings;
 
@@ -34,7 +36,7 @@ namespace RailworksDownloader
                         if (int.TryParse(parts[1], out int pkgId))
                         {
                             string queueFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "DLS.queue");
-                            List<string> queuedPkgs = System.IO.File.Exists(queueFile) ? System.IO.File.ReadAllText(queueFile).Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries).ToList() : new List<string>();
+                            HashSet<string> queuedPkgs = System.IO.File.Exists(queueFile) ? System.IO.File.ReadAllText(queueFile).Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries).ToHashSet() : new HashSet<string>();
                             queuedPkgs.Add(pkgId.ToString());
                             System.IO.File.WriteAllText(queueFile, string.Join(",", queuedPkgs));
                         }
