@@ -4,7 +4,6 @@ using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -39,46 +38,39 @@ namespace RailworksDownloader
 
         public MainWindow()
         {
-            try
+            InitializeComponent();
+
+            App.Window = this;
+
+            App.SteamManager = new SteamManager();
+
+            Closing += MainWindowDialog_Closing;
+
+            string savedRWPath = Settings.Default.RailworksLocation;
+            App.Railworks = new Railworks(string.IsNullOrWhiteSpace(App.SteamManager.RWPath) ? savedRWPath : App.SteamManager.RWPath);
+            App.Railworks.ProgressUpdated += RW_ProgressUpdated;
+            App.Railworks.RouteSaving += RW_RouteSaving;
+            App.Railworks.CrawlingComplete += RW_CrawlingComplete;
+
+            RW = App.Railworks;
+
+            if (string.IsNullOrWhiteSpace(RW.RWPath))
             {
-                InitializeComponent();
-
-                App.Window = this;
-
-                App.SteamManager = new SteamManager();
-
-                Closing += MainWindowDialog_Closing;
-
-                string savedRWPath = Settings.Default.RailworksLocation;
-                App.Railworks = new Railworks(string.IsNullOrWhiteSpace(App.SteamManager.RWPath) ? savedRWPath : App.SteamManager.RWPath);
-                App.Railworks.ProgressUpdated += RW_ProgressUpdated;
-                App.Railworks.RouteSaving += RW_RouteSaving;
-                App.Railworks.CrawlingComplete += RW_CrawlingComplete;
-
-                RW = App.Railworks;
-
-                if (string.IsNullOrWhiteSpace(RW.RWPath))
-                {
-                    RailworksPathDialog rpd = new RailworksPathDialog();
-                    rpd.ShowAsync();
-                }
-
-                if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
-                {
-                    Settings.Default.RailworksLocation = RW.RWPath;
-                    Settings.Default.Save();
-                }
-
-                PathChanged();
-
-                Settings.Default.PropertyChanged += PropertyChanged;
-
-                DownloadDialog.Owner = this;
+                RailworksPathDialog rpd = new RailworksPathDialog();
+                rpd.ShowAsync();
             }
-            catch (Exception e)
+
+            if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
             {
-                Desharp.Debug.Log(e, Desharp.Level.DEBUG);
+                Settings.Default.RailworksLocation = RW.RWPath;
+                Settings.Default.Save();
             }
+
+            PathChanged();
+
+            Settings.Default.PropertyChanged += PropertyChanged;
+
+            DownloadDialog.Owner = this;
 
             RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
             key.SetValue("URL Protocol", "");
@@ -87,17 +79,10 @@ namespace RailworksDownloader
 
             Task.Run(async () =>
             {
-                try
-                {
-                    RW_CheckingDLC(false);
-                    List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
-                    await WebWrapper.ReportDLC(dlcList, ApiUrl);
-                    RW_CheckingDLC(true);
-                }
-                catch (Exception e)
-                {
-                    Desharp.Debug.Log(e, Desharp.Level.DEBUG);
-                }
+                RW_CheckingDLC(false);
+                List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
+                await WebWrapper.ReportDLC(dlcList, ApiUrl);
+                RW_CheckingDLC(true);
             });
         }
 
@@ -105,7 +90,7 @@ namespace RailworksDownloader
         {
             if (exitConfirmed == true)
                 return;
-            
+
             if (Saving || CheckingDLC)
             {
                 e.Cancel = true;
@@ -188,7 +173,8 @@ namespace RailworksDownloader
                 }
             });
 
-            TotalProgress.Dispatcher.Invoke(() => {
+            TotalProgress.Dispatcher.Invoke(() =>
+            {
                 TotalProgress.IsIndeterminate = false;
                 DownloadMissing.IsEnabled = true;
             });
@@ -284,21 +270,14 @@ namespace RailworksDownloader
 
         private void ScanRailworks_Click(object sender, RoutedEventArgs e)
         {
-            try
+            ScanRailworks.Dispatcher.Invoke(() =>
             {
-                ScanRailworks.Dispatcher.Invoke(() =>
-                {
-                    ScanRailworks.IsEnabled = false;
-                    SelectRailworksLocation.IsEnabled = false;
-                    TotalProgress.Value = 0;
-                });
-                crawlingComplete = false;
-                RW.RunAllCrawlers();
-            }
-            catch (Exception ex)
-            {
-                Desharp.Debug.Log(ex, Desharp.Level.DEBUG);
-            }
+                ScanRailworks.IsEnabled = false;
+                SelectRailworksLocation.IsEnabled = false;
+                TotalProgress.Value = 0;
+            });
+            crawlingComplete = false;
+            RW.RunAllCrawlers();
         }
 
         private void ListViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e)

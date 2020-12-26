@@ -1,20 +1,8 @@
 ﻿using ModernWpf.Controls;
-using Newtonsoft.Json.Linq;
 using RailworksDownloader.Properties;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace RailworksDownloader
 {
@@ -54,7 +42,7 @@ namespace RailworksDownloader
                         Settings.Default.Username = login.Trim();
                         Settings.Default.Password = Utils.PasswordEncryptor.Encrypt(pass, login.Trim());
                         Settings.Default.Save();
-                        switch(Invoker)
+                        switch (Invoker)
                         {
                             case 0:
                                 PM.DownloadDependencies();
@@ -63,7 +51,8 @@ namespace RailworksDownloader
                                 PM.CheckUpdates();
                                 break;
                         }
-                    } else
+                    }
+                    else
                     {
                         args.Cancel = true;
                         //FIXME: replace message box with better designed one

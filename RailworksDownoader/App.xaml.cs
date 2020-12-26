@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Messaging;
 using System.Windows;
-using System.Windows.Documents;
 using static RailworksDownloader.Properties.Settings;
 
 namespace RailworksDownloader
@@ -45,7 +44,7 @@ namespace RailworksDownloader
 
             string thisprocessname = Process.GetCurrentProcess().ProcessName;
             if (Process.GetProcesses().Count(p => p.ProcessName == thisprocessname) > 1)
-                Shutdown();
+                Environment.Exit(0);
 
             if (Default.UpgradeRequired)
             {

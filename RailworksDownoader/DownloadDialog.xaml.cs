@@ -1,12 +1,11 @@
 ﻿using ModernWpf.Controls;
-using System.Net;
 using System;
-using System.Windows;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace RailworksDownloader
 {
@@ -60,7 +59,8 @@ namespace RailworksDownloader
                         }
                         installedPackages[installedPackages.FindIndex(x => x.PackageId == pkgId)] = p;
                         sqLiteAdapter.SaveInstalledPackage(p);
-                        new Task(() => {
+                        new Task(() =>
+                        {
                             sqLiteAdapter.FlushToFile(true);
                         }).Start();
                     }
@@ -110,7 +110,8 @@ namespace RailworksDownloader
                     }
                     installedPackages.Add(download);
                     sqLiteAdapter.SaveInstalledPackage(download);
-                    new Task(() => {
+                    new Task(() =>
+                    {
                         sqLiteAdapter.FlushToFile(true);
                     }).Start();
                 }
@@ -145,12 +146,13 @@ namespace RailworksDownloader
 
                     if (dl_result.code == 1)
                     {
-                        using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content)) {
+                        using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
+                        {
                             foreach (ZipArchiveEntry e in a.Entries)
                             {
                                 if (e.Name == string.Empty)
                                     continue;
-                                
+
                                 string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName));
 
                                 if (!Directory.Exists(path))
@@ -161,10 +163,11 @@ namespace RailworksDownloader
                         }
                         installedPackages.Add(p);
                         sqLiteAdapter.SaveInstalledPackage(p);
-                        new Task(() => {
+                        new Task(() =>
+                        {
                             sqLiteAdapter.FlushToFile(true);
                         }).Start();
-                    } 
+                    }
                     else
                     {
                         //FIXME: replace message box with better designed one
@@ -186,7 +189,8 @@ namespace RailworksDownloader
                 {
                     DownloadProgress.IsIndeterminate = true;
                     Progress.Content = "Installing...";
-                } else
+                }
+                else
                 {
                     DownloadProgress.IsIndeterminate = false;
                     DownloadProgress.Value = progress;

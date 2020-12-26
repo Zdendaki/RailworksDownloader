@@ -97,40 +97,29 @@ namespace RailworksDownloader
         /// <returns></returns>
         public void Start()
         {
-            try
+            Task t = Task.Run(async () =>
             {
-                Task t = Task.Run(async () =>
+                // If route directory exists
+                if (Directory.Exists(RoutePath))
                 {
-                    // If route directory exists
-                    if (Directory.Exists(RoutePath))
+                    // Counts size of all files
+                    AllFilesSize = CountAllFiles();
+
+                    // Find all dependencies
+                    await GetDependencies();
+
+                    // If crawling skipped because cache or inaccuracy, adds to 100 %
+                    if (PercentProgress != 100)
                     {
-                        // Counts size of all files
-                        AllFilesSize = CountAllFiles();
-
-                        // Find all dependencies
-                        await GetDependencies();
-
-                        // If crawling skipped because cache or inaccuracy, adds to 100 %
-                        if (PercentProgress != 100)
-                        {
-                            DeltaProgress?.Invoke(100f - PercentProgress);
-                            PercentProgress = 100;
-                            ProgressUpdated?.Invoke(PercentProgress);
-                        }
+                        DeltaProgress?.Invoke(100f - PercentProgress);
+                        PercentProgress = 100;
+                        ProgressUpdated?.Invoke(PercentProgress);
                     }
+                }
 
-                    // Crawling complete event
-                    Complete?.Invoke();
-                });
-            }
-            catch (Exception e)
-            {
-                Desharp.Debug.Log(e, Desharp.Level.DEBUG);
-
-                // store exception with all inner exceptions and everything else
-                // you need to know later in exceptions.html or exceptions.log file
-                Desharp.Debug.Log(e.ToString());
-            }
+                // Crawling complete event
+                Complete?.Invoke();
+            });
         }
 
         /// <summary>
@@ -139,32 +128,7 @@ namespace RailworksDownloader
         /// <param name="file"></param>
         private void ReportProgress(string file)
         {
-            float delta;
-
-            lock (ProgressLock)
-            {
-                Progress += GetFileSize(file);
-            }
-
-            Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize + "\nRoute: " + RoutePath);
-            if (Progress <= AllFilesSize)
-            {
-
-                if (AllFilesSize > 0)
-                {
-                    PercentProgress = Progress * 100f / AllFilesSize;
-                    delta = (float)(GetFileSize(file) * 100.0f / AllFilesSize);
-                }
-                else
-                {
-                    PercentProgress = 100f;
-                    delta = 100f;
-                }
-
-                // Invoke progress events
-                ProgressUpdated?.Invoke(PercentProgress);
-                DeltaProgress?.Invoke(delta);
-            }
+            ReportProgress(GetFileSize(file));
         }
         private void ReportProgress(long fsize)
         {
@@ -575,7 +539,7 @@ namespace RailworksDownloader
             catch (Exception e)
             {
                 Desharp.Debug.Log(e);
-                Debug.Assert(false, "Nastala kritická chyba při čtení souboru ZIP Entry!!!");
+                Debug.Assert(false, "Nastala kritická chyba při čtení ZIP Entry!!!");
             }
         }
 

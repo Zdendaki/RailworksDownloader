@@ -1,12 +1,9 @@
 ﻿using ModernWpf.Controls;
-using Newtonsoft.Json.Linq;
 using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Messaging;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -84,7 +81,7 @@ namespace RailworksDownloader
 
         private HashSet<string> DownloadableDeps { get; set; }
 
-        private HashSet<int> PkgsToDownload { get; set;} = new HashSet<int>();
+        private HashSet<int> PkgsToDownload { get; set; } = new HashSet<int>();
 
         private Uri ApiUrl { get; set; }
 
@@ -315,7 +312,7 @@ namespace RailworksDownloader
                 watcher.Changed += OnChanged;
                 watcher.EnableRaisingEvents = true;
 
-                while (true);
+                while (true) ;
             }
         }
 
@@ -343,7 +340,8 @@ namespace RailworksDownloader
                         MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); });
                         MainWindow.DownloadDialog.DownloadPackage(packageToDownload, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
                     }).Wait();
-                } else
+                }
+                else
                 {
                     //FIXME: replace message box with better designed one
                     MessageBox.Show("This package is already downloaded!");

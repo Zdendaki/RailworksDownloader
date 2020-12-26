@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Xml;
 
 namespace RailworksDownloader
@@ -59,9 +58,9 @@ namespace RailworksDownloader
             {
                 if (string.IsNullOrWhiteSpace(input))
                     return "";
-                
+
                 string output = "";
-                
+
                 for (int i = 0; i < input.Length; i++)
                 {
                     int inp = input[i];
@@ -112,7 +111,7 @@ namespace RailworksDownloader
             public static bool IsCompressedData(string fname)
             {
                 byte[] buff = new byte[4];
-                using(Stream fs = File.OpenRead(fname))
+                using (Stream fs = File.OpenRead(fname))
                 {
                     fs.Read(buff, 0, buff.Length);
                 }

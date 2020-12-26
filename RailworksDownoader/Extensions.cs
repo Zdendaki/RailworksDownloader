@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -44,8 +43,8 @@ namespace RailworksDownloader
         {
             foreach (TSource tmp in second)
             {
-                if (first.Contains(tmp)) 
-                { 
+                if (first.Contains(tmp))
+                {
                     yield return tmp;
                 }
             }

@@ -193,26 +193,19 @@ namespace RailworksDownloader
 
         internal void RunAllCrawlers()
         {
-            try
+            InitCrawlers();
+
+            APDependencies.Clear();
+
+            int maxThreads = Math.Min(Environment.ProcessorCount, Routes.Count);
+            Parallel.For(0, maxThreads, workerId =>
             {
-                InitCrawlers();
-
-                APDependencies.Clear();
-
-                int maxThreads = Math.Min(Environment.ProcessorCount, Routes.Count);
-                Parallel.For(0, maxThreads, workerId =>
+                int max = Routes.Count * (workerId + 1) / maxThreads;
+                for (int i = Routes.Count * workerId / maxThreads; i < max; i++)
                 {
-                    int max = Routes.Count * (workerId + 1) / maxThreads;
-                    for (int i = Routes.Count * workerId / maxThreads; i < max; i++)
-                    {
-                        Routes[i].Crawler.Start();
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                Desharp.Debug.Log(e, Desharp.Level.DEBUG);
-            }
+                    Routes[i].Crawler.Start();
+                }
+            });
         }
 
         private void Complete()
