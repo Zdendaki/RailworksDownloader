@@ -7,8 +7,9 @@ namespace RailworksDownloader
     /// </summary>
     public partial class PackageManagerWindow : Window
     {
-        InstallPackageDialog IPD;
-        PackageManager PM { get; set; }
+        private readonly InstallPackageDialog IPD;
+
+        private PackageManager PM { get; set; }
 
         public PackageManagerWindow(PackageManager pm)
         {

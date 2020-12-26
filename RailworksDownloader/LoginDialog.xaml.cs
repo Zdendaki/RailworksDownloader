@@ -11,9 +11,10 @@ namespace RailworksDownloader
     /// </summary>
     public partial class LoginDialog : ContentDialog
     {
-        PackageManager PM { get; set; }
-        int Invoker { get; set; } //0 - DownloadDeps, 1 - CheckUpates
-        Uri ApiUrl { get; set; }
+        private PackageManager PM { get; set; }
+        private int Invoker { get; set; } //0 - DownloadDeps, 1 - CheckUpates
+        private Uri ApiUrl { get; set; }
+
         public LoginDialog(PackageManager pm, Uri apiUrl, int invoker)
         {
             InitializeComponent();
@@ -31,6 +32,8 @@ namespace RailworksDownloader
             if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(pass))
             {
                 args.Cancel = true;
+                ErrorLabel.Content = "You haven't filled all required fields.";
+                ErrorLabel.Visibility = Visibility.Visible;
             }
             else
             {
@@ -55,8 +58,15 @@ namespace RailworksDownloader
                     else
                     {
                         args.Cancel = true;
-                        //FIXME: replace message box with better designed one
-                        MessageBox.Show(result.message, "Login error!");
+
+                        new Task(() =>
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                ErrorLabel.Content = result.message;
+                                ErrorLabel.Visibility = Visibility.Visible;
+                            });
+                        }).Start();
                     }
                 }).Wait();
             }

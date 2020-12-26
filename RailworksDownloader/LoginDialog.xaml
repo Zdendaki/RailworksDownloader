@@ -14,6 +14,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="*" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
@@ -26,5 +27,6 @@
         <PasswordBox Grid.Row="2" x:Name="Password" Margin="0,10,0,0" VerticalAlignment="Top" ui:ControlHelper.PlaceholderText="Password..." Grid.ColumnSpan="2" />
         <CheckBox Grid.Row="3" Grid.Column="0" Content="Stay logged in" Margin="0,5,10,0" />
         <TextBlock Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" Margin="0,5,0,0"><Hyperlink NavigateUri="https://dls.rw.jachyhm.cz">Forgot passord</Hyperlink></TextBlock>
+        <Label x:Name="ErrorLabel" Grid.Row="4" Grid.ColumnSpan="2" Content="ASDFGHHJK" Padding="10,5" Background="#c23616" Foreground="White" Margin="0,5" FontWeight="Medium" Visibility="Collapsed" />
     </Grid>
 </ui:ContentDialog>

@@ -18,7 +18,7 @@ namespace RailworksDownloader
         private SQLiteConnection MemoryConn { get; set; }
         private SQLiteConnection FileConn { get; set; }
 
-        private object DBLock = new object();
+        private readonly object DBLock = new object();
 
         public SqLiteAdapter(string path)
         {

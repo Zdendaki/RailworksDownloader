@@ -28,6 +28,7 @@ namespace RailworksDownloader
 
         internal static DownloadDialog DownloadDialog = new DownloadDialog();
         internal static ContentDialog ContentDialog = new ContentDialog();
+        internal static ContentDialog ErrorDialog = new ContentDialog();
 
         private bool Saving = false;
         private bool CheckingDLC = false;
@@ -103,7 +104,7 @@ namespace RailworksDownloader
                     SecondaryButtonText = "No"
                 };
 
-                var result = dialog.ShowAsync();
+                Task<ContentDialogResult> result = dialog.ShowAsync();
 
                 exitConfirmed = (await result) == ContentDialogResult.Primary;
                 if (exitConfirmed)

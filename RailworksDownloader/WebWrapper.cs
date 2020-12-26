@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -102,7 +103,7 @@ namespace RailworksDownloader
 
             Client = new HttpClient(new HttpClientHandler()
             {
-                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
             });
         }
 
@@ -123,74 +124,17 @@ namespace RailworksDownloader
             string tempFname = Path.GetTempFileName();
             await webClient.DownloadFileTaskAsync(url, tempFname);
 
-            if (Utils.ZipTools.IsCompressedData(tempFname))
+            if (ZipTools.IsCompressedData(tempFname))
             {
                 return new ObjectResult<object>(1, "Package succesfully downloaded!", tempFname);
             }
             else
             {
-                var obj = JsonConvert.DeserializeObject<ObjectResult<object>>(File.ReadAllText(tempFname));
+                ObjectResult<object> obj = JsonConvert.DeserializeObject<ObjectResult<object>>(File.ReadAllText(tempFname));
                 obj.code = 0;
                 obj.content = tempFname;
                 return obj;
             }
-
-            //FIXME: report progress of downloading file with Client.PostAsync
-            /*HttpResponseMessage response = await Client.PostAsync(ApiUrl + "download", encodedContent).ConfigureAwait(false);
-            if (response.IsSuccessStatusCode)
-            {
-                if (response.Content.Headers.GetValues("Content-Type").Any(x => x.ToLower().Contains("application/json")))
-                {
-                    var obj =  JsonConvert.DeserializeObject<ObjectResult<object>>(await response.Content.ReadAsStringAsync());
-                    obj.code = 0;
-                    return obj;
-                }
-                else
-                {
-                    ushort BUFF_SIZE = 16 * 1024;
-
-                    long? responseLength = response.Content.Headers.ContentLength;
-                    long responseReadBytes = 0;
-                    float progress = 0;
-
-                    using (FileStream oStream = File.OpenWrite(tempFname))
-                    {
-                        if (responseLength.HasValue)
-                        {
-                            using (Stream iStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                            {
-                                byte[] buffer = new byte[BUFF_SIZE];
-                                int bytesRead;
-                                while ((bytesRead = iStream.Read(buffer, 0, BUFF_SIZE)) > 0)
-                                {
-                                    oStream.Write(buffer, 0, bytesRead);
-                                    responseReadBytes += bytesRead;
-                                    progress = ((float)responseReadBytes/responseLength??0)*100;
-                                    OnDownloadProgressChanged?.Invoke(progress);
-                                    //TODO: report progress
-                                }
-                            }
-                        }
-                        else
-                        {
-                            using (Stream iStream = await response.Content.ReadAsStreamAsync())
-                            {
-                                byte[] buffer = new byte[BUFF_SIZE];
-                                int bytesRead;
-
-                                while ((bytesRead = iStream.Read(buffer, 0, BUFF_SIZE)) > 0)
-                                {
-                                    oStream.Write(buffer, 0, bytesRead);
-                                }
-                            }
-                        }
-                    }
-
-                    return new ObjectResult<object>(1, "Package succesfully downloaded!", tempFname);
-                }
-            }
-
-            return new ObjectResult<object>();*/
         }
 
         public async Task<Package> SearchForFile(string fileToFind)
@@ -269,10 +213,10 @@ namespace RailworksDownloader
             HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
             if (response.IsSuccessStatusCode)
             {
-                ObjectResult<Dictionary<int, int>> jsonObject = JsonConvert.DeserializeObject<ObjectResult<Dictionary<int, int>>>(await response.Content.ReadAsStringAsync());
+                ObjectResult<Dictionary<string, int>> jsonObject = JsonConvert.DeserializeObject<ObjectResult<Dictionary<string, int>>>(await response.Content.ReadAsStringAsync());
                 if (jsonObject.code > 0)
                 {
-                    return jsonObject.content;
+                    return jsonObject.content.ToDictionary(x => int.Parse(x.Key), x => x.Value); ;
                 }
             }
 

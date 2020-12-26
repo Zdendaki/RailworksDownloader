@@ -66,8 +66,27 @@ namespace RailworksDownloader
                     }
                     else
                     {
-                        //FIXME: replace message box with better designed one
-                        MessageBox.Show((string)dl_result.message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
+                        //FIXED: replace message box with better designed one
+
+                        new Task(() =>
+                        {
+
+                            App.Window.Dispatcher.Invoke(() =>
+                            {
+                                MainWindow.ErrorDialog = new ContentDialog()
+                                {
+                                    Title = "Error occured while downloading",
+                                    Content = dl_result.message,
+                                    SecondaryButtonText = "OK",
+                                    Owner = App.Window
+                                };
+
+                                MainWindow.ErrorDialog.ShowAsync();
+                            });
+
+                        }).Start();
+
+                        //MessageBox.Show((string)dl_result.message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
 
                     File.Delete((string)dl_result.content);
@@ -77,61 +96,12 @@ namespace RailworksDownloader
             App.Window.Dispatcher.Invoke(() => Hide());
         }
 
-        public async Task DownloadPackage(Package download, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                Title = $"Downloading package";
-                FileName.Content = download?.DisplayName ?? "#INVALID FILE NAME";
-            });
-
-            await Task.Run(async () =>
-            {
-                int pkgId = download.PackageId;
-                wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
-                ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
-
-                if (dl_result.code == 1)
-                {
-                    using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
-                    {
-                        foreach (ZipArchiveEntry e in a.Entries)
-                        {
-                            if (e.Name == string.Empty)
-                                continue;
-
-                            string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, download.TargetPath, e.FullName));
-
-                            if (!Directory.Exists(path))
-                                Directory.CreateDirectory(path);
-
-                            e.ExtractToFile(Path.Combine(path, e.Name), true);
-                        }
-                    }
-                    installedPackages.Add(download);
-                    sqLiteAdapter.SaveInstalledPackage(download);
-                    new Task(() =>
-                    {
-                        sqLiteAdapter.FlushToFile(true);
-                    }).Start();
-                }
-                else
-                {
-                    //FIXME: replace message box with better designed one
-                    MessageBox.Show((string)dl_result.message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-
-                File.Delete((string)dl_result.content);
-            });
-
-            App.Window.Dispatcher.Invoke(() => Hide());
-        }
-
         public async Task DownloadPackages(HashSet<int> download, List<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
         {
             for (int i = 0; i < download.Count; i++)
             {
                 Package p = cached.FirstOrDefault(x => x.PackageId == download.ElementAt(i));
+
                 Dispatcher.Invoke(() =>
                 {
                     Title = $"Downloading packages {i + 1}/{download.Count}";
@@ -170,8 +140,27 @@ namespace RailworksDownloader
                     }
                     else
                     {
-                        //FIXME: replace message box with better designed one
-                        MessageBox.Show((string)dl_result.message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
+                        //FIXED: replace message box with better designed one
+
+                        new Task(() =>
+                        {
+
+                            App.Window.Dispatcher.Invoke(() =>
+                            {
+                                MainWindow.ErrorDialog = new ContentDialog()
+                                {
+                                    Title = "Error occured while downloading",
+                                    Content = dl_result.message,
+                                    SecondaryButtonText = "OK",
+                                    Owner = App.Window
+                                };
+
+                                MainWindow.ErrorDialog.ShowAsync();
+                            });
+
+                        }).Start();
+
+                        //MessageBox.Show((string)dl_result.message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
 
                     File.Delete((string)dl_result.content);

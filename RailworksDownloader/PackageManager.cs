@@ -1,4 +1,5 @@
 ﻿using ModernWpf.Controls;
+using Newtonsoft.Json;
 using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
@@ -12,19 +13,100 @@ namespace RailworksDownloader
     public class Package
     {
         public int PackageId { get; set; }
+
         public string FileName { get; set; }
+
         public string DisplayName { get; set; }
+
         public int Category { get; set; }
+
+        [JsonIgnore]
+        public string CategoryString
+        {
+            get
+            {
+                switch (Category)
+                {
+                    case 0:
+                        return "Locomotives";
+                    case 1:
+                        return "Wagons";
+                    case 2:
+                        return "Rail vehicle dependencies";
+                    case 3:
+                        return "Scenery";
+                    case 4:
+                        return "Track objects";
+                    case 5:
+                        return "Enviroment";
+                    default:
+                        return "Other/uncategorized";
+                }
+            }
+        }
+
         public int Era { get; set; }
+
+        [JsonIgnore]
+        public string EraString
+        {
+            get
+            {
+                switch (Era)
+                {
+                    case 1:
+                        return "I.";
+                    case 2:
+                        return "II.";
+                    case 3:
+                        return "III.";
+                    case 4:
+                        return "IV.";
+                    case 5:
+                        return "V.";
+                    case 6:
+                        return "VI.";
+                    default:
+                        return "Indeterminate";
+                }
+            }
+        }
+
         public int Country { get; set; }
+
+        [JsonIgnore]
+        public string CountryString
+        {
+            get
+            {
+                switch (Country)
+                {
+                    case 1:
+                        return "Czech Republic";
+                    case 2:
+                        return "Slovak Republic";
+                    default:
+                        return "Not specified";
+                }
+            }
+        }
+
         public int Version { get; set; }
+
         public int Owner { get; set; }
+
         public DateTime Datetime { get; set; }
+
         public string Description { get; set; }
+
         public string TargetPath { get; set; }
+
         public bool IsPaid { get; set; }
+
         public int SteamAppID { get; set; }
+
         public List<string> FilesContained { get; set; }
+
         public List<int> Dependencies { get; set; }
 
         public Package(int package_id, string display_name, int category, int era, int country, int owner, string date_time, string target_path, List<string> deps_contained, string file_name = "", string description = "", int version = 1)
@@ -273,9 +355,30 @@ namespace RailworksDownloader
                     }
                 });
 
-                await MainWindow.Dispatcher.Invoke(async () => { MainWindow.DownloadDialog.ShowAsync(); });
-                MainWindow.DownloadDialog.DownloadPackages(PkgsToDownload, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
-                MainWindow.RW_CrawlingComplete();
+                if (PkgsToDownload.Count > 0)
+                {
+                    await MainWindow.Dispatcher.Invoke(async () => { MainWindow.DownloadDialog.ShowAsync(); });
+                    MainWindow.DownloadDialog.DownloadPackages(PkgsToDownload, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                    MainWindow.RW_CrawlingComplete();
+                }
+                else
+                {
+                    new Task(() =>
+                    {
+                        App.Window.Dispatcher.Invoke(() =>
+                        {
+                            MainWindow.ErrorDialog = new ContentDialog()
+                            {
+                                Title = "Cannot download packages",
+                                Content = "All availaible packages were downloaded.",
+                                SecondaryButtonText = "OK",
+                                Owner = App.Window
+                            };
+
+                            MainWindow.ErrorDialog.ShowAsync();
+                        });
+                    }).Start();
+                }
             });
         }
 
@@ -285,11 +388,11 @@ namespace RailworksDownloader
             {
                 Dictionary<int, int> pkgsToUpdate = new Dictionary<int, int>();
                 List<int> packagesId = InstalledPackages.Select(x => x.PackageId).ToList();
-                var serverVersions = await WebWrapper.GetVersions(packagesId);
+                Dictionary<int, int> serverVersions = await WebWrapper.GetVersions(packagesId);
                 if (serverVersions.Count == 0)
                     return;
 
-                foreach (var package in InstalledPackages)
+                foreach (Package package in InstalledPackages)
                 {
                     if (serverVersions.ContainsKey(package.PackageId) && package.Version < serverVersions[package.PackageId])
                     {
@@ -326,7 +429,7 @@ namespace RailworksDownloader
             ReceiveMSMQ();
             using (FileSystemWatcher watcher = new FileSystemWatcher())
             {
-                watcher.Path = System.IO.Path.GetTempPath();
+                watcher.Path = Path.GetTempPath();
 
                 watcher.Filter = "DLS.queue";
 
@@ -347,8 +450,8 @@ namespace RailworksDownloader
 
         public void ReceiveMSMQ()
         {
-            string queueFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "DLS.queue");
-            List<string> queuedPkgs = System.IO.File.Exists(queueFile) ? System.IO.File.ReadAllText(queueFile).Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries).ToList() : new List<string>();
+            string queueFile = Path.Combine(Path.GetTempPath(), "DLS.queue");
+            List<string> queuedPkgs = File.Exists(queueFile) ? File.ReadAllText(queueFile).Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList() : new List<string>();
             int numElems = queuedPkgs.Count;
 
             if (numElems > 0)
@@ -367,8 +470,29 @@ namespace RailworksDownloader
                         }
                         HashSet<int> packageIds = new HashSet<int>() { packageToDownload.PackageId }.Union(await GetDependencies(packageToDownload.Dependencies.ToHashSet())).ToHashSet();
 
-                        MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); });
-                        MainWindow.DownloadDialog.DownloadPackages(packageIds, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                        if (packageIds.Count > 0)
+                        {
+                            MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); });
+                            MainWindow.DownloadDialog.DownloadPackages(packageIds, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                        }
+                        else
+                        {
+                            new Task(() =>
+                            {
+                                App.Window.Dispatcher.Invoke(() =>
+                                {
+                                    MainWindow.ErrorDialog = new ContentDialog()
+                                    {
+                                        Title = "Cannot download packages",
+                                        Content = "An error ocured when trying to install package.",
+                                        SecondaryButtonText = "OK",
+                                        Owner = App.Window
+                                    };
+
+                                    MainWindow.ErrorDialog.ShowAsync();
+                                });
+                            }).Start();
+                        }
                     }).Wait();
                 }
                 else
