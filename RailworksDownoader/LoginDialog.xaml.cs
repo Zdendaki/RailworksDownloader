@@ -24,12 +24,14 @@ namespace RailworksDownloader
     public partial class LoginDialog : ContentDialog
     {
         PackageManager PM { get; set; }
+        int Invoker { get; set; } //0 - DownloadDeps, 1 - CheckUpates
         Uri ApiUrl { get; set; }
-        public LoginDialog(PackageManager pm, Uri apiUrl)
+        public LoginDialog(PackageManager pm, Uri apiUrl, int invoker)
         {
             InitializeComponent();
             PM = pm;
             ApiUrl = apiUrl;
+            Invoker = invoker;
             ShowAsync();
         }
 
@@ -52,9 +54,21 @@ namespace RailworksDownloader
                         Settings.Default.Username = login.Trim();
                         Settings.Default.Password = Utils.PasswordEncryptor.Encrypt(pass, login.Trim());
                         Settings.Default.Save();
-                        PM.DownloadDependencies();
+                        switch(Invoker)
+                        {
+                            case 0:
+                                PM.DownloadDependencies();
+                                break;
+                            case 1:
+                                PM.CheckUpdates();
+                                break;
+                        }
                     } else
+                    {
                         args.Cancel = true;
+                        //FIXME: replace message box with better designed one
+                        MessageBox.Show(result.message, "Login error!");
+                    }
                 }).Wait();
             }
         }

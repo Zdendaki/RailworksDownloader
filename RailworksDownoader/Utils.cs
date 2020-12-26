@@ -92,6 +92,34 @@ namespace RailworksDownloader
             }
         }
 
+        public class ZipTools
+        {
+            private const int ZIP_LEAD_BYTES = 0x04034b50;
+            private const ushort GZIP_LEAD_BYTES = 0x8b1f;
+
+            internal static bool IsPkZipCompressedData(byte[] data)
+            {
+                // if the first 4 bytes of the array are the ZIP signature then it is compressed data
+                return BitConverter.ToInt32(data, 0) == ZIP_LEAD_BYTES;
+            }
+
+            internal static bool IsGZipCompressedData(byte[] data)
+            {
+                // if the first 2 bytes of the array are theG ZIP signature then it is compressed data;
+                return BitConverter.ToUInt16(data, 0) == GZIP_LEAD_BYTES;
+            }
+
+            public static bool IsCompressedData(string fname)
+            {
+                byte[] buff = new byte[4];
+                using(Stream fs = File.OpenRead(fname))
+                {
+                    fs.Read(buff, 0, buff.Length);
+                }
+                return IsPkZipCompressedData(buff) || IsGZipCompressedData(buff);
+            }
+        }
+
         public static string NormalizePath(string path, string ext = null)
         {
 

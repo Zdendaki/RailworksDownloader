@@ -13,8 +13,12 @@ namespace RailworksDownloader
 
         private readonly string ConnectionString;
 
+        private bool Empty = true;
+
         private SQLiteConnection MemoryConn { get; set; }
         private SQLiteConnection FileConn { get; set; }
+
+        private object DBLock = new object();
 
         public SqLiteAdapter(string path)
         {
@@ -25,6 +29,7 @@ namespace RailworksDownloader
 
             if (File.Exists(DatabasePath))
             {
+                Empty = false;
                 FileConn = new SQLiteConnection(ConnectionString);
                 FileConn.Open();
                 FileConn.BackupDatabase(MemoryConn, "main", "main", -1, null, 0);
@@ -32,13 +37,17 @@ namespace RailworksDownloader
             }
         }
 
-        public void FlushToFile()
+        public void FlushToFile(bool keepOpen = false)
         {
-            FileConn = new SQLiteConnection(ConnectionString);
-            FileConn.Open();
-            MemoryConn.BackupDatabase(FileConn, "main", "main", -1, null, 0);
-            FileConn.Close();
-            MemoryConn.Close();
+            lock (DBLock)
+            {
+                FileConn = new SQLiteConnection(ConnectionString);
+                FileConn.Open();
+                MemoryConn.BackupDatabase(FileConn, "main", "main", -1, null, 0);
+                FileConn.Close();
+                if (!keepOpen)
+                    MemoryConn.Close();
+            }
         }
 
         internal void SaveRoute(LoadedRoute route)
@@ -176,16 +185,23 @@ namespace RailworksDownloader
 
         internal void CreateRouteCacheFile()
         {
+            if (!Empty)
+                return;
+
             SQLiteCommand command = new SQLiteCommand(MemoryConn)
             {
                 CommandText = "CREATE TABLE dependencies (id INTEGER PRIMARY KEY, path TEXT, isScenario INTEGER);CREATE TABLE checksums (id INTEGER PRIMARY KEY, folder VARCHAR(32) UNIQUE, chcksum VARCHAR(32));"
             };
             command.ExecuteNonQuery();
             command.Dispose();
+            Empty = false;
         }
 
         internal void CreateMainCacheFile()
         {
+            if (!Empty)
+                return;
+
             SQLiteCommand command = new SQLiteCommand(MemoryConn)
             {
                 CommandText = @"CREATE TABLE package_list (
@@ -209,6 +225,7 @@ CREATE TABLE file_list (
             };
             command.ExecuteNonQuery();
             command.Dispose();
+            Empty = false;
         }
 
         internal void SaveInstalledPackage(Package package)

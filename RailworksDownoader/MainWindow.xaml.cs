@@ -1,8 +1,10 @@
-﻿using ModernWpf.Controls;
+﻿using Microsoft.Win32;
+using ModernWpf.Controls;
 using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -77,6 +79,11 @@ namespace RailworksDownloader
             {
                 Desharp.Debug.Log(e, Desharp.Level.DEBUG);
             }
+
+            RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
+            key.SetValue("URL Protocol", "");
+            //key.SetValue("DefaultIcon", "");
+            key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
 
             Task.Run(async () =>
             {
@@ -186,6 +193,11 @@ namespace RailworksDownloader
                 DownloadMissing.IsEnabled = true;
             });
             crawlingComplete = true;
+
+            new Task(() =>
+            {
+                PM.RunQueueWatcher();
+            }).Start();
         }
 
         private void ToggleSavingGrid(string type)
@@ -245,7 +257,7 @@ namespace RailworksDownloader
 
                 RW = App.Railworks;
 
-                App.PackageManager = new PackageManager(ApiUrl, this);
+                App.PackageManager = new PackageManager(ApiUrl, this, RW.RWPath);
                 PM = App.PackageManager;
 
                 Title = "Railworks download station client - " + RW.RWPath;
