@@ -113,7 +113,7 @@ namespace RailworksDownloader
             }
         }
 
-        private async void RW_CrawlingComplete()
+        internal async void RW_CrawlingComplete()
         {
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.Value = 100);
             TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = true);

@@ -99,18 +99,35 @@ namespace RailworksDownloader
             WebWrapper = new WebWrapper(ApiUrl);
         }
 
-        public async Task<int> FindFile(string file_name)
+        public async Task<HashSet<int>> GetDependencies(HashSet<int> dependecies)
+        {
+            HashSet<int> returnDependencies = (new HashSet<int>()).Union(dependecies).ToHashSet();
+            foreach (int depPackageId in dependecies)
+            {
+                Package dependencyPackage = await WebWrapper.GetPackage(depPackageId);
+                lock (CachedPackages)
+                {
+                    if (!CachedPackages.Any(x => x.PackageId == dependencyPackage.PackageId))
+                        CachedPackages.Add(dependencyPackage);
+                }
+
+                returnDependencies.UnionWith(await GetDependencies(dependencyPackage.Dependencies.ToHashSet()));
+            }
+            return returnDependencies;
+        }
+
+        public async Task<List<int>> FindFile(string file_name, bool withDeps = true)
         {
             Package package = InstalledPackages.FirstOrDefault(x => x.FilesContained.Contains(file_name));
 
             if (package != default)
-                return package.PackageId;
+                return new List<int>() { package.PackageId };
 
             lock (CachedPackages)
                 package = CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(file_name));
 
             if (package != default)
-                return package.PackageId;
+                return new List<int>() { package.PackageId };
 
             Package onlinePackage = await WebWrapper.SearchForFile(file_name);
             if (onlinePackage != null && onlinePackage.PackageId > 0)
@@ -120,10 +137,11 @@ namespace RailworksDownloader
                     if (!CachedPackages.Any(x => x.PackageId == onlinePackage.PackageId))
                         CachedPackages.Add(onlinePackage);
                 }
-                return onlinePackage.PackageId;
+                HashSet<int> depPackageIds = withDeps ? await GetDependencies(onlinePackage.Dependencies.ToHashSet()) : new HashSet<int>();
+                return new List<int>() { onlinePackage.PackageId }.Union(depPackageIds).ToList();
             }
 
-            return -1;
+            return new List<int>();
         }
 
         public async Task<HashSet<string>> GetDownloadableDependencies(HashSet<string> globalDependencies, HashSet<string> existing, MainWindow mw)
@@ -142,11 +160,14 @@ namespace RailworksDownloader
                     int max = conflictDeps.Count * (workerId + 1) / maxThreads;
                     for (int i = conflictDeps.Count * workerId / maxThreads; i < max; i++)
                     {
-                        int id = await FindFile(conflictDeps.ElementAt(i));
-                        if (conflictPackages.Contains(id))
-                            continue;
+                        int id = (await FindFile(conflictDeps.ElementAt(i), false)).FirstOrDefault();
+                        lock (conflictPackages)
+                        {
+                            if (conflictPackages.Contains(id))
+                                continue;
 
-                        conflictPackages.Add(id);
+                            conflictPackages.Add(id);
+                        }
                     }
                 }).Wait();
             });
@@ -173,6 +194,7 @@ namespace RailworksDownloader
                 if (result == ContentDialogResult.Primary)
                 {
                     PkgsToDownload.Add(id);
+                    PkgsToDownload.UnionWith(await GetDependencies(new HashSet<int>() { id }));
                 }
                 else
                 {
@@ -238,13 +260,13 @@ namespace RailworksDownloader
                         Task.Run(async () =>
                         {
                             string dependency = DownloadableDeps.ElementAt(i);
-                            int pkgId = await FindFile(dependency);
+                            List<int> pkgId = await FindFile(dependency);
 
-                            if (pkgId >= 0)
+                            if (pkgId.Count >= 0)
                             {
                                 lock (PkgsToDownload)
                                 {
-                                    PkgsToDownload.Add(pkgId);
+                                    PkgsToDownload.UnionWith(pkgId);
                                 }
                             }
                         }).Wait();
@@ -253,8 +275,8 @@ namespace RailworksDownloader
 
                 await MainWindow.Dispatcher.Invoke(async () => { MainWindow.DownloadDialog.ShowAsync(); });
                 MainWindow.DownloadDialog.DownloadPackages(PkgsToDownload, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                MainWindow.RW_CrawlingComplete();
             });
-
         }
 
         public void CheckUpdates()
@@ -295,6 +317,7 @@ namespace RailworksDownloader
 
                 await MainWindow.Dispatcher.Invoke(async () => { MainWindow.DownloadDialog.ShowAsync(); });
                 MainWindow.DownloadDialog.UpdatePackages(pkgsToUpdate, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                MainWindow.RW_CrawlingComplete();
             });
         }
 
@@ -337,8 +360,15 @@ namespace RailworksDownloader
                     Task.Run(async () =>
                     {
                         Package packageToDownload = await WebWrapper.GetPackage(idToDownload);
+                        lock (CachedPackages)
+                        {
+                            if (!CachedPackages.Any(x => x.PackageId == packageToDownload.PackageId))
+                                CachedPackages.Add(packageToDownload);
+                        }
+                        HashSet<int> packageIds = new HashSet<int>() { packageToDownload.PackageId }.Union(await GetDependencies(packageToDownload.Dependencies.ToHashSet())).ToHashSet();
+
                         MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); });
-                        MainWindow.DownloadDialog.DownloadPackage(packageToDownload, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                        MainWindow.DownloadDialog.DownloadPackages(packageIds, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
                     }).Wait();
                 }
                 else
