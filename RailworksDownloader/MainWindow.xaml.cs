@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -42,6 +43,8 @@ namespace RailworksDownloader
         {
             InitializeComponent();
 
+            Title = $"Railworks DLS client v{App.Version}";
+
             App.Window = this;
 
             App.SteamManager = new SteamManager();
@@ -56,36 +59,47 @@ namespace RailworksDownloader
 
             RW = App.Railworks;
 
-            if (string.IsNullOrWhiteSpace(RW.RWPath))
+            Updater updater = new Updater();
+            if (updater.CheckUpdates(ApiUrl))
             {
-                RailworksPathDialog rpd = new RailworksPathDialog();
-                rpd.ShowAsync();
+                Task.Run(async () =>
+                {
+                    await updater.UpdateAsync();
+                });
             }
-
-            if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+            else
             {
-                Settings.Default.RailworksLocation = RW.RWPath;
-                Settings.Default.Save();
+                if (string.IsNullOrWhiteSpace(RW.RWPath))
+                {
+                    RailworksPathDialog rpd = new RailworksPathDialog();
+                    rpd.ShowAsync();
+                }
+
+                if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                {
+                    Settings.Default.RailworksLocation = RW.RWPath;
+                    Settings.Default.Save();
+                }
+
+                PathChanged();
+
+                Settings.Default.PropertyChanged += PropertyChanged;
+
+                DownloadDialog.Owner = this;
+
+                RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
+                key.SetValue("URL Protocol", "");
+                //key.SetValue("DefaultIcon", "");
+                key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
+
+                Task.Run(async () =>
+                {
+                    RW_CheckingDLC(false);
+                    List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
+                    await WebWrapper.ReportDLC(dlcList, ApiUrl);
+                    RW_CheckingDLC(true);
+                });
             }
-
-            PathChanged();
-
-            Settings.Default.PropertyChanged += PropertyChanged;
-
-            DownloadDialog.Owner = this;
-
-            RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
-            key.SetValue("URL Protocol", "");
-            //key.SetValue("DefaultIcon", "");
-            key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
-
-            Task.Run(async () =>
-            {
-                RW_CheckingDLC(false);
-                List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
-                await WebWrapper.ReportDLC(dlcList, ApiUrl);
-                RW_CheckingDLC(true);
-            });
         }
 
         private async void MainWindowDialog_Closing(object sender, CancelEventArgs e)
@@ -252,7 +266,7 @@ namespace RailworksDownloader
                 App.PackageManager = new PackageManager(ApiUrl, this, RW.RWPath);
                 PM = App.PackageManager;
 
-                Title = "Railworks download station client - " + RW.RWPath;
+                Title = $"Railworks DLS client v{App.Version} - " + RW.RWPath;
 
                 LoadRoutes();
             }

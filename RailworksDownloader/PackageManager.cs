@@ -400,7 +400,7 @@ namespace RailworksDownloader
                         MainWindow.Dispatcher.Invoke(() =>
                         {
                             MainWindow.ContentDialog.Title = "Newer package found!";
-                            MainWindow.ContentDialog.Content = string.Format("Never version of following package was found on server:\n{0}\nDo you want to update it?", package.DisplayName);
+                            MainWindow.ContentDialog.Content = string.Format("Newer version of following package was found on server:\n{0}\nDo you want to update it?", package.DisplayName);
                             MainWindow.ContentDialog.PrimaryButtonText = "Yes, update";
                             MainWindow.ContentDialog.SecondaryButtonText = "No, keep local";
                             MainWindow.ContentDialog.Owner = MainWindow;
@@ -452,12 +452,12 @@ namespace RailworksDownloader
         {
             string queueFile = Path.Combine(Path.GetTempPath(), "DLS.queue");
             HashSet<string> queuedPkgs = File.Exists(queueFile) ? File.ReadAllText(queueFile).Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToHashSet() : new HashSet<string>();
-            int numElems = queuedPkgs.Count;
 
-            if (numElems > 0)
+            if (queuedPkgs.Count > 0)
             {
                 MainWindow.Dispatcher.Invoke(() => { MainWindow.Activate(); });
-                int idToDownload = Convert.ToInt32(queuedPkgs.First());
+                int idToDownload = Convert.ToInt32(queuedPkgs.PopOne());
+
                 if (!InstalledPackages.Exists(x => x.PackageId == idToDownload))
                 {
                     Task.Run(async () =>
@@ -468,6 +468,25 @@ namespace RailworksDownloader
                             if (!CachedPackages.Any(x => x.PackageId == packageToDownload.PackageId))
                                 CachedPackages.Add(packageToDownload);
                         }
+
+                        if (packageToDownload.IsPaid)
+                        {
+                            App.Window.Dispatcher.Invoke(() =>
+                            {
+                                MainWindow.ErrorDialog = new ContentDialog()
+                                {
+                                    Title = "Cannot download package",
+                                    Content = "This is paid package. Paid packages cannot be downloaded through this app.",
+                                    SecondaryButtonText = "OK",
+                                    Owner = App.Window
+                                };
+
+                                MainWindow.ErrorDialog.ShowAsync();
+                            });
+
+                            return;
+                        }
+
                         HashSet<int> packageIds = new HashSet<int>() { packageToDownload.PackageId }.Union(await GetDependencies(packageToDownload.Dependencies.ToHashSet())).ToHashSet();
 
                         if (packageIds.Count > 0)
@@ -509,12 +528,11 @@ namespace RailworksDownloader
 
                         MainWindow.ErrorDialog.ShowAsync();
                     });
+
                 }
-                queuedPkgs.Remove(queuedPkgs.First());
 
                 File.WriteAllText(queueFile, string.Join(",", queuedPkgs));
-
-                if (numElems > 1)
+                if (queuedPkgs.Count > 0)
                     ReceiveMSMQ();
             }
         }

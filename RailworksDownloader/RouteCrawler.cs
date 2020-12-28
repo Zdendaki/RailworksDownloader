@@ -660,33 +660,40 @@ namespace RailworksDownloader
             {
                 foreach (string file in Directory.GetFiles(RoutePath, "*.ap", SearchOption.AllDirectories))
                 {
-                    using (ZipFile zip = new ZipFile(file))
+                    try
                     {
-                        foreach (ZipEntry entry in zip)
+                        using (ZipFile zip = new ZipFile(file))
                         {
-                            string ext = Path.GetExtension(entry.Name).ToLower();
-                            if (ext == ".xml" || ext == ".bin")
+                            foreach (ZipEntry entry in zip)
                             {
-                                string relativePath = NormalizePath(GetRelativePath(RoutePath, Path.Combine(Path.GetDirectoryName(file), entry.Name)));
-                                string mainFolder = relativePath.Split(Path.DirectorySeparatorChar)[0];
-                                if (mainFolder == "scenarios" || mainFolder == "scenery")
+                                string ext = Path.GetExtension(entry.Name).ToLower();
+                                if (ext == ".xml" || ext == ".bin")
                                 {
-                                    size += entry.Size;
-                                }
-                                else if (mainFolder == "networks")
-                                {
-                                    string subFolder = relativePath.Split(Path.DirectorySeparatorChar)[1];
-                                    if (subFolder == "loft tiles" || subFolder == "road tiles" || subFolder == "track tiles")
+                                    string relativePath = NormalizePath(GetRelativePath(RoutePath, Path.Combine(Path.GetDirectoryName(file), entry.Name)));
+                                    string mainFolder = relativePath.Split(Path.DirectorySeparatorChar)[0];
+                                    if (mainFolder == "scenarios" || mainFolder == "scenery")
+                                    {
+                                        size += entry.Size;
+                                    }
+                                    else if (mainFolder == "networks")
+                                    {
+                                        string subFolder = relativePath.Split(Path.DirectorySeparatorChar)[1];
+                                        if (subFolder == "loft tiles" || subFolder == "road tiles" || subFolder == "track tiles")
+                                        {
+                                            size += entry.Size;
+                                        }
+                                    }
+                                    else if (Path.GetFileName(entry.Name).ToLower().Contains("routeproperties"))
                                     {
                                         size += entry.Size;
                                     }
                                 }
-                                else if (Path.GetFileName(entry.Name).ToLower().Contains("routeproperties"))
-                                {
-                                    size += entry.Size;
-                                }
                             }
                         }
+                    } 
+                    catch
+                    {
+                        Debug.Assert(false, $"Error while reading zip file: \"{file}\"!");
                     }
                 }
             }

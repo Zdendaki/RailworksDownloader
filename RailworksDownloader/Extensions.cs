@@ -49,5 +49,16 @@ namespace RailworksDownloader
                 }
             }
         }
+
+        internal static TSource PopOne<TSource>(this HashSet<TSource> hashSetToPop)
+        {
+            if (hashSetToPop.Count == 0)
+                return default;
+
+            TSource res = hashSetToPop.First();
+            hashSetToPop.Remove(res);
+
+            return res;
+        }
     }
 }

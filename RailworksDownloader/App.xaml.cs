@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using static RailworksDownloader.Properties.Settings;
@@ -24,8 +25,12 @@ namespace RailworksDownloader
 
         internal static string Token { get; set; }
 
+        internal static string Version { get; set; }
+
         protected override void OnStartup(StartupEventArgs e)
         {
+            Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
             if (e.Args.Length > 0)
             {
                 for (int i = 0; i < e.Args.Length; i++)

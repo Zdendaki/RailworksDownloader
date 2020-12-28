@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -87,6 +88,15 @@ namespace RailworksDownloader
 
         public string[] content { get; set; }
     }
+
+    public class AppVersionContent
+    {
+        public string version_name { get; set; }
+        public DateTime deployed { get; set; }
+        public string comment { get; set; }
+        public string file_path { get; set; }
+    }
+
 
     public class WebWrapper
     {
@@ -221,6 +231,18 @@ namespace RailworksDownloader
             }
 
             return new Dictionary<int, int>();
+        }
+
+        public static async Task<ObjectResult<AppVersionContent>> GetAppVersion(Uri apiUrl)
+        {
+            Dictionary<string, string> content = new Dictionary<string, string> { };
+            FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
+
+            HttpResponseMessage response = await new HttpClient(new HttpClientHandler(){AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate}).PostAsync(apiUrl + "getAppVersion", encodedContent);
+            if (response.IsSuccessStatusCode)
+                return JsonConvert.DeserializeObject<ObjectResult<AppVersionContent>>(await response.Content.ReadAsStringAsync());
+
+            return null;
         }
     }
 }

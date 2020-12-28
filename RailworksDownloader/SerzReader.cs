@@ -62,7 +62,6 @@ namespace RailworksDownloader
 
         private class EndTag : Tag
         {
-
             public EndTag(ushort stringId)
             {
                 Type = Types.CloseTag;
@@ -72,7 +71,6 @@ namespace RailworksDownloader
 
         private class DataTag : Tag
         {
-
             public double FloatValue { get; set; }
 
             public ulong IntValue { get; set; }
@@ -155,6 +153,7 @@ namespace RailworksDownloader
 
             public BlobTag(uint size, byte[] data)
             {
+                Type = Types.BlobTag;
                 Size = size;
                 Data = data;
             }
@@ -612,6 +611,8 @@ namespace RailworksDownloader
                         BlobTag bt = new BlobTag(blobSize, blobData);
 
                         BinTags[BIndex % BINDEX_MAX] = bt;
+                        AllTags.Add(bt);
+                        
                         break;
                     }
                 default:
@@ -625,81 +626,86 @@ namespace RailworksDownloader
         {
             ref Tag refTag = ref BinTags[cur_byte];
 
-            switch (refTag.Type)
+            try
             {
-                case Tag.Types.OpenTag:
-                    {
-                        int node_id = br.ReadInt32(); //gets node id
-                        int node_type = br.ReadInt32(); //gets node type
-
-                        AllTags.Add(new StartTag(node_id, refTag.RWtype, refTag.TagNameID));
-                        CurrentXMLlevel++;
-                        break;
-                    }
-                case Tag.Types.CloseTag:
-                    {
-                        AllTags.Add(new EndTag(refTag.TagNameID));
-                        CurrentXMLlevel--;
-                        break;
-                    }
-                case Tag.Types.DataTag:
-                    {
-                        ParseExistingDataTag(cur_byte, ref br);
-                        break;
-                    }
-                case Tag.Types.MatrixTag:
-                    {
-                        ParseExistingMatrixTag(cur_byte, ref br);
-                        break;
-                    }
-                case Tag.Types.NilTag:
-                    {
-                        NilTag nt = new NilTag();
-
-                        AllTags.Add(nt);
-
-                        break;
-                    }
-                case Tag.Types.RefTag:
-                    {
-                        int node_id = br.ReadInt32();
-
-                        RefTag rt = new RefTag(node_id, refTag.TagNameID);
-
-                        AllTags.Add(rt);
-
-                        break;
-                    }
-                case Tag.Types.MagicTag:
-                    {
-                        byte unknown_byte = br.ReadByte();
-                        uint unknown_uint = br.ReadUInt32();
-
-                        MagicTag mt = new MagicTag(unknown_byte, unknown_uint);
-
-                        //BinTags[BIndex % BINDEX_MAX] = ut;
-
-                        //Debug.Assert(false, string.Format("Reused magic tag at level {0}, byte {1}, uint {2}, BIndex {3}!!!", CurrentXMLlevel, unknown_byte, unknown_uint, BIndex % BINDEX_MAX));
-
-                        break;
-                    }
-                case Tag.Types.BlobTag:
-                    {
-                        uint blobSize = br.ReadUInt32();
-                        byte[] blobData = new byte[blobSize];
-
-                        for (int i = 0; i < Math.Ceiling((double)blobSize / int.MaxValue); i++)
+                switch (refTag.Type)
+                {
+                    case Tag.Types.OpenTag:
                         {
-                            int buffer_size = (int)Math.Min(blobSize - int.MaxValue * i, int.MaxValue);
-                            byte[] buffer = br.ReadBytes(buffer_size);
-                            Array.Copy(buffer, 0, blobData, int.MaxValue * i, buffer_size);
+                            int node_id = br.ReadInt32(); //gets node id
+                            int node_type = br.ReadInt32(); //gets node type
+
+                            AllTags.Add(new StartTag(node_id, refTag.RWtype, refTag.TagNameID));
+                            CurrentXMLlevel++;
+                            break;
                         }
+                    case Tag.Types.CloseTag:
+                        {
+                            AllTags.Add(new EndTag(refTag.TagNameID));
+                            CurrentXMLlevel--;
+                            break;
+                        }
+                    case Tag.Types.DataTag:
+                        {
+                            ParseExistingDataTag(cur_byte, ref br);
+                            break;
+                        }
+                    case Tag.Types.MatrixTag:
+                        {
+                            ParseExistingMatrixTag(cur_byte, ref br);
+                            break;
+                        }
+                    case Tag.Types.NilTag:
+                        {
+                            NilTag nt = new NilTag();
 
-                        BlobTag bt = new BlobTag(blobSize, blobData);
+                            AllTags.Add(nt);
 
-                        BinTags[BIndex % BINDEX_MAX] = bt;
-                        break;
-                    }
+                            break;
+                        }
+                    case Tag.Types.RefTag:
+                        {
+                            int node_id = br.ReadInt32();
+
+                            RefTag rt = new RefTag(node_id, refTag.TagNameID);
+
+                            AllTags.Add(rt);
+
+                            break;
+                        }
+                    case Tag.Types.MagicTag:
+                        {
+                            byte unknown_byte = br.ReadByte();
+                            uint unknown_uint = br.ReadUInt32();
+
+                            MagicTag mt = new MagicTag(unknown_byte, unknown_uint);
+
+                            //BinTags[BIndex % BINDEX_MAX] = ut;
+
+                            //Debug.Assert(false, string.Format("Reused magic tag at level {0}, byte {1}, uint {2}, BIndex {3}!!!", CurrentXMLlevel, unknown_byte, unknown_uint, BIndex % BINDEX_MAX));
+
+                            break;
+                        }
+                    case Tag.Types.BlobTag:
+                        {
+                            uint blobSize = br.ReadUInt32();
+                            byte[] blobData = new byte[blobSize];
+
+                            for (int i = 0; i < Math.Ceiling((double)blobSize / int.MaxValue); i++)
+                            {
+                                int buffer_size = (int)Math.Min(blobSize - int.MaxValue * i, int.MaxValue);
+                                byte[] buffer = br.ReadBytes(buffer_size);
+                                Array.Copy(buffer, 0, blobData, int.MaxValue * i, buffer_size);
+                            }
+
+                            AllTags.Add(new BlobTag(blobSize, blobData));
+                            break;
+                        }
+                }
+            }
+            catch
+            {
+                Debug.Assert(false, $"Unable to parse file {((FileStream)InputStream).Name} at position {br.BaseStream.Position}!");
             }
 
         }

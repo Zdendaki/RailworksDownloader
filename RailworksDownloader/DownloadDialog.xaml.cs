@@ -98,6 +98,7 @@ namespace RailworksDownloader
 
         public async Task DownloadPackages(HashSet<int> download, List<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
         {
+            download.RemoveWhere(x => cached.Any(y => y.PackageId == x && y.IsPaid));
             for (int i = 0; i < download.Count; i++)
             {
                 Package p = cached.FirstOrDefault(x => x.PackageId == download.ElementAt(i));
