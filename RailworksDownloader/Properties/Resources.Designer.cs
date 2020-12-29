@@ -61,15 +61,7 @@ namespace RailworksDownloader.Properties {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný $source = &quot;##01&quot;
-        ///$target = &quot;##02&quot;
-        ///
-        ///Start-Sleep -s 3
-        ///Move-Item -Path $source -Destination $target
-        ///if ($true -ne $?) {
-        ///    Start-Process -WindowStyle Hidden -Verb runAs PowerShell -Args &quot;Move-Item -Path $source -Destination $target&quot; -Wait
-        ///}
-        ///Start-Process $target.
+        ///   Vyhledá lokalizovaný řetězec podobný $source = \&quot;##01\&quot;; $target = \&quot;##02\&quot;; Start-Sleep -s 3; Move-Item -Path $source -Destination $target -Force; if ($true -ne $?) {Start-Process -WindowStyle Hidden -Verb runAs PowerShell -Args \&quot;Move-Item -Path $source -Destination $target -Force\&quot; -Wait}; Start-Process $target.
         /// </summary>
         internal static string UpdateScript {
             get {

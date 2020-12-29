@@ -60,17 +60,16 @@ namespace RailworksDownloader
 
             string oldFilename = Assembly.GetExecutingAssembly().Location;
 
-            string ps = Resources.UpdateScript.Replace("##01", tempFname).Replace("##02", oldFilename); // FIXME: repárovat chibi jahymovi
-            ExecuteCommand(Convert.ToBase64String(Encoding.UTF8.GetBytes(ps)));
+            string ps = Resources.UpdateScript.Replace("##01", tempFname).Replace("##02", oldFilename);
+            ExecuteCommand(ps);
             Environment.Exit(0);
-            //$"title Railworks Download Station Updater & echo INSTALLING UPDATE... PLEASE WAIT. & ping 127.0.0.1 -n 4 > nul & move \"{tempFname}\" \"{oldFilename}\" > nul & start \"\" \"{oldFilename}\" > nul\""
         }
 
         private void ExecuteCommand(string command)
         {
-            ProcessStartInfo processInfo = new ProcessStartInfo("PowerShell", $"-EncodedCommand  {command}")
+            ProcessStartInfo processInfo = new ProcessStartInfo("PowerShell", $"-Command \"{command}\"")
             {
-                CreateNoWindow = false,
+                CreateNoWindow = true,
                 UseShellExecute = false,
             };
 
