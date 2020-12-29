@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -133,8 +132,13 @@ namespace RailworksDownloader
         {
             crawlingComplete = true;
 
-            TotalProgress.Dispatcher.Invoke(() => TotalProgress.Value = 100);
-            TotalProgress.Dispatcher.Invoke(() => TotalProgress.IsIndeterminate = true);
+            Dispatcher.Invoke(() => 
+            { 
+                DownloadMissing.IsEnabled = false;
+                ScanRailworks.IsEnabled = false;
+                TotalProgress.Value = 100;
+                TotalProgress.IsIndeterminate = true;
+            });
 
             HashSet<string> globalDeps = new HashSet<string>();
 
@@ -150,7 +154,7 @@ namespace RailworksDownloader
             HashSet<string> downloadable = await PM.GetDownloadableDependencies(globalDeps, existing, this);
             HashSet<string> paid = await PM.GetPaidDependencies(globalDeps);
 
-            RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); });
+            RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); }); // BUG: NullReferenceException
 
             int maxThreads = Math.Min(Environment.ProcessorCount, RW.Routes.Count);
             Parallel.For(0, maxThreads, workerId =>
@@ -183,8 +187,7 @@ namespace RailworksDownloader
                             deps.Add(new Dependency(dep, state, isScenario, isRoute));
                         }
                     }
-                    /*RW.Routes[_i].Dependencies.Clear();
-                    RW.Routes[_i].ScenarioDeps.Clear();*/
+
                     RW.Routes[_i].AllDependencies = null;
                     RW.Routes[_i].ParsedDependencies = new DependenciesList(deps);
                     RW.Routes[_i].Redraw();
@@ -192,10 +195,14 @@ namespace RailworksDownloader
             });
 
             loadingComplete = true;
-            TotalProgress.Dispatcher.Invoke(() =>
+            Dispatcher.Invoke(() =>
             {
                 TotalProgress.IsIndeterminate = false;
-                DownloadMissing.IsEnabled = true;
+
+
+                if (downloadable.Count > 0)
+                    DownloadMissing.IsEnabled = true;
+
                 ScanRailworks.IsEnabled = true;
                 ScanRailworks.Content = "Rescan assets...";
             });
@@ -290,7 +297,7 @@ namespace RailworksDownloader
 
         private void ScanRailworks_Click(object sender, RoutedEventArgs e)
         {
-            ScanRailworks.Dispatcher.Invoke(() =>
+            Dispatcher.Invoke(() =>
             {
                 ScanRailworks.IsEnabled = false;
                 SelectRailworksLocation.IsEnabled = false;
@@ -301,7 +308,8 @@ namespace RailworksDownloader
             {
                 crawlingComplete = false;
                 RW.RunAllCrawlers();
-            } else
+            }
+            else
             {
                 RW_CrawlingComplete();
             }

@@ -167,7 +167,7 @@ namespace RailworksDownloader
                 {
                     RouteInfo ri = Routes[i];
                     ri.Progress = 0;
-                    ri.Crawler = new RouteCrawler(ri.Path, RWPath, ri.Dependencies, ri.ScenarioDeps);
+                    ri.Crawler = new RouteCrawler(ri.Path, ri.Dependencies, ri.ScenarioDeps);
                     ri.Crawler.DeltaProgress += OnProgress;
                     ri.Crawler.ProgressUpdated += ri.ProgressUpdated;
                     ri.Crawler.Complete += Complete;

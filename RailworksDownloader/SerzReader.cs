@@ -211,7 +211,7 @@ namespace RailworksDownloader
                 uint magic = binaryReader.ReadUInt32();
                 if (magic == SERZ_MAGIC)
                 {
-                    int someNumber = binaryReader.ReadInt32();
+                    binaryReader.ReadInt32();
 
                     DebugStep = 0;
                     BIndex = 0;
@@ -612,7 +612,7 @@ namespace RailworksDownloader
 
                         BinTags[BIndex % BINDEX_MAX] = bt;
                         AllTags.Add(bt);
-                        
+
                         break;
                     }
                 default:

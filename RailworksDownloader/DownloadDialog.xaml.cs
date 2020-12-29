@@ -5,7 +5,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace RailworksDownloader
 {
@@ -14,10 +13,17 @@ namespace RailworksDownloader
     /// </summary>
     public partial class DownloadDialog : ContentDialog
     {
-        public DownloadDialog()
+        public bool CancelButton
+        {
+            get => IsSecondaryButtonEnabled;
+            set => IsSecondaryButtonEnabled = value;
+        }
+
+        public DownloadDialog(bool cancel = true)
         {
             InitializeComponent();
             Title = "Preparing download!";
+            CancelButton = cancel;
             //FileName.Content = "";
         }
 
@@ -42,6 +48,8 @@ namespace RailworksDownloader
 
                     if (dl_result.code == 1)
                     {
+                        Dispatcher.Invoke(() => CancelButton = false);
+
                         using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
                         {
                             foreach (ZipArchiveEntry e in a.Entries)
@@ -63,6 +71,8 @@ namespace RailworksDownloader
                         {
                             sqLiteAdapter.FlushToFile(true);
                         }).Start();
+
+                        Dispatcher.Invoke(() => CancelButton = true);
                     }
                     else
                     {
@@ -134,6 +144,8 @@ namespace RailworksDownloader
 
                     if (dl_result.code == 1)
                     {
+                        Dispatcher.Invoke(() => CancelButton = false);
+
                         using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
                         {
                             foreach (ZipArchiveEntry e in a.Entries)
@@ -155,6 +167,8 @@ namespace RailworksDownloader
                         {
                             sqLiteAdapter.FlushToFile(true);
                         }).Start();
+
+                        Dispatcher.Invoke(() => CancelButton = true);
                     }
                     else
                     {
@@ -188,6 +202,40 @@ namespace RailworksDownloader
             App.Window.Dispatcher.Invoke(() => Hide());
         }
 
+        internal void DownloadUpdateAsync(Updater updater)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                Title = $"Downloading update of application...";
+                FileName.Content = null;
+                CancelButton = false;
+                DownloadProgress.IsIndeterminate = false;
+                SecondaryButtonText = null;
+                DownloadProgress.Value = 0;
+            });
+
+            updater.OnDownloadProgressChanged += (progress) => 
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    DownloadProgress.Value = progress;
+                    Progress.Content = $"{progress} %";
+                });
+            };
+
+            updater.OnDownloaded += () =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    Title = $"Installing update...";
+                    FileName.Content = "Application will be restarted";
+                    DownloadProgress.Value = 100;
+                    DownloadProgress.IsIndeterminate = true;
+                    Progress.Content = null;
+                });
+            };
+        }
+
         private void Wrapper_OnDownloadProgressChanged(float progress)
         {
             App.Window.Dispatcher.Invoke(() =>
@@ -206,19 +254,14 @@ namespace RailworksDownloader
             });
         }
 
-        private void Wc_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
-        {
-            if (e.Error != null)
-                //FIXME: replace message box with better designed one
-                MessageBox.Show(e.Error.Message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
-            else if (!e.Cancelled)
-                //FIXME: replace message box with better designed one
-                MessageBox.Show("File downloaded!", "Download complete", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
         private void ContentDialog_SecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
-            args.Cancel = true; // TODO: Cancel downloading
+            if (CancelButton)
+            {
+
+            }
+            else
+                args.Cancel = true;
         }
     }
 }

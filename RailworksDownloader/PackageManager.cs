@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace RailworksDownloader
 {
@@ -357,7 +356,7 @@ namespace RailworksDownloader
 
                 if (PkgsToDownload.Count > 0)
                 {
-                    await MainWindow.Dispatcher.Invoke(async () => { MainWindow.DownloadDialog.ShowAsync(); });
+                    MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); }); // TODO: Check if works
                     MainWindow.DownloadDialog.DownloadPackages(PkgsToDownload, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
                     MainWindow.RW_CrawlingComplete();
                 }
@@ -418,7 +417,7 @@ namespace RailworksDownloader
                 if (await CheckLogin(1) < 0 || pkgsToUpdate.Count == 0)
                     return;
 
-                await MainWindow.Dispatcher.Invoke(async () => { MainWindow.DownloadDialog.ShowAsync(); });
+                MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); }); // TODO: Check if works
                 MainWindow.DownloadDialog.UpdatePackages(pkgsToUpdate, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
                 MainWindow.RW_CrawlingComplete();
             });

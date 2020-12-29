@@ -1,18 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using RailworksDownloader.Properties;
+using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace RailworksDownloader
 {
-    class Updater
+    internal class Updater
     {
         internal delegate void OnDownloadProgressChangedEventHandler(float progress);
         internal event OnDownloadProgressChangedEventHandler OnDownloadProgressChanged;
+        internal delegate void OnDownloadedEventHandler();
+        internal event OnDownloadedEventHandler OnDownloaded;
 
         private Uri UpdateUrl { get; set; }
 
@@ -34,6 +38,12 @@ namespace RailworksDownloader
 
         internal async Task UpdateAsync()
         {
+            App.Window.Dispatcher.Invoke(() =>
+            {
+                MainWindow.DownloadDialog.ShowAsync();
+                MainWindow.DownloadDialog.DownloadUpdateAsync(this);
+            });
+
             OnDownloadProgressChanged?.Invoke(0);
 
             WebClient webClient = new WebClient();
@@ -44,21 +54,35 @@ namespace RailworksDownloader
 
             string tempFname = Path.GetTempFileName();
             await webClient.DownloadFileTaskAsync(UpdateUrl, tempFname);
+            OnDownloaded?.Invoke();
 
-            string oldFilename = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            Thread.Sleep(3000);
 
-            ExecuteCommand($"ping 127.0.0.1 -n 4 > nul & move \"{tempFname}\" \"{oldFilename}\" > nul & start \"\" \"{oldFilename}\" > nul");
+            string oldFilename = Assembly.GetExecutingAssembly().Location;
+
+            string ps = Resources.UpdateScript.Replace("##01", tempFname).Replace("##02", oldFilename); // FIXME: repárovat chibi jahymovi
+            ExecuteCommand(Convert.ToBase64String(Encoding.UTF8.GetBytes(ps)));
             Environment.Exit(0);
+            //$"title Railworks Download Station Updater & echo INSTALLING UPDATE... PLEASE WAIT. & ping 127.0.0.1 -n 4 > nul & move \"{tempFname}\" \"{oldFilename}\" > nul & start \"\" \"{oldFilename}\" > nul\""
         }
 
-        static void ExecuteCommand(string command)
+        private void ExecuteCommand(string command)
         {
-            var processInfo = new ProcessStartInfo("cmd.exe", "/c " + command);
-            processInfo.CreateNoWindow = true;
-            processInfo.UseShellExecute = false;
-            processInfo.Verb = "runas";
+            ProcessStartInfo processInfo = new ProcessStartInfo("PowerShell", $"-EncodedCommand  {command}")
+            {
+                CreateNoWindow = false,
+                UseShellExecute = false,
+            };
 
-            Process.Start(processInfo);
+            try
+            {
+                Process.Start(processInfo);
+            }
+            catch
+            {
+                MessageBox.Show("You need to confirm administrator privileges to update Railworks Download Station.", "UAC required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                ExecuteCommand(command);
+            }
         }
     }
 }

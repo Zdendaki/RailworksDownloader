@@ -20,8 +20,6 @@ namespace RailworksDownloader
     {
         // Route path
         private readonly string RoutePath;
-        // Railworks path
-        private readonly string RailworksPath;
         // Size of all route files
         private long AllFilesSize = 0;
         // Size of processed route files
@@ -74,10 +72,9 @@ namespace RailworksDownloader
         /// </summary>
         /// <param name="path">Route path</param>
         /// <param name="railworksPath">RailWorks path</param>
-        public RouteCrawler(string path, string railworksPath, HashSet<string> dependencies, HashSet<string> scenarioDeps)
+        public RouteCrawler(string path, HashSet<string> dependencies, HashSet<string> scenarioDeps)
         {
             RoutePath = path;
-            RailworksPath = railworksPath;
             Dependencies = dependencies;
             ScenarioDeps = scenarioDeps;
             Adapter = new SqLiteAdapter(Path.Combine(RoutePath, "cache.dls"));
@@ -386,7 +383,7 @@ namespace RailworksDownloader
             });
         }
 
-        private async Task _GetDependencies()
+        private async Task GetDependenciesInternal()
         {
             bool loftsChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Loft Tiles")) != SavedRoute.LoftChecksum;
             bool roadsChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Road Tiles")) != SavedRoute.RoadChecksum;
@@ -508,7 +505,7 @@ namespace RailworksDownloader
             });
         }
 
-        private void ParseAPEntry(ZipFile file, ZipEntry entry, bool isScenario = false, string fname = "")
+        private void ParseAPEntry(ZipFile file, ZipEntry entry, bool isScenario = false)
         {
             try
             {
@@ -536,9 +533,8 @@ namespace RailworksDownloader
                     ReportProgress(entry.Size);
                 }
             }
-            catch (Exception e)
+            catch
             {
-                Desharp.Debug.Log(e);
                 Debug.Assert(false, "Nastala kritická chyba při čtení ZIP Entry!!!");
             }
         }
@@ -570,34 +566,33 @@ namespace RailworksDownloader
                                                 case "networks":
                                                     string subFolder = relativePath.Split(Path.DirectorySeparatorChar)[1];
                                                     if (subFolder == "loft tiles" || subFolder == "road tiles" || subFolder == "track tiles")
-                                                        ParseAPEntry(zipFile, entry, false, file);
+                                                        ParseAPEntry(zipFile, entry, false);
                                                     break;
                                                 case "scenarios":
-                                                    ParseAPEntry(zipFile, entry, true, file);
+                                                    ParseAPEntry(zipFile, entry, true);
                                                     break;
                                                 case "scenery":
-                                                    ParseAPEntry(zipFile, entry, false, file);
+                                                    ParseAPEntry(zipFile, entry, false);
                                                     break;
                                             }
                                         }
                                         else if (Path.GetFileName(entry.Name).ToLower().Contains("routeproperties"))
                                         {
-                                            ParseAPEntry(zipFile, entry, false, file);
+                                            ParseAPEntry(zipFile, entry, false);
                                         }
                                     }
                                 }
                             }
                         }
-                        catch (Exception e)
+                        catch
                         {
-                            Desharp.Debug.Log(e);
                             Debug.Assert(false, "Nastala kritická chyba při čtení souboru ZIP!!!");
                         }
                     }
                 });
             }
 
-            await _GetDependencies();
+            await GetDependenciesInternal();
         }
 
         private long CountAllFiles()
@@ -690,7 +685,7 @@ namespace RailworksDownloader
                                 }
                             }
                         }
-                    } 
+                    }
                     catch
                     {
                         Debug.Assert(false, $"Error while reading zip file: \"{file}\"!");
