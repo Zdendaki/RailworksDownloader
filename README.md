@@ -1,2 +1,2 @@
 # RailworksDownloader
-Application that downloads missing Train Simulator assets.
+Application for downloading missing Train Simulator assets.
