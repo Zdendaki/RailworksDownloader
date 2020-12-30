@@ -6,7 +6,7 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         ui:WindowHelper.UseModernWindowStyle="True"
         mc:Ignorable="d"
-        Title="" Height="400" Width="600" MinWidth="600" MinHeight="400" Loaded="Window_Loaded">
+        Title="" Height="400" Width="600" MinWidth="600" MinHeight="400" Loaded="Window_Loaded" Icon="dls.png">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
