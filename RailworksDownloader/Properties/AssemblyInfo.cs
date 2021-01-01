@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Resources;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
 
@@ -8,7 +9,7 @@ using System.Windows;
 [assembly: AssemblyTitle("Railworks Download Station Client")]
 [assembly: AssemblyDescription("Railworks Download Station Client")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Zdendaki.net & JachyHm 2020")]
 [assembly: AssemblyProduct("Railworks Download Station Client")]
 [assembly: AssemblyCopyright("Copyright © Zdendaki.net & JachyHm 2020")]
 [assembly: AssemblyTrademark("")]
@@ -49,5 +50,6 @@ using System.Windows;
 // Můžete zadat všechny hodnoty nebo nastavit výchozí číslo buildu a revize
 // pomocí zástupného znaku * takto:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.1.12.2")]
-[assembly: AssemblyFileVersion("0.1.12.2")]
+[assembly: AssemblyVersion("0.9.1.0")]
+[assembly: AssemblyFileVersion("0.9.1.0")]
+[assembly: NeutralResourcesLanguage("en")]

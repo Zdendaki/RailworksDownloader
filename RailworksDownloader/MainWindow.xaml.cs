@@ -153,8 +153,8 @@ namespace RailworksDownloader
         {
             crawlingComplete = true;
 
-            Dispatcher.Invoke(() => 
-            { 
+            Dispatcher.Invoke(() =>
+            {
                 DownloadMissing.IsEnabled = false;
                 ScanRailworks.IsEnabled = false;
                 TotalProgress.Value = 100;

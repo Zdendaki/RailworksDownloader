@@ -208,7 +208,7 @@ namespace RailworksDownloader
                 DownloadProgress.Value = 0;
             });
 
-            updater.OnDownloadProgressChanged += (progress) => 
+            updater.OnDownloadProgressChanged += (progress) =>
             {
                 Dispatcher.Invoke(() =>
                 {
