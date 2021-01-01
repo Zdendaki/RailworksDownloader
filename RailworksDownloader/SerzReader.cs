@@ -207,38 +207,39 @@ namespace RailworksDownloader
 
             if (binaryReader.BaseStream.Length > sizeof(int) * 2)
             {
-                //Check file contains SERZ at 0x0
-                uint magic = binaryReader.ReadUInt32();
-                if (magic == SERZ_MAGIC)
+                try
                 {
-                    binaryReader.ReadInt32();
-
-                    DebugStep = 0;
-                    BIndex = 0;
-                    SIndex = 0;
-                    CurrentXMLlevel = 0;
-
-                    //Read whole bin file
-                    while (binaryReader.BaseStream.Position != binaryReader.BaseStream.Length)
+                    //Check file contains SERZ at 0x0
+                    uint magic = binaryReader.ReadUInt32();
+                    if (magic == SERZ_MAGIC)
                     {
-                        byte cur_byte = binaryReader.ReadByte();
+                        binaryReader.ReadInt32();
 
-                        //Debug.Assert(DebugStep < 20174, "Debug assert!");
-                        //Debug.Assert(BIndex % BINDEX_MAX != 0x85 || cur_byte != 0xFF, "Desired index reached!");
+                        DebugStep = 0;
+                        BIndex = 0;
+                        SIndex = 0;
+                        CurrentXMLlevel = 0;
 
-                        //Debug.Assert(cur_byte > 0, "Ambigous index!");*/
-
-                        if (cur_byte == 0xFF) //FF is "startbit" for command
+                        //Read whole bin file
+                        while (binaryReader.BaseStream.Position != binaryReader.BaseStream.Length)
                         {
-                            ParseNewTag(ref binaryReader);
-                            BIndex++;
+                            byte cur_byte = binaryReader.ReadByte();
+
+                            if (cur_byte == 0xFF) //FF is "startbit" for command
+                            {
+                                ParseNewTag(ref binaryReader);
+                                BIndex++;
+                            }
+                            else
+                            {
+                                ParseExistingTag(cur_byte, ref binaryReader);
+                            }
+                            DebugStep++;
                         }
-                        else
-                        {
-                            ParseExistingTag(cur_byte, ref binaryReader);
-                        }
-                        DebugStep++;
                     }
+                } catch (Exception e)
+                {
+                    Trace.Assert(false, $"Error when parsing bin file {((FileStream)InputStream).Name}:\n{e}");
                 }
             }
         }
@@ -247,7 +248,7 @@ namespace RailworksDownloader
         {
             ushort string_id = br.ReadUInt16(); //read two bytes as short
 
-            Debug.Assert(string_id < SIndex || string_id == 0xFFFF, string.Format("Adding non loaded string id {0} at position {1}, step {2}!", string_id, br.BaseStream.Position, DebugStep));
+            Trace.Assert(string_id < SIndex || string_id == 0xFFFF, string.Format("Adding non loaded string id {0} at position {1}, step {2} in file {3}!", string_id, br.BaseStream.Position, DebugStep, ((FileStream)InputStream).Name));
 
             if (string_id == 0xFFFF) //if string index == FFFF then it is string itself
             {
@@ -359,7 +360,7 @@ namespace RailworksDownloader
                     }
                 default:
                     {
-                        Debug.Assert(false, string.Format("Unknown data type {0} at position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
+                        Trace.Assert(false, string.Format("Unknown data type {0} at position {1}, step {2} in file {3}!", Strings[format_id], br.BaseStream.Position, DebugStep, ((FileStream)InputStream).Name));
                         return;
                         //throw new Exception(string.Format("Unknown data type {0} at position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
                     }
@@ -479,13 +480,8 @@ namespace RailworksDownloader
         {
             ushort tagName_id = ReadString(ref br); //reads name of tag
             ushort format_id = ReadString(ref br); //reads format of saved data
-
-            if (Strings[format_id] != "sFloat32")
-            {
-                Debug.Assert(false, string.Format("Unknown format {0} in mattrice on position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
-                return;
-                //throw new Exception(string.Format("Unknown format {0} in mattrice on position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
-            }
+            
+            Trace.Assert(Strings[format_id] == "sFloat32", string.Format("Unknown format {0} in mattrice on position {1}, step {2} in file {3}!", Strings[format_id], br.BaseStream.Position, DebugStep, ((FileStream)InputStream).Name));
 
             ushort num_elements = br.ReadByte();
             float[] elements = new float[num_elements];
@@ -616,7 +612,7 @@ namespace RailworksDownloader
                         break;
                     }
                 default:
-                    Debug.Assert(false, string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
+                    Trace.Assert(false, string.Format("Unknown tag format {0} at position {1}, step {2} in file {3}!", command_type, br.BaseStream.Position, DebugStep, ((FileStream)InputStream).Name));
                     break;
                     //throw new Exception(string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
             }
@@ -705,7 +701,7 @@ namespace RailworksDownloader
             }
             catch
             {
-                Debug.Assert(false, $"Unable to parse file {((FileStream)InputStream).Name} at position {br.BaseStream.Position}!");
+                Trace.Assert(false, $"Unable to parse file {((FileStream)InputStream).Name} at position {br.BaseStream.Position}!");
             }
 
         }
@@ -738,7 +734,7 @@ namespace RailworksDownloader
                 Tag currentTag = AllTags[i];
                 Tag nextTag = i + 1 < AllTags.Count ? AllTags[i + 1] : null;
 
-                Debug.Assert(currentTag.TagNameID < SIndex, "Attempted to flush unreaded string");
+                Trace.Assert(currentTag.TagNameID < SIndex, $"Attempted to flush unreaded string in file {((FileStream)InputStream).Name}");
 
                 if (i == 0)
                 {
@@ -910,7 +906,6 @@ namespace RailworksDownloader
                 s = ((char)0x09) + s;
             }
             byte[] b = Encoding.UTF8.GetBytes(s);
-            //Debug.Assert(!s.Contains("</cRecordSet>\r\n"));
             OutputStream.Write(b, 0, b.Length);
             OutputStream.FlushAsync();
         }

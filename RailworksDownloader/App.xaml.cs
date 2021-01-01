@@ -25,6 +25,8 @@ namespace RailworksDownloader
 
         internal static string Version { get; set; }
 
+        internal static bool IsDownloading { get; set; } = false;
+
         protected override void OnStartup(StartupEventArgs e)
         {
             Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();

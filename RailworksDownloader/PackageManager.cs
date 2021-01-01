@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -162,13 +163,15 @@ namespace RailworksDownloader
 
         private HashSet<string> DownloadableDeps { get; set; }
 
-        private HashSet<int> PkgsToDownload { get; set; } = new HashSet<int>();
+        internal HashSet<int> PkgsToDownload { get; set; } = new HashSet<int>();
 
         private Uri ApiUrl { get; set; }
 
         private WebWrapper WebWrapper { get; set; }
 
         private MainWindow MainWindow { get; set; }
+
+        private bool MSMQRunning { get; set; } = false;
 
         public PackageManager(Uri apiUrl, MainWindow mw, string RWPath)
         {
@@ -227,6 +230,8 @@ namespace RailworksDownloader
 
         public async Task<HashSet<string>> GetDownloadableDependencies(HashSet<string> globalDependencies, HashSet<string> existing, MainWindow mw)
         {
+            InstalledPackages = SqLiteAdapter.LoadInstalledPackages();
+
             HashSet<string> allDownloadableDeps = await WebWrapper.QueryArray("listFiles");
 
             HashSet<string> conflictDeps = existing.Intersect(allDownloadableDeps).Except(InstalledPackages.SelectMany(x => x.FilesContained)).ToHashSet();
@@ -260,11 +265,17 @@ namespace RailworksDownloader
                 if (Settings.Default.IgnoredPackages?.Contains(id) == true)
                     continue;
 
+                Trace.Assert(CachedPackages.Exists(x => x.PackageId == id), $"Package {id} doesn't exist in cached packages!");
+
+                Package p = CachedPackages.FirstOrDefault(x => x.PackageId == id);
+
+                Trace.Assert(p != null, $"Package {id} doesn't exist in cached packages!");
+
                 Task<ContentDialogResult> t = null;
                 mw.Dispatcher.Invoke(() =>
                 {
                     MainWindow.ContentDialog.Title = "Conflict file found!";
-                    MainWindow.ContentDialog.Content = string.Format("Following package seems to be controlled by DLS but not installed through this app:\n{0}\nPlease decide how to continue!", CachedPackages.FirstOrDefault(x => x.PackageId == id).DisplayName);
+                    MainWindow.ContentDialog.Content = string.Format("Following package seems to be controlled by DLS but not installed through this app:\n{0}\nPlease decide how to continue!", p != null ? p.DisplayName : $"FATAL ERROR! PACKAGE {id} DOES NOT EXIST?! WTF???");
                     MainWindow.ContentDialog.PrimaryButtonText = "Overwrite local";
                     MainWindow.ContentDialog.SecondaryButtonText = "Keep local";
                     MainWindow.ContentDialog.Owner = mw;
@@ -329,7 +340,7 @@ namespace RailworksDownloader
         {
             Task.Run(async () =>
             {
-                if (await CheckLogin(1) < 0)
+                if (await CheckLogin(1) < 0 || App.IsDownloading)
                     return;
 
                 int maxThreads = Math.Min(Environment.ProcessorCount, DownloadableDeps.Count);
@@ -356,8 +367,10 @@ namespace RailworksDownloader
 
                 if (PkgsToDownload.Count > 0)
                 {
+                    App.IsDownloading = true;
                     MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); }); // TODO: Check if works
                     MainWindow.DownloadDialog.DownloadPackages(PkgsToDownload, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                    App.IsDownloading = false;
                     MainWindow.RW_CrawlingComplete();
                 }
                 else
@@ -375,6 +388,12 @@ namespace RailworksDownloader
                             };
 
                             MainWindow.ErrorDialog.ShowAsync();
+                        });
+
+                        MainWindow.Dispatcher.Invoke(() =>
+                        {
+                            MainWindow.ScanRailworks.IsEnabled = true;
+                            MainWindow.SelectRailworksLocation.IsEnabled = true;
                         });
                     }).Start();
                 }
@@ -414,18 +433,25 @@ namespace RailworksDownloader
                     }
                 }
 
-                if (await CheckLogin(1) < 0 || pkgsToUpdate.Count == 0)
+                if (await CheckLogin(1) < 0 || pkgsToUpdate.Count == 0 || App.IsDownloading)
                     return;
 
+                App.IsDownloading = true;
                 MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); }); // TODO: Check if works
                 MainWindow.DownloadDialog.UpdatePackages(pkgsToUpdate, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                App.IsDownloading = false;
                 MainWindow.RW_CrawlingComplete();
             });
         }
 
         public void RunQueueWatcher()
         {
-            ReceiveMSMQ();
+            new Task(async () =>
+            {
+                MSMQRunning = true;
+                await ReceiveMSMQ();
+                MSMQRunning = false;
+            }).Start(); ;
             using (FileSystemWatcher watcher = new FileSystemWatcher())
             {
                 watcher.Path = Path.GetTempPath();
@@ -444,10 +470,18 @@ namespace RailworksDownloader
         private void OnChanged(object source, FileSystemEventArgs e)
         {
             System.Threading.Thread.Sleep(500);
-            ReceiveMSMQ();
+            if (MSMQRunning)
+                return;
+
+            new Task(async () =>
+            {
+                MSMQRunning = true;
+                await ReceiveMSMQ();
+                MSMQRunning = false;
+            }).Start();
         }
 
-        public void ReceiveMSMQ()
+        public async Task ReceiveMSMQ()
         {
             string queueFile = Path.Combine(Path.GetTempPath(), "DLS.queue");
             HashSet<string> queuedPkgs = File.Exists(queueFile) ? File.ReadAllText(queueFile).Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToHashSet() : new HashSet<string>();
@@ -455,6 +489,12 @@ namespace RailworksDownloader
             if (queuedPkgs.Count > 0)
             {
                 MainWindow.Dispatcher.Invoke(() => { MainWindow.Activate(); });
+                if (await CheckLogin(1) < 0 || App.IsDownloading)
+                {
+                    File.WriteAllText(queueFile, string.Empty);
+                    return;
+                }
+
                 int idToDownload = Convert.ToInt32(queuedPkgs.PopOne());
 
                 if (!InstalledPackages.Exists(x => x.PackageId == idToDownload))
@@ -490,8 +530,10 @@ namespace RailworksDownloader
 
                         if (packageIds.Count > 0)
                         {
+                            App.IsDownloading = true;
                             MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); });
-                            MainWindow.DownloadDialog.DownloadPackages(packageIds, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                            await MainWindow.DownloadDialog.DownloadPackages(packageIds, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter);
+                            App.IsDownloading = false;
                         }
                         else
                         {
@@ -531,8 +573,7 @@ namespace RailworksDownloader
                 }
 
                 File.WriteAllText(queueFile, string.Join(",", queuedPkgs));
-                if (queuedPkgs.Count > 0)
-                    ReceiveMSMQ();
+                await ReceiveMSMQ();
             }
         }
     }

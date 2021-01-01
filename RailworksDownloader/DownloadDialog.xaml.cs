@@ -136,67 +136,61 @@ namespace RailworksDownloader
                     FileName.Content = p?.DisplayName ?? "#INVALID FILE NAME";
                 });
 
-                await Task.Run(async () =>
+                int pkgId = download.ElementAt(i);
+                wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
+                ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
+
+                if (dl_result.code == 1)
                 {
-                    int pkgId = download.ElementAt(i);
-                    wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
-                    ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
+                    Dispatcher.Invoke(() => CancelButton = false);
 
-                    if (dl_result.code == 1)
+                    using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
                     {
-                        Dispatcher.Invoke(() => CancelButton = false);
-
-                        using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
+                        foreach (ZipArchiveEntry e in a.Entries)
                         {
-                            foreach (ZipArchiveEntry e in a.Entries)
-                            {
-                                if (e.Name == string.Empty)
-                                    continue;
+                            if (e.Name == string.Empty)
+                                continue;
 
-                                string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName));
+                            string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName));
 
-                                if (!Directory.Exists(path))
-                                    Directory.CreateDirectory(path);
+                            if (!Directory.Exists(path))
+                                Directory.CreateDirectory(path);
 
-                                e.ExtractToFile(Path.Combine(path, e.Name), true);
-                            }
+                            e.ExtractToFile(Path.Combine(path, e.Name), true);
                         }
-                        installedPackages.Add(p);
-                        sqLiteAdapter.SaveInstalledPackage(p);
-                        new Task(() =>
-                        {
-                            sqLiteAdapter.FlushToFile(true);
-                        }).Start();
-
-                        Dispatcher.Invoke(() => CancelButton = true);
                     }
-                    else
+                    installedPackages.Add(p);
+                    sqLiteAdapter.SaveInstalledPackage(p);
+                    sqLiteAdapter.FlushToFile(true);
+
+                    Dispatcher.Invoke(() => CancelButton = true);
+                }
+                else
+                {
+                    //FIXED: replace message box with better designed one
+
+                    new Task(() =>
                     {
-                        //FIXED: replace message box with better designed one
 
-                        new Task(() =>
+                        App.Window.Dispatcher.Invoke(() =>
                         {
-
-                            App.Window.Dispatcher.Invoke(() =>
+                            MainWindow.ErrorDialog = new ContentDialog()
                             {
-                                MainWindow.ErrorDialog = new ContentDialog()
-                                {
-                                    Title = "Error occured while downloading",
-                                    Content = dl_result.message,
-                                    SecondaryButtonText = "OK",
-                                    Owner = App.Window
-                                };
+                                Title = "Error occured while downloading",
+                                Content = dl_result.message,
+                                SecondaryButtonText = "OK",
+                                Owner = App.Window
+                            };
 
-                                MainWindow.ErrorDialog.ShowAsync();
-                            });
+                            MainWindow.ErrorDialog.ShowAsync();
+                        });
 
-                        }).Start();
+                    }).Start();
 
-                        //MessageBox.Show((string)dl_result.message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                    //MessageBox.Show((string)dl_result.message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
 
-                    File.Delete((string)dl_result.content);
-                });
+                File.Delete((string)dl_result.content);
             }
 
             App.Window.Dispatcher.Invoke(() => Hide());

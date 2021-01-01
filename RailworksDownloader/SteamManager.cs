@@ -39,8 +39,7 @@ namespace RailworksDownloader
 
             if (key != null && key.GetValue("SteamPath") is string steamPath)
             {
-                SteamPath = steamPath;
-                SteamPath = Path.GetFullPath(SteamPath);
+                SteamPath = Path.GetFullPath(steamPath);
                 AppManifestPath = GetAppManifestPath();
                 if (RWPath == null)
                     RWPath = GetRWInstallPath();

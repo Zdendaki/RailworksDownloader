@@ -45,6 +45,7 @@ namespace RailworksDownloader
                         Settings.Default.Username = login.Trim();
                         Settings.Default.Password = Utils.PasswordEncryptor.Encrypt(pass, login.Trim());
                         Settings.Default.Save();
+                        App.Token = result.content.token;
                         switch (Invoker)
                         {
                             case 0:

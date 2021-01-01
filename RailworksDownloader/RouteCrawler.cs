@@ -99,11 +99,18 @@ namespace RailworksDownloader
                 // If route directory exists
                 if (Directory.Exists(RoutePath))
                 {
-                    // Counts size of all files
-                    AllFilesSize = CountAllFiles();
+                    try
+                    {
+                        // Counts size of all files
+                        AllFilesSize = CountAllFiles();
 
-                    // Find all dependencies
-                    await GetDependencies();
+                        // Find all dependencies
+                        await GetDependencies();
+                    } 
+                    catch (Exception e)
+                    {
+                        Trace.Assert(false, $"Error when crawling route \"{RoutePath}\":\n{e}");
+                    }
 
                     // If crawling skipped because cache or inaccuracy, adds to 100 %
                     if (PercentProgress != 100)
@@ -136,7 +143,7 @@ namespace RailworksDownloader
                 Progress += fsize;
             }
 
-            Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize + "\nRoute: " + RoutePath);
+            Trace.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize + "\nRoute: " + RoutePath);
             if (Progress <= AllFilesSize)
             {
 
@@ -535,7 +542,7 @@ namespace RailworksDownloader
             }
             catch
             {
-                Debug.Assert(false, "Nastala kritická chyba při čtení ZIP Entry!!!");
+                Trace.Assert(false, $"Error when reading gzip entry of file \"{file.Name}\"!");
             }
         }
 
@@ -546,9 +553,9 @@ namespace RailworksDownloader
             {
                 Parallel.ForEach(Directory.GetFiles(RoutePath, "*.ap", SearchOption.AllDirectories), file =>
                 {
-                    using (ZipFile zipFile = new ZipFile(file))
+                    try
                     {
-                        try
+                        using (ZipFile zipFile = new ZipFile(file))
                         {
                             if (zipFile.TestArchive(true, TestStrategy.FindFirstError, null))
                             {
@@ -583,11 +590,15 @@ namespace RailworksDownloader
                                     }
                                 }
                             }
+                            else
+                            {
+                                Trace.Assert(false, $"Gzip file \"{file}\" is corrupted!");
+                            }
                         }
-                        catch
-                        {
-                            Debug.Assert(false, "Nastala kritická chyba při čtení souboru ZIP!!!");
-                        }
+                    }
+                    catch
+                    {
+                        Trace.Assert(false, $"Error while reading gzip file: \"{file}\"!");
                     }
                 });
             }
@@ -688,7 +699,7 @@ namespace RailworksDownloader
                     }
                     catch
                     {
-                        Debug.Assert(false, $"Error while reading zip file: \"{file}\"!");
+                        Trace.Assert(false, $"Error while counting size of file: \"{file}\"!");
                     }
                 }
             }

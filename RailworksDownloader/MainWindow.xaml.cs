@@ -4,6 +4,7 @@ using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -40,64 +41,84 @@ namespace RailworksDownloader
 
         public MainWindow()
         {
-            InitializeComponent();
-
-            Title = $"Railworks DLS client v{App.Version}";
-
-            App.Window = this;
-
-            App.SteamManager = new SteamManager();
-
-            Closing += MainWindowDialog_Closing;
-
-            string savedRWPath = Settings.Default.RailworksLocation;
-            App.Railworks = new Railworks(string.IsNullOrWhiteSpace(App.SteamManager.RWPath) ? savedRWPath : App.SteamManager.RWPath);
-            App.Railworks.ProgressUpdated += RW_ProgressUpdated;
-            App.Railworks.RouteSaving += RW_RouteSaving;
-            App.Railworks.CrawlingComplete += RW_CrawlingComplete;
-
-            RW = App.Railworks;
-
-            Updater updater = new Updater();
-            if (updater.CheckUpdates(ApiUrl))
+            try
             {
-                Task.Run(async () =>
+                InitializeComponent();
+
+                Title = $"Railworks DLS client v{App.Version}";
+
+                App.Window = this;
+
+                try
                 {
-                    await updater.UpdateAsync();
-                });
-            }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(RW.RWPath))
+                    App.SteamManager = new SteamManager();
+                }
+                catch
                 {
-                    RailworksPathDialog rpd = new RailworksPathDialog();
-                    rpd.ShowAsync();
+                    Trace.Assert(false, "Initialision of SteamManager failed!");
                 }
 
-                if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                Closing += MainWindowDialog_Closing;
+
+                string savedRWPath = Settings.Default.RailworksLocation;
+                App.Railworks = new Railworks(string.IsNullOrWhiteSpace(App.SteamManager.RWPath) ? savedRWPath : App.SteamManager.RWPath);
+                App.Railworks.ProgressUpdated += RW_ProgressUpdated;
+                App.Railworks.RouteSaving += RW_RouteSaving;
+                App.Railworks.CrawlingComplete += RW_CrawlingComplete;
+
+                RW = App.Railworks;
+
+                try
                 {
-                    Settings.Default.RailworksLocation = RW.RWPath;
-                    Settings.Default.Save();
+                    Updater updater = new Updater();
+                    if (updater.CheckUpdates(ApiUrl) && false)
+                    {
+                        Task.Run(async () =>
+                        {
+                            await updater.UpdateAsync();
+                        });
+                    }
+                    else
+                    {
+                        if (string.IsNullOrWhiteSpace(RW.RWPath))
+                        {
+                            RailworksPathDialog rpd = new RailworksPathDialog();
+                            rpd.ShowAsync();
+                        }
+
+                        if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                        {
+                            Settings.Default.RailworksLocation = RW.RWPath;
+                            Settings.Default.Save();
+                        }
+
+                        PathChanged();
+
+                        Settings.Default.PropertyChanged += PropertyChanged;
+
+                        DownloadDialog.Owner = this;
+
+                        RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
+                        key.SetValue("URL Protocol", "");
+                        //key.SetValue("DefaultIcon", "");
+                        key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
+
+                        Task.Run(async () =>
+                        {
+                            RW_CheckingDLC(false);
+                            List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
+                            await WebWrapper.ReportDLC(dlcList, ApiUrl);
+                            RW_CheckingDLC(true);
+                        });
+                    }
                 }
-
-                PathChanged();
-
-                Settings.Default.PropertyChanged += PropertyChanged;
-
-                DownloadDialog.Owner = this;
-
-                RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
-                key.SetValue("URL Protocol", "");
-                //key.SetValue("DefaultIcon", "");
-                key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
-
-                Task.Run(async () =>
+                catch
                 {
-                    RW_CheckingDLC(false);
-                    List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
-                    await WebWrapper.ReportDLC(dlcList, ApiUrl);
-                    RW_CheckingDLC(true);
-                });
+                    Trace.Assert(false, "Updater panic!");
+                }
+            } catch (Exception e)
+            {
+                Trace.Assert(false, e.ToString());
             }
         }
 
@@ -142,70 +163,76 @@ namespace RailworksDownloader
 
             HashSet<string> globalDeps = new HashSet<string>();
 
-            for (int i = 0; i < RW.Routes.Count; i++)
+            try
             {
-                RW.Routes[i].AllDependencies = RW.Routes[i].Dependencies.Union(RW.Routes[i].ScenarioDeps).ToArray();
-                globalDeps.UnionWith(RW.Routes[i].AllDependencies);
-            }
-
-            HashSet<string> existing = await RW.GetMissing(globalDeps);
-
-            globalDeps.ExceptWith(existing);
-            HashSet<string> downloadable = await PM.GetDownloadableDependencies(globalDeps, existing, this);
-            HashSet<string> paid = await PM.GetPaidDependencies(globalDeps);
-
-            RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); }); // BUG: NullReferenceException
-
-            int maxThreads = Math.Min(Environment.ProcessorCount, RW.Routes.Count);
-            Parallel.For(0, maxThreads, workerId =>
-            {
-                int max = RW.Routes.Count * (workerId + 1) / maxThreads;
-                for (int i = RW.Routes.Count * workerId / maxThreads; i < max; i++)
+                for (int i = 0; i < RW.Routes.Count; i++)
                 {
-                    List<Dependency> deps = new List<Dependency>();
-
-                    int _i = ((i & 1) != 0) ? (i - 1) / 2 : (RW.Routes.Count - 1) - i / 2;
-                    for (int j = 0; j < RW.Routes[_i].AllDependencies.Length; j++)
-                    {
-                        string dep = RW.Routes[_i].AllDependencies[j];
-
-                        if (dep != string.Empty)
-                        {
-                            bool isRoute = RW.Routes[_i].Dependencies.Contains(dep);
-                            bool isScenario = RW.Routes[_i].ScenarioDeps.Contains(dep);
-
-                            DependencyState state = DependencyState.Unknown;
-                            if (existing.Contains(dep))
-                                state = DependencyState.Downloaded;
-                            else if (downloadable.Contains(dep))
-                                state = DependencyState.Available;
-                            else if (paid.Contains(dep))
-                                state = DependencyState.Paid;
-                            else
-                                state = DependencyState.Unavailable;
-
-                            deps.Add(new Dependency(dep, state, isScenario, isRoute));
-                        }
-                    }
-
-                    RW.Routes[_i].AllDependencies = null;
-                    RW.Routes[_i].ParsedDependencies = new DependenciesList(deps);
-                    RW.Routes[_i].Redraw();
+                    RW.Routes[i].AllDependencies = RW.Routes[i].Dependencies.Union(RW.Routes[i].ScenarioDeps).ToArray();
+                    globalDeps.UnionWith(RW.Routes[i].AllDependencies);
                 }
-            });
 
-            loadingComplete = true;
-            Dispatcher.Invoke(() =>
+                HashSet<string> existing = await RW.GetMissing(globalDeps);
+
+                globalDeps.ExceptWith(existing);
+                HashSet<string> downloadable = await PM.GetDownloadableDependencies(globalDeps, existing, this);
+                HashSet<string> paid = await PM.GetPaidDependencies(globalDeps);
+
+                RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); }); // BUG: NullReferenceException
+
+                int maxThreads = Math.Min(Environment.ProcessorCount, RW.Routes.Count);
+                Parallel.For(0, maxThreads, workerId =>
+                {
+                    int max = RW.Routes.Count * (workerId + 1) / maxThreads;
+                    for (int i = RW.Routes.Count * workerId / maxThreads; i < max; i++)
+                    {
+                        List<Dependency> deps = new List<Dependency>();
+
+                        int _i = ((i & 1) != 0) ? (i - 1) / 2 : (RW.Routes.Count - 1) - i / 2;
+                        for (int j = 0; j < RW.Routes[_i].AllDependencies.Length; j++)
+                        {
+                            string dep = RW.Routes[_i].AllDependencies[j];
+
+                            if (dep != string.Empty)
+                            {
+                                bool isRoute = RW.Routes[_i].Dependencies.Contains(dep);
+                                bool isScenario = RW.Routes[_i].ScenarioDeps.Contains(dep);
+
+                                DependencyState state = DependencyState.Unknown;
+                                if (existing.Contains(dep))
+                                    state = DependencyState.Downloaded;
+                                else if (downloadable.Contains(dep))
+                                    state = DependencyState.Available;
+                                else if (paid.Contains(dep))
+                                    state = DependencyState.Paid;
+                                else
+                                    state = DependencyState.Unavailable;
+
+                                deps.Add(new Dependency(dep, state, isScenario, isRoute));
+                            }
+                        }
+
+                        RW.Routes[_i].AllDependencies = null;
+                        RW.Routes[_i].ParsedDependencies = new DependenciesList(deps);
+                        RW.Routes[_i].Redraw();
+                    }
+                });
+
+                loadingComplete = true;
+                Dispatcher.Invoke(() =>
+                {
+                    TotalProgress.IsIndeterminate = false;
+
+                    if (downloadable.Count + PM.PkgsToDownload.Count > 0)
+                        DownloadMissing.IsEnabled = true;
+
+                    ScanRailworks.IsEnabled = true;
+                    ScanRailworks.Content = "Rescan assets...";
+                });
+            } 
+            catch (Exception e)
             {
-                TotalProgress.IsIndeterminate = false;
-
-
-                if (downloadable.Count > 0)
-                    DownloadMissing.IsEnabled = true;
-
-                ScanRailworks.IsEnabled = true;
-                ScanRailworks.Content = "Rescan assets...";
-            });
+                Trace.Assert(false, e.ToString());
+            }
 
             new Task(() =>
             {
@@ -257,9 +284,10 @@ namespace RailworksDownloader
 
         private void PathChanged()
         {
-            PathSelected.IsChecked = ScanRailworks.IsEnabled = !string.IsNullOrWhiteSpace(RW.RWPath);
+            bool @switch = RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath);
+            PathSelected.IsChecked = ScanRailworks.IsEnabled = @switch;
 
-            if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
+            if (@switch)
             {
                 TotalProgress.Dispatcher.Invoke(() => TotalProgress.Value = 0);
 
@@ -281,12 +309,18 @@ namespace RailworksDownloader
 
         private void LoadRoutes()
         {
-            if (string.IsNullOrWhiteSpace(RW.RWPath))
-                return;
+            try
+            {
+                if (string.IsNullOrWhiteSpace(RW.RWPath))
+                    return;
 
-            RW.InitRoutes();
+                RW.InitRoutes();
 
-            RoutesList.ItemsSource = RW.Routes.OrderBy(x => x.Name);
+                RoutesList.ItemsSource = RW.Routes.OrderBy(x => x.Name);
+            } catch
+            {
+                Trace.Assert(false, "Loading routes failed!");
+            }
         }
 
         private void SelectRailworksLocation_Click(object sender, RoutedEventArgs e)
@@ -332,17 +366,27 @@ namespace RailworksDownloader
             pmw.ShowDialog();
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private void Window_Loaded(object sender, RoutedEventArgs _)
         {
             Task.Run(() =>
             {
-                if (!string.IsNullOrWhiteSpace(RW.RWPath))
-                    ScanRailworks_Click(this, null);
+                try
+                {
+                    if (!System.IO.Directory.Exists(RW.RWPath))
+                        ScanRailworks_Click(this, null);
+                }
+                catch (Exception e)
+                {
+                    Trace.Assert(false, e.ToString());
+                }
             });
         }
 
         private void DownloadMissing_Click(object sender, RoutedEventArgs e)
         {
+            ScanRailworks.IsEnabled = false;
+            SelectRailworksLocation.IsEnabled = false;
+            DownloadMissing.IsEnabled = false;
             PM.DownloadDependencies();
         }
     }
