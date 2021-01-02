@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Web;
 using static RailworksDownloader.Utils;
 
@@ -237,9 +238,11 @@ namespace RailworksDownloader
                             DebugStep++;
                         }
                     }
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
-                    Trace.Assert(false, $"Error when parsing bin file {((FileStream)InputStream).Name}:\n{e}");
+                    if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                        Trace.Assert(false, $"Error when parsing bin file:\n{e}");
                 }
             }
         }
@@ -248,7 +251,7 @@ namespace RailworksDownloader
         {
             ushort string_id = br.ReadUInt16(); //read two bytes as short
 
-            Trace.Assert(string_id < SIndex || string_id == 0xFFFF, string.Format("Adding non loaded string id {0} at position {1}, step {2} in file {3}!", string_id, br.BaseStream.Position, DebugStep, ((FileStream)InputStream).Name));
+            Debug.Assert(string_id < SIndex || string_id == 0xFFFF, string.Format("Adding non loaded string id {0} at position {1}, step {2}!", string_id, br.BaseStream.Position, DebugStep));
 
             if (string_id == 0xFFFF) //if string index == FFFF then it is string itself
             {
@@ -360,7 +363,7 @@ namespace RailworksDownloader
                     }
                 default:
                     {
-                        Trace.Assert(false, string.Format("Unknown data type {0} at position {1}, step {2} in file {3}!", Strings[format_id], br.BaseStream.Position, DebugStep, ((FileStream)InputStream).Name));
+                        Debug.Assert(false, string.Format("Unknown data type {0} at position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
                         return;
                         //throw new Exception(string.Format("Unknown data type {0} at position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
                     }
@@ -480,8 +483,8 @@ namespace RailworksDownloader
         {
             ushort tagName_id = ReadString(ref br); //reads name of tag
             ushort format_id = ReadString(ref br); //reads format of saved data
-            
-            Trace.Assert(Strings[format_id] == "sFloat32", string.Format("Unknown format {0} in mattrice on position {1}, step {2} in file {3}!", Strings[format_id], br.BaseStream.Position, DebugStep, ((FileStream)InputStream).Name));
+
+            Debug.Assert(Strings[format_id] == "sFloat32", string.Format("Unknown format {0} in mattrice on position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
 
             ushort num_elements = br.ReadByte();
             float[] elements = new float[num_elements];
@@ -612,7 +615,7 @@ namespace RailworksDownloader
                         break;
                     }
                 default:
-                    Trace.Assert(false, string.Format("Unknown tag format {0} at position {1}, step {2} in file {3}!", command_type, br.BaseStream.Position, DebugStep, ((FileStream)InputStream).Name));
+                    Debug.Assert(false, string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
                     break;
                     //throw new Exception(string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
             }
@@ -701,7 +704,7 @@ namespace RailworksDownloader
             }
             catch
             {
-                Trace.Assert(false, $"Unable to parse file {((FileStream)InputStream).Name} at position {br.BaseStream.Position}!");
+                Debug.Assert(false, $"Unable to parse position {br.BaseStream.Position}!");
             }
 
         }
@@ -734,7 +737,7 @@ namespace RailworksDownloader
                 Tag currentTag = AllTags[i];
                 Tag nextTag = i + 1 < AllTags.Count ? AllTags[i + 1] : null;
 
-                Trace.Assert(currentTag.TagNameID < SIndex, $"Attempted to flush unreaded string in file {((FileStream)InputStream).Name}");
+                Debug.Assert(currentTag.TagNameID < SIndex, $"Attempted to flush unreaded string!");
 
                 if (i == 0)
                 {

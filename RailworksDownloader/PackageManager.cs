@@ -246,13 +246,20 @@ namespace RailworksDownloader
                     int max = conflictDeps.Count * (workerId + 1) / maxThreads;
                     for (int i = conflictDeps.Count * workerId / maxThreads; i < max; i++)
                     {
-                        int id = (await FindFile(conflictDeps.ElementAt(i), false)).FirstOrDefault();
-                        lock (conflictPackages)
-                        {
-                            if (conflictPackages.Contains(id))
-                                continue;
+                        List<int> packages = await FindFile(conflictDeps.ElementAt(i), false);
 
-                            conflictPackages.Add(id);
+                        Trace.Assert(packages.Count > 0, $"FindFile for {conflictDeps.ElementAt(i)} returned no packages!");
+
+                        if (packages.Count > 0)
+                        {
+                            int id = packages.First();
+                            lock (conflictPackages)
+                            {
+                                if (conflictPackages.Contains(id))
+                                    continue;
+
+                                conflictPackages.Add(id);
+                            }
                         }
                     }
                 }).Wait();
@@ -265,17 +272,13 @@ namespace RailworksDownloader
                 if (Settings.Default.IgnoredPackages?.Contains(id) == true)
                     continue;
 
-                Trace.Assert(CachedPackages.Exists(x => x.PackageId == id), $"Package {id} doesn't exist in cached packages!");
-
                 Package p = CachedPackages.FirstOrDefault(x => x.PackageId == id);
-
-                Trace.Assert(p != null, $"Package {id} doesn't exist in cached packages!");
 
                 Task<ContentDialogResult> t = null;
                 mw.Dispatcher.Invoke(() =>
                 {
                     MainWindow.ContentDialog.Title = "Conflict file found!";
-                    MainWindow.ContentDialog.Content = string.Format("Following package seems to be controlled by DLS but not installed through this app:\n{0}\nPlease decide how to continue!", p != null ? p.DisplayName : $"FATAL ERROR! PACKAGE {id} DOES NOT EXIST?! WTF???");
+                    MainWindow.ContentDialog.Content = string.Format("Following package seems to be controlled by DLS but not installed through this app:\n{0}\nPlease decide how to continue!", p != null ? p.DisplayName : $"Unknown package");
                     MainWindow.ContentDialog.PrimaryButtonText = "Overwrite local";
                     MainWindow.ContentDialog.SecondaryButtonText = "Keep local";
                     MainWindow.ContentDialog.Owner = mw;
@@ -341,7 +344,15 @@ namespace RailworksDownloader
             Task.Run(async () =>
             {
                 if (await CheckLogin(1) < 0 || App.IsDownloading)
+                {
+                    App.Window.Dispatcher.Invoke(() =>
+                    {
+                        MainWindow.ScanRailworks.IsEnabled = true;
+                        MainWindow.SelectRailworksLocation.IsEnabled = true;
+                        MainWindow.DownloadMissing.IsEnabled = true;
+                    });
                     return;
+                }
 
                 int maxThreads = Math.Min(Environment.ProcessorCount, DownloadableDeps.Count);
                 Parallel.For(0, maxThreads, workerId =>

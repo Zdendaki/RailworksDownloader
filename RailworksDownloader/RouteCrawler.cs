@@ -106,10 +106,11 @@ namespace RailworksDownloader
 
                         // Find all dependencies
                         await GetDependencies();
-                    } 
+                    }
                     catch (Exception e)
                     {
-                        Trace.Assert(false, $"Error when crawling route \"{RoutePath}\":\n{e}");
+                        if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                            Trace.Assert(false, $"Error when crawling route \"{RoutePath}\":\n{e}");
                     }
 
                     // If crawling skipped because cache or inaccuracy, adds to 100 %
@@ -143,7 +144,7 @@ namespace RailworksDownloader
                 Progress += fsize;
             }
 
-            Trace.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize + "\nRoute: " + RoutePath);
+            Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize + "\nRoute: " + RoutePath);
             if (Progress <= AllFilesSize)
             {
 
@@ -540,9 +541,10 @@ namespace RailworksDownloader
                     ReportProgress(entry.Size);
                 }
             }
-            catch
+            catch (Exception e)
             {
-                Trace.Assert(false, $"Error when reading gzip entry of file \"{file.Name}\"!");
+                if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                    Trace.Assert(false, $"Error when reading gzip entry of file \"{file.Name}\":\n{e}");
             }
         }
 
@@ -596,9 +598,10 @@ namespace RailworksDownloader
                             }
                         }
                     }
-                    catch
+                    catch (Exception e)
                     {
-                        Trace.Assert(false, $"Error while reading gzip file: \"{file}\"!");
+                        if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                            Trace.Assert(false, $"Error while reading gzip file: \"{file}\":\n{e}");
                     }
                 });
             }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -55,7 +56,7 @@ namespace RailworksDownloader
                 }
                 catch
                 {
-                    Trace.Assert(false, "Initialision of SteamManager failed!");
+                    Debug.Assert(false, "Initialision of SteamManager failed!");
                 }
 
                 Closing += MainWindowDialog_Closing;
@@ -71,7 +72,8 @@ namespace RailworksDownloader
                 try
                 {
                     Updater updater = new Updater();
-                    if (updater.CheckUpdates(ApiUrl) && false)
+#if !DEBUG
+                    if (updater.CheckUpdates(ApiUrl))
                     {
                         Task.Run(async () =>
                         {
@@ -80,6 +82,7 @@ namespace RailworksDownloader
                     }
                     else
                     {
+#endif
                         if (string.IsNullOrWhiteSpace(RW.RWPath))
                         {
                             RailworksPathDialog rpd = new RailworksPathDialog();
@@ -110,15 +113,19 @@ namespace RailworksDownloader
                             await WebWrapper.ReportDLC(dlcList, ApiUrl);
                             RW_CheckingDLC(true);
                         });
+#if !DEBUG
                     }
+#endif
                 }
                 catch
                 {
                     Trace.Assert(false, "Updater panic!");
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
-                Trace.Assert(false, e.ToString());
+                if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                    Trace.Assert(false, e.ToString());
             }
         }
 
@@ -228,10 +235,11 @@ namespace RailworksDownloader
                     ScanRailworks.IsEnabled = true;
                     ScanRailworks.Content = "Rescan assets...";
                 });
-            } 
+            }
             catch (Exception e)
             {
-                Trace.Assert(false, e.ToString());
+                if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                    Trace.Assert(false, e.ToString());
             }
 
             new Task(() =>
@@ -317,7 +325,8 @@ namespace RailworksDownloader
                 RW.InitRoutes();
 
                 RoutesList.ItemsSource = RW.Routes.OrderBy(x => x.Name);
-            } catch
+            }
+            catch
             {
                 Trace.Assert(false, "Loading routes failed!");
             }
@@ -372,12 +381,13 @@ namespace RailworksDownloader
             {
                 try
                 {
-                    if (!System.IO.Directory.Exists(RW.RWPath))
+                    if (System.IO.Directory.Exists(RW.RWPath))
                         ScanRailworks_Click(this, null);
                 }
                 catch (Exception e)
                 {
-                    Trace.Assert(false, e.ToString());
+                    if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                        Trace.Assert(false, e.ToString());
                 }
             });
         }

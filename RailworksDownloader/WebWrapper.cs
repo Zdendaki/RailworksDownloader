@@ -153,7 +153,12 @@ namespace RailworksDownloader
 
             HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
             if (response.IsSuccessStatusCode)
-                return new Package(JsonConvert.DeserializeObject<ObjectResult<QueryContent>>(await response.Content.ReadAsStringAsync()).content);
+            {
+                ObjectResult<QueryContent> responseContent = JsonConvert.DeserializeObject<ObjectResult<QueryContent>>(await response.Content.ReadAsStringAsync());
+
+                if (responseContent.code > 0)
+                    return new Package(responseContent.content);
+            }
 
             return null;
         }
@@ -165,7 +170,12 @@ namespace RailworksDownloader
 
             HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
             if (response.IsSuccessStatusCode)
-                return new Package(JsonConvert.DeserializeObject<ObjectResult<QueryContent>>(await response.Content.ReadAsStringAsync()).content);
+            {
+                ObjectResult<QueryContent> responseContent = JsonConvert.DeserializeObject<ObjectResult<QueryContent>>(await response.Content.ReadAsStringAsync());
+
+                if (responseContent.code > 0)
+                    return new Package(responseContent.content);
+            }
 
             return null;
         }

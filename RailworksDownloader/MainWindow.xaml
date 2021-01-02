@@ -65,7 +65,7 @@
                     <Label x:Name="SavingLabel" Content="Saving" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="10,10,0,10" VerticalAlignment="Center" Height="26" />
                     <ProgressBar Margin="10,0,10,0" VerticalAlignment="Center" IsIndeterminate="True" Grid.Column="1" Height="2" HorizontalAlignment="Stretch"/>
                 </Grid>
-                <Button x:Name="DownloadMissing" Grid.Column="2" IsEnabled="False" Content="Download missing assets" Margin="5,10,10,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="32" Click="DownloadMissing_Click" />
+                <Button x:Name="DownloadMissing" Grid.Column="2" IsEnabled="False" Content="Download packages" Margin="5,10,10,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="32" Click="DownloadMissing_Click" />
                 <Button x:Name="ManagePackages" Grid.Column="1" IsEnabled="true" Content="Manage packages" HorizontalAlignment="Left" Margin="5,10" VerticalAlignment="Bottom" Click="ManagePackages_Click" Height="32" />
             </Grid>
         </Grid>
