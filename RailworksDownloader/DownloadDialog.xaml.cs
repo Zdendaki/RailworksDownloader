@@ -190,10 +190,10 @@ namespace RailworksDownloader
                     //MessageBox.Show((string)dl_result.message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
 
-                download.Remove(pkgId);
                 File.Delete((string)dl_result.content);
             }
 
+            download = new HashSet<int>();
             App.Window.Dispatcher.Invoke(() => Hide());
         }
 
