@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -130,6 +131,7 @@ namespace RailworksDownloader
         public IEnumerable<RouteInfo> GetRoutes()
         {
             string path = Path.Combine(RWPath, "Content", "Routes");
+            List<RouteInfo> list = new List<RouteInfo>();
 
             foreach (string dir in Directory.GetDirectories(path))
             {
@@ -137,22 +139,31 @@ namespace RailworksDownloader
 
                 if (File.Exists(rp_path))
                 {
-                    yield return new RouteInfo(ParseRouteProperties(rp_path).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar);
+                    list.Add(new RouteInfo(ParseRouteProperties(rp_path).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
                 }
                 else
                 {
                     foreach (string file in Directory.GetFiles(dir, "*.ap"))
                     {
-                        using (ZipArchive archive = ZipFile.OpenRead(file))
+                        try
                         {
-                            foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("RouteProperties")))
+                            using (ZipArchive archive = ZipFile.OpenRead(file))
                             {
-                                yield return new RouteInfo(ParseRouteProperties(entry.Open()).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar);
+                                foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("RouteProperties")))
+                                {
+                                    list.Add(new RouteInfo(ParseRouteProperties(entry.Open()).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
+                                }
                             }
+                        } 
+                        catch
+                        {
+                            Trace.Assert(false, $"Error reading zip file {file}!");
                         }
                     }
                 }
             }
+
+            return list;
         }
 
         internal void InitCrawlers()

@@ -109,9 +109,10 @@ namespace RailworksDownloader
         public async Task DownloadPackages(HashSet<int> download, List<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
         {
             download.RemoveWhere(x => cached.Any(y => y.PackageId == x && y.IsPaid));
-            for (int i = 0; i < download.Count; i++)
+            int count = download.Count;
+            for (int i = 0; i < count; i++)
             {
-                Package p = cached.FirstOrDefault(x => x.PackageId == download.ElementAt(i));
+                Package p = cached.FirstOrDefault(x => x.PackageId == download.First());
 
                 if (p == null)
                 {
@@ -132,11 +133,11 @@ namespace RailworksDownloader
 
                 Dispatcher.Invoke(() =>
                 {
-                    Title = $"Downloading packages {i + 1}/{download.Count}";
+                    Title = $"Downloading packages {i + 1}/{count}";
                     FileName.Content = p?.DisplayName ?? "#INVALID FILE NAME";
                 });
 
-                int pkgId = download.ElementAt(i);
+                int pkgId = p.PackageId;
                 wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
                 ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
@@ -162,7 +163,7 @@ namespace RailworksDownloader
                     installedPackages.Add(p);
                     sqLiteAdapter.SaveInstalledPackage(p);
                     sqLiteAdapter.FlushToFile(true);
-
+                    download.Remove(pkgId);
                     Dispatcher.Invoke(() => CancelButton = true);
                 }
                 else
@@ -193,7 +194,6 @@ namespace RailworksDownloader
                 File.Delete((string)dl_result.content);
             }
 
-            download = new HashSet<int>();
             App.Window.Dispatcher.Invoke(() => Hide());
         }
 

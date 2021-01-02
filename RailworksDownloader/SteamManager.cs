@@ -103,7 +103,7 @@ namespace RailworksDownloader
                             if (fileName.Contains("assets"))
                             {
                                 if (extension.Contains("xml") || extension.Contains("bin"))
-                                    dlc.IncludedFiles.Add(NormalizePath(fileName));
+                                    dlc.IncludedFiles.Add(NormalizePath(GetRelativePath(Path.Combine(RWPath, "Assets"), Path.Combine(RWPath, fileName))));
 
                                 if (extension == ".ap")
                                 {
