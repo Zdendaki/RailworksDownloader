@@ -190,6 +190,7 @@ namespace RailworksDownloader
                     //MessageBox.Show((string)dl_result.message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
 
+                download.Remove(pkgId);
                 File.Delete((string)dl_result.content);
             }
 
@@ -252,7 +253,12 @@ namespace RailworksDownloader
         {
             if (CancelButton)
             {
-
+                App.Window.Dispatcher.Invoke(() =>
+                {
+                    App.Window.ScanRailworks.IsEnabled = true;
+                    App.Window.SelectRailworksLocation.IsEnabled = true;
+                    App.Window.DownloadMissing.IsEnabled = true;
+                });
             }
             else
                 args.Cancel = true;
