@@ -265,6 +265,9 @@ namespace RailworksDownloader
                 }).Wait();
             });
 
+            bool rewriteAll = false;
+            bool keepAll = false;
+
             for (int i = 0; i < conflictPackages.Count; i++)
             {
                 int id = conflictPackages.ElementAt(i);
@@ -274,19 +277,26 @@ namespace RailworksDownloader
 
                 Package p = CachedPackages.FirstOrDefault(x => x.PackageId == id);
 
-                Task<ContentDialogResult> t = null;
-                mw.Dispatcher.Invoke(() =>
+                bool rewrite = false;
+                if (!rewriteAll && !keepAll)
                 {
-                    MainWindow.ContentDialog.Title = "Conflict file found!";
-                    MainWindow.ContentDialog.Content = string.Format("Following package seems to be controlled by DLS but not installed through this app:\n{0}\nPlease decide how to continue!", p != null ? p.DisplayName : $"Unknown package");
-                    MainWindow.ContentDialog.PrimaryButtonText = "Overwrite local";
-                    MainWindow.ContentDialog.SecondaryButtonText = "Keep local";
-                    MainWindow.ContentDialog.Owner = mw;
-                    t = MainWindow.ContentDialog.ShowAsync();
-                });
+                    Task<ContentDialogResult> t = null;
+                    mw.Dispatcher.Invoke(() =>
+                    {
+                        MainWindow.ContentDialog = new ConflictPackageDialog(p.DisplayName);
+                        t = MainWindow.ContentDialog.ShowAsync();
+                    });
 
-                ContentDialogResult result = await t;
-                if (result == ContentDialogResult.Primary)
+                    ContentDialogResult result = await t;
+
+                    ConflictPackageDialog dlg = (ConflictPackageDialog)MainWindow.ContentDialog;
+
+                    rewrite = dlg.RewriteLocal;
+                    rewriteAll = dlg.RewriteAll;
+                    keepAll = dlg.KeepAll;
+                }
+
+                if (rewrite || rewriteAll)
                 {
                     PkgsToDownload.Add(id);
                     PkgsToDownload.UnionWith(await GetDependencies(new HashSet<int>() { id }));

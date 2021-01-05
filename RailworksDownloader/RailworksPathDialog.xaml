@@ -12,6 +12,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -22,5 +23,6 @@
         </TextBlock>
         <TextBox Grid.Row="1" x:Name="UserPath" Margin="0,5" VerticalAlignment="Top" />
         <Button x:Name="BrowseButton" Grid.Column="1" Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="5" Content="Browse" Click="BrowseButton_Click" />
+        <Button x:Name="DefaultButton" Grid.ColumnSpan="2" Grid.Row="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="5" Content="Try finding Railworks location automatically" Click="DefaultButton_Click" />
     </Grid>
 </ui:ContentDialog>

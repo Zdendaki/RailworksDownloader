@@ -27,23 +27,32 @@ namespace RailworksDownloader
 
         internal static bool IsDownloading { get; set; } = false;
 
+        internal static bool AutoDownload { get; set; } = true;
+
         protected override void OnStartup(StartupEventArgs e)
         {
             Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
             if (e.Args.Length > 0)
             {
-                for (int i = 0; i < e.Args.Length; i++)
+                if (e.Args[0].ToLower().Contains("preventautostart"))
                 {
-                    string[] parts = e.Args[i].Split(':');
-                    if (parts.Count() == 2)
+                    AutoDownload = false;
+                }
+                else
+                {
+                    for (int i = 0; i < e.Args.Length; i++)
                     {
-                        if (int.TryParse(parts[1], out int pkgId))
+                        string[] parts = e.Args[i].Split(':');
+                        if (parts.Count() == 2)
                         {
-                            string queueFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "DLS.queue");
-                            HashSet<string> queuedPkgs = System.IO.File.Exists(queueFile) ? System.IO.File.ReadAllText(queueFile).Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries).ToHashSet() : new HashSet<string>();
-                            queuedPkgs.Add(pkgId.ToString());
-                            System.IO.File.WriteAllText(queueFile, string.Join(",", queuedPkgs));
+                            if (int.TryParse(parts[1], out int pkgId))
+                            {
+                                string queueFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "DLS.queue");
+                                HashSet<string> queuedPkgs = System.IO.File.Exists(queueFile) ? System.IO.File.ReadAllText(queueFile).Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToHashSet() : new HashSet<string>();
+                                queuedPkgs.Add(pkgId.ToString());
+                                System.IO.File.WriteAllText(queueFile, string.Join(",", queuedPkgs));
+                            }
                         }
                     }
                 }

@@ -62,7 +62,7 @@ namespace RailworksDownloader
                 Closing += MainWindowDialog_Closing;
 
                 string savedRWPath = Settings.Default.RailworksLocation;
-                App.Railworks = new Railworks(string.IsNullOrWhiteSpace(App.SteamManager.RWPath) ? savedRWPath : App.SteamManager.RWPath);
+                App.Railworks = new Railworks(string.IsNullOrWhiteSpace(savedRWPath) ? App.SteamManager.RWPath : savedRWPath);
                 App.Railworks.ProgressUpdated += RW_ProgressUpdated;
                 App.Railworks.RouteSaving += RW_RouteSaving;
                 App.Railworks.CrawlingComplete += RW_CrawlingComplete;
@@ -106,13 +106,16 @@ namespace RailworksDownloader
                         //key.SetValue("DefaultIcon", "");
                         key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
 
-                        Task.Run(async () =>
+                        if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
                         {
-                            RW_CheckingDLC(false);
-                            List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
-                            await WebWrapper.ReportDLC(dlcList, ApiUrl);
-                            RW_CheckingDLC(true);
-                        });
+                            Task.Run(async () =>
+                            {
+                                RW_CheckingDLC(false);
+                                List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
+                                await WebWrapper.ReportDLC(dlcList, ApiUrl);
+                                RW_CheckingDLC(true);
+                            });
+                        }
 #if !DEBUG
                     }
 #endif
@@ -292,10 +295,10 @@ namespace RailworksDownloader
 
         private void PathChanged()
         {
-            bool @switch = RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath);
-            PathSelected.IsChecked = ScanRailworks.IsEnabled = @switch;
+            bool flag = RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath);
+            PathSelected.IsChecked = ScanRailworks.IsEnabled = flag;
 
-            if (@switch)
+            if (flag)
             {
                 TotalProgress.Dispatcher.Invoke(() => TotalProgress.Value = 0);
 
@@ -381,7 +384,7 @@ namespace RailworksDownloader
             {
                 try
                 {
-                    if (System.IO.Directory.Exists(RW.RWPath))
+                    if (System.IO.Directory.Exists(RW.RWPath) && App.AutoDownload)
                         ScanRailworks_Click(this, null);
                 }
                 catch (Exception e)

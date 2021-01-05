@@ -43,5 +43,10 @@ namespace RailworksDownloader
                 UserPath.Text = Path.GetDirectoryName(ofd.FileName);
             }
         }
+
+        private void DefaultButton_Click(object sender, RoutedEventArgs e)
+        {
+            UserPath.Text = App.SteamManager.RWPath;
+        }
     }
 }
