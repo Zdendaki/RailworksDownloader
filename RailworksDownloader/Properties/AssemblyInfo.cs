@@ -9,9 +9,9 @@ using System.Windows;
 [assembly: AssemblyTitle("Railworks Download Station Client")]
 [assembly: AssemblyDescription("Railworks Download Station Client")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Zdendaki.net & JachyHm 2020")]
+[assembly: AssemblyCompany("Zdendaki.net & JachyHm 2021")]
 [assembly: AssemblyProduct("Railworks Download Station Client")]
-[assembly: AssemblyCopyright("Copyright © Zdendaki.net & JachyHm 2020")]
+[assembly: AssemblyCopyright("Copyright © Zdendaki.net & JachyHm 2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -50,6 +50,6 @@ using System.Windows;
 // Můžete zadat všechny hodnoty nebo nastavit výchozí číslo buildu a revize
 // pomocí zástupného znaku * takto:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.9.2.3")]
-[assembly: AssemblyFileVersion("0.9.2.3")]
+[assembly: AssemblyVersion("0.9.3.0")]
+[assembly: AssemblyFileVersion("0.9.3.0")]
 [assembly: NeutralResourcesLanguage("en")]

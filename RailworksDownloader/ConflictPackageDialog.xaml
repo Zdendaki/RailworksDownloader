@@ -1,0 +1,28 @@
+﻿<ui:ContentDialog  
+    x:Class="RailworksDownloader.ConflictPackageDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.modernwpf.com/2019"
+    Title="Conflict file found!">
+    
+    <Grid MinWidth="400">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.ColumnSpan="2" Margin="0,0,0,20">
+            Following package seems to be controlled by DLS but not installed through this app:<LineBreak />
+            <Run x:Name="PackageName" Text="PACKAGE NAME" /> <LineBreak/>
+            Please decide how to continue!
+        </TextBlock>
+        <Button Grid.Column="0" Grid.Row="1" Content="Overwrite all!" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="2,5" x:Name="Overwrite" Click="OverwriteAll_Click" />
+        <Button Grid.Column="1" Grid.Row="1" Content="Keep all!" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="2,5" x:Name="Keep" Click="KeepAll_Click" />
+        <Button Grid.Column="0" Grid.Row="2" Content="Overwrite local" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="2,5" x:Name="OverwriteLocal" Click="OverwriteLocal_Click" />
+        <Button Grid.Column="1" Grid.Row="2" Content="Keep local" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="2,5" x:Name="KeepLocalBtn" Click="KeepLocal_Click" />
+    </Grid>
+</ui:ContentDialog>

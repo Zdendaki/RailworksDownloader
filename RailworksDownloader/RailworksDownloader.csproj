@@ -105,6 +105,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ConflictPackageDialog.xaml.cs">
+      <DependentUpon>ConflictPackageDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Dependency.cs" />
     <Compile Include="DependencyWindow.xaml.cs">
       <DependentUpon>DependencyWindow.xaml</DependentUpon>
@@ -137,6 +140,10 @@
     <Compile Include="Updater.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="WebWrapper.cs" />
+    <Page Include="ConflictPackageDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="DependencyWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
