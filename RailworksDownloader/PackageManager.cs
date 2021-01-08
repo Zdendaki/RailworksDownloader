@@ -183,14 +183,14 @@ namespace RailworksDownloader
             WebWrapper = new WebWrapper(ApiUrl);
         }
 
-        public async Task<HashSet<int>> GetDependencies(HashSet<int> dependecies, HashSet<int> returnDependencies = (new HashSet<int>()).Union(dependecies).ToHashSet())
+        public async Task<HashSet<int>> GetDependencies(HashSet<int> dependecies, HashSet<int> returnDependencies = new HashSet<int>())
         {
             foreach (int depPackageId in dependecies)
             {
                 if (!returnDependencies.Contains(depPackageId)) {
                     Package dependencyPackage = CachedPackages.FirstOrDefault(x => x.PackageId == depPackageId);
                     if (dependencyPackage == default) {
-                        Package dependencyPackage = await WebWrapper.GetPackage(depPackageId);
+                        dependencyPackage = await WebWrapper.GetPackage(depPackageId);
 
                         lock (CachedPackages)
                         {
