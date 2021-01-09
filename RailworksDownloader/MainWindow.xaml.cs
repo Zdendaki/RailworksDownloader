@@ -120,9 +120,9 @@ namespace RailworksDownloader
                     }
 #endif
                 }
-                catch
+                catch (Exception e)
                 {
-                    Trace.Assert(false, "Updater panic!");
+                    Trace.Assert(false, $"Updater panic!\n{e}");
                 }
             }
             catch (Exception e)
