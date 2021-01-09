@@ -18,6 +18,11 @@ namespace RailworksDownloader
             get => IsSecondaryButtonEnabled;
             set => IsSecondaryButtonEnabled = value;
         }
+        private float LastValue
+        {
+            get;
+            set;
+        }
 
         public DownloadDialog(bool cancel = true)
         {
@@ -233,7 +238,9 @@ namespace RailworksDownloader
 
         private void Wrapper_OnDownloadProgressChanged(float progress)
         {
-            App.Window.Dispatcher.Invoke(() =>
+            if (LastValue != progress)
+            {
+                Dispatcher.Invoke(() =>
             {
                 if (progress >= 100)
                 {
@@ -243,10 +250,14 @@ namespace RailworksDownloader
                 else
                 {
                     DownloadProgress.IsIndeterminate = false;
+
                     DownloadProgress.Value = progress;
                     Progress.Content = $"{progress} %";
+                    LastValue = progress;
                 }
             });
+            }
+                
         }
 
         private void ContentDialog_SecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
