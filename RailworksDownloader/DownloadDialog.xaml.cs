@@ -134,7 +134,17 @@ namespace RailworksDownloader
                 Dispatcher.Invoke(() =>
                 {
                     Title = $"Downloading packages {i + 1}/{count}";
-                    FileName.Content = p?.DisplayName ?? "#INVALID FILE NAME";
+                    String DisplayNameShort = null;
+
+                    if (p?.DisplayName.Length > 50)
+                    {
+                        DisplayNameShort = (p?.DisplayName.Substring(0, 50) + "...") ?? "#INVALID FILE NAME";
+                    }
+                    else
+                    {
+                        DisplayNameShort = p?.DisplayName ?? "#INVALID FILE NAME";
+                    }
+                    FileName.Content = DisplayNameShort;
                 });
 
                 int pkgId = p.PackageId;

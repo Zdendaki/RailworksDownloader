@@ -183,21 +183,27 @@ namespace RailworksDownloader
             WebWrapper = new WebWrapper(ApiUrl);
         }
 
-        public async Task<HashSet<int>> GetDependencies(HashSet<int> dependecies)
-        {
-            HashSet<int> returnDependencies = (new HashSet<int>()).Union(dependecies).ToHashSet();
+        public async Task GetDependencies(HashSet<int> dependecies, HashSet<int> returnDependencies)
+        {            
             foreach (int depPackageId in dependecies)
             {
-                Package dependencyPackage = await WebWrapper.GetPackage(depPackageId);
-                lock (CachedPackages)
-                {
-                    if (!CachedPackages.Any(x => x.PackageId == dependencyPackage.PackageId))
-                        CachedPackages.Add(dependencyPackage);
-                }
+                if (!returnDependencies.Contains(depPackageId)) {
+                    Package dependencyPackage = CachedPackages.FirstOrDefault(x => x.PackageId == depPackageId);
+                    if (dependencyPackage == default) {
+                        dependencyPackage = await WebWrapper.GetPackage(depPackageId);
 
-                returnDependencies.UnionWith(await GetDependencies(dependencyPackage.Dependencies.ToHashSet()));
+                        lock (CachedPackages)
+                        {
+                            CachedPackages.Add(dependencyPackage);
+                        }
+                    }
+
+                    returnDependencies.Add(depPackageId);
+                    await GetDependencies(dependencyPackage.Dependencies.ToHashSet(), returnDependencies);
+                    //returnDependencies.UnionWith(await GetDependencies(dependencyPackage.Dependencies.ToHashSet(), returnDependencies));
+                }
             }
-            return returnDependencies;
+            //return returnDependencies;
         }
 
         public async Task<List<int>> FindFile(string file_name, bool withDeps = true)
@@ -221,8 +227,14 @@ namespace RailworksDownloader
                     if (!CachedPackages.Any(x => x.PackageId == onlinePackage.PackageId))
                         CachedPackages.Add(onlinePackage);
                 }
-                HashSet<int> depPackageIds = withDeps ? await GetDependencies(onlinePackage.Dependencies.ToHashSet()) : new HashSet<int>();
-                return new List<int>() { onlinePackage.PackageId }.Union(depPackageIds).ToList();
+
+                HashSet<int> dependencyPkgIds = onlinePackage.Dependencies.ToHashSet();
+                if (withDeps)
+                {
+                    await GetDependencies(dependencyPkgIds.ToHashSet(), dependencyPkgIds);
+                }
+
+                return new List<int>() { onlinePackage.PackageId }.Union(dependencyPkgIds).ToList();
             }
 
             return new List<int>();
@@ -299,7 +311,9 @@ namespace RailworksDownloader
                 if (rewrite || rewriteAll)
                 {
                     PkgsToDownload.Add(id);
-                    PkgsToDownload.UnionWith(await GetDependencies(new HashSet<int>() { id }));
+                    HashSet<int> depsPkgs = new HashSet<int>() { id };
+                    await GetDependencies(new HashSet<int>() { id }, depsPkgs);
+                    PkgsToDownload.UnionWith(depsPkgs);
                 }
                 else
                 {
@@ -547,7 +561,9 @@ namespace RailworksDownloader
                             return;
                         }
 
-                        HashSet<int> packageIds = new HashSet<int>() { packageToDownload.PackageId }.Union(await GetDependencies(packageToDownload.Dependencies.ToHashSet())).ToHashSet();
+                        HashSet<int> depsPkgs = packageToDownload.Dependencies.ToHashSet();
+                        await GetDependencies(depsPkgs.ToHashSet(), depsPkgs);
+                        HashSet<int> packageIds = new HashSet<int>() { packageToDownload.PackageId }.Union(depsPkgs).ToHashSet();
 
                         if (packageIds.Count > 0)
                         {
