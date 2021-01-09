@@ -18,11 +18,8 @@ namespace RailworksDownloader
             get => IsSecondaryButtonEnabled;
             set => IsSecondaryButtonEnabled = value;
         }
-        private float LastValue
-        {
-            get;
-            set;
-        }
+
+        private float LastValue { get; set; }
 
         public DownloadDialog(bool cancel = true)
         {
@@ -81,8 +78,6 @@ namespace RailworksDownloader
                     }
                     else
                     {
-                        //FIXED: replace message box with better designed one
-
                         new Task(() =>
                         {
 
@@ -100,8 +95,6 @@ namespace RailworksDownloader
                             });
 
                         }).Start();
-
-                        //MessageBox.Show((string)dl_result.message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
 
                     File.Delete((string)dl_result.content);
@@ -139,7 +132,7 @@ namespace RailworksDownloader
                 Dispatcher.Invoke(() =>
                 {
                     Title = $"Downloading packages {i + 1}/{count}";
-                    String DisplayNameShort = null;
+                    string DisplayNameShort = null;
 
                     if (p?.DisplayName.Length > 50)
                     {
@@ -183,8 +176,6 @@ namespace RailworksDownloader
                 }
                 else
                 {
-                    //FIXED: replace message box with better designed one
-
                     new Task(() =>
                     {
 
@@ -202,8 +193,6 @@ namespace RailworksDownloader
                         });
 
                     }).Start();
-
-                    //MessageBox.Show((string)dl_result.message, "Error occured while downloading", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
 
                 File.Delete((string)dl_result.content);
@@ -251,23 +240,22 @@ namespace RailworksDownloader
             if (LastValue != progress)
             {
                 Dispatcher.Invoke(() =>
-            {
-                if (progress >= 100)
                 {
-                    DownloadProgress.IsIndeterminate = true;
-                    Progress.Content = "Installing...";
-                }
-                else
-                {
-                    DownloadProgress.IsIndeterminate = false;
+                    if (progress >= 100)
+                    {
+                        DownloadProgress.IsIndeterminate = true;
+                        Progress.Content = "Installing...";
+                    }
+                    else
+                    {
+                        DownloadProgress.IsIndeterminate = false;
 
-                    DownloadProgress.Value = progress;
-                    Progress.Content = $"{progress} %";
-                    LastValue = progress;
-                }
-            });
+                        DownloadProgress.Value = progress;
+                        Progress.Content = $"{progress} %";
+                        LastValue = progress;
+                    }
+                });
             }
-                
         }
 
         private void ContentDialog_SecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)

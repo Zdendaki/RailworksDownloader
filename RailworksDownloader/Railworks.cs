@@ -154,7 +154,7 @@ namespace RailworksDownloader
                                     list.Add(new RouteInfo(ParseRouteProperties(entry.Open()).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
                                 }
                             }
-                        } 
+                        }
                         catch
                         {
                             Trace.Assert(false, $"Error reading zip file {file}!");

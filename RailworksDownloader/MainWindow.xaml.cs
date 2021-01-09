@@ -83,39 +83,39 @@ namespace RailworksDownloader
                     else
                     {
 #endif
-                        if (string.IsNullOrWhiteSpace(RW.RWPath))
+                    if (string.IsNullOrWhiteSpace(RW.RWPath))
+                    {
+                        RailworksPathDialog rpd = new RailworksPathDialog();
+                        rpd.ShowAsync();
+                    }
+
+                    if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                    {
+                        Settings.Default.RailworksLocation = RW.RWPath;
+                        Settings.Default.Save();
+                    }
+
+                    PathChanged();
+
+                    Settings.Default.PropertyChanged += PropertyChanged;
+
+                    DownloadDialog.Owner = this;
+
+                    RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
+                    key.SetValue("URL Protocol", "");
+                    //key.SetValue("DefaultIcon", "");
+                    key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
+
+                    if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
+                    {
+                        Task.Run(async () =>
                         {
-                            RailworksPathDialog rpd = new RailworksPathDialog();
-                            rpd.ShowAsync();
-                        }
-
-                        if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
-                        {
-                            Settings.Default.RailworksLocation = RW.RWPath;
-                            Settings.Default.Save();
-                        }
-
-                        PathChanged();
-
-                        Settings.Default.PropertyChanged += PropertyChanged;
-
-                        DownloadDialog.Owner = this;
-
-                        RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
-                        key.SetValue("URL Protocol", "");
-                        //key.SetValue("DefaultIcon", "");
-                        key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
-
-                        if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
-                        {
-                            Task.Run(async () =>
-                            {
-                                RW_CheckingDLC(false);
-                                List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
-                                await WebWrapper.ReportDLC(dlcList, ApiUrl);
-                                RW_CheckingDLC(true);
-                            });
-                        }
+                            RW_CheckingDLC(false);
+                            List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
+                            await WebWrapper.ReportDLC(dlcList, ApiUrl);
+                            RW_CheckingDLC(true);
+                        });
+                    }
 #if !DEBUG
                     }
 #endif

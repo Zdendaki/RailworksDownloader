@@ -184,12 +184,14 @@ namespace RailworksDownloader
         }
 
         public async Task GetDependencies(HashSet<int> dependecies, HashSet<int> returnDependencies)
-        {            
+        {
             foreach (int depPackageId in dependecies)
             {
-                if (!returnDependencies.Contains(depPackageId)) {
+                if (!returnDependencies.Contains(depPackageId))
+                {
                     Package dependencyPackage = CachedPackages.FirstOrDefault(x => x.PackageId == depPackageId);
-                    if (dependencyPackage == default) {
+                    if (dependencyPackage == default)
+                    {
                         dependencyPackage = await WebWrapper.GetPackage(depPackageId);
 
                         lock (CachedPackages)
@@ -200,10 +202,8 @@ namespace RailworksDownloader
 
                     returnDependencies.Add(depPackageId);
                     await GetDependencies(dependencyPackage.Dependencies.ToHashSet(), returnDependencies);
-                    //returnDependencies.UnionWith(await GetDependencies(dependencyPackage.Dependencies.ToHashSet(), returnDependencies));
                 }
             }
-            //return returnDependencies;
         }
 
         public async Task<List<int>> FindFile(string file_name, bool withDeps = true)

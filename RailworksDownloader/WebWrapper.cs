@@ -119,8 +119,6 @@ namespace RailworksDownloader
         public async Task<ObjectResult<object>> DownloadPackage(int packageId, string token)
         {
             Uri url = new Uri(ApiUrl + $"download?token={token}&package_id={packageId}");
-            //Dictionary<string, string> content = new Dictionary<string, string> { { "token", token }, { "package_id", packageId.ToString() } };
-            //FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
             OnDownloadProgressChanged?.Invoke(0);
 
