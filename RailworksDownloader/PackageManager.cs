@@ -157,6 +157,7 @@ namespace RailworksDownloader
         public List<Package> InstalledPackages { get; set; }
 
         public List<Package> CachedPackages { get; set; } = new List<Package>();
+
         public HashSet<string> MissingDeps { get; set; }
 
         private readonly SqLiteAdapter SqLiteAdapter = new SqLiteAdapter(Path.GetFullPath("packages.mcf"));
@@ -180,6 +181,7 @@ namespace RailworksDownloader
 
             SqLiteAdapter = new SqLiteAdapter(Path.Combine(RWPath, "main.dls"));
             InstalledPackages = SqLiteAdapter.LoadInstalledPackages();
+            CachedPackages = CachedPackages.Union(InstalledPackages).ToList();
             WebWrapper = new WebWrapper(ApiUrl);
         }
 
@@ -187,7 +189,7 @@ namespace RailworksDownloader
         {
             foreach (int depPackageId in dependecies)
             {
-                if (!returnDependencies.Contains(depPackageId))
+                if (!returnDependencies.Contains(depPackageId) && !InstalledPackages.Any(x => x.PackageId == depPackageId))
                 {
                     Package dependencyPackage = CachedPackages.FirstOrDefault(x => x.PackageId == depPackageId);
                     if (dependencyPackage == default)
@@ -200,7 +202,9 @@ namespace RailworksDownloader
                         }
                     }
 
-                    returnDependencies.Add(depPackageId);
+                    if (!dependencyPackage.IsPaid)
+                        returnDependencies.Add(depPackageId);
+
                     await GetDependencies(dependencyPackage.Dependencies.ToHashSet(), returnDependencies);
                 }
             }
@@ -228,10 +232,10 @@ namespace RailworksDownloader
                         CachedPackages.Add(onlinePackage);
                 }
 
-                HashSet<int> dependencyPkgIds = onlinePackage.Dependencies.ToHashSet();
+                HashSet<int> dependencyPkgIds = new HashSet<int>();
                 if (withDeps)
                 {
-                    await GetDependencies(dependencyPkgIds.ToHashSet(), dependencyPkgIds);
+                    await GetDependencies(new HashSet<int>() { onlinePackage.PackageId }, dependencyPkgIds);
                 }
 
                 return new List<int>() { onlinePackage.PackageId }.Union(dependencyPkgIds).ToList();
@@ -311,7 +315,7 @@ namespace RailworksDownloader
                 if (rewrite || rewriteAll)
                 {
                     PkgsToDownload.Add(id);
-                    HashSet<int> depsPkgs = new HashSet<int>() { id };
+                    HashSet<int> depsPkgs = new HashSet<int>();
                     await GetDependencies(new HashSet<int>() { id }, depsPkgs);
                     PkgsToDownload.UnionWith(depsPkgs);
                 }
@@ -561,8 +565,8 @@ namespace RailworksDownloader
                             return;
                         }
 
-                        HashSet<int> depsPkgs = packageToDownload.Dependencies.ToHashSet();
-                        await GetDependencies(depsPkgs.ToHashSet(), depsPkgs);
+                        HashSet<int> depsPkgs = new HashSet<int>();
+                        await GetDependencies(new HashSet<int>() { packageToDownload.PackageId }, depsPkgs);
                         HashSet<int> packageIds = new HashSet<int>() { packageToDownload.PackageId }.Union(depsPkgs).ToHashSet();
 
                         if (packageIds.Count > 0)
