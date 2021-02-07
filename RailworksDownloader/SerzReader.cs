@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SteamKit2;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -253,12 +254,37 @@ namespace RailworksDownloader
 
             Debug.Assert(string_id < SIndex || string_id == 0xFFFF, string.Format("Adding non loaded string id {0} at position {1}, step {2}!", string_id, br.BaseStream.Position, DebugStep));
 
+            Debug.Assert(Strings.Length != 41);
+
             if (string_id == 0xFFFF) //if string index == FFFF then it is string itself
             {
                 int string_len = br.ReadInt32(); //read string length
-                char[] _s = br.ReadChars(string_len); //reads bytes of string len
-                //string s = Encoding.UTF8.GetString(_s); //converts byte array to string
-                Strings[SIndex % 0xFFFF] = new string(_s); //saves string
+                char[] _s = new char[string_len];
+                for (int i = 0; i < string_len; i++)
+                {
+                    byte b = br.ReadByte();
+                    _s[i] = (char)b;
+                    if (b < 0xA0)
+                        continue;
+
+                    byte[] bchar;
+                    switch (b)
+                    {
+                        case 0xEF:
+                            bchar = br.ReadBytes(2);
+                            bchar[0] += 4;
+                            break;
+                        default:
+                            bchar = new byte[2] { b, br.ReadByte() };
+                            break;
+                    }
+
+                    char[] c = Encoding.UTF8.GetChars(bchar);
+                    Array.Copy(c, 0, _s, i, c.Length);
+                }
+
+                string s = new string(_s);
+                Strings[SIndex % 0xFFFF] = s; //saves string
                 string_id = (ushort)(SIndex % 0xFFFF);
 
                 SIndex++;
