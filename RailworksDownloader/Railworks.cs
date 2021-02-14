@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Xml;
 using static RailworksDownloader.Utils;
 
@@ -133,13 +134,22 @@ namespace RailworksDownloader
             string path = Path.Combine(RWPath, "Content", "Routes");
             List<RouteInfo> list = new List<RouteInfo>();
 
+            var dataList = Directory.GetDirectories(path);
+
             foreach (string dir in Directory.GetDirectories(path))
             {
                 string rp_path = Path.Combine(dir, "RouteProperties.xml");
 
                 if (File.Exists(rp_path))
                 {
-                    list.Add(new RouteInfo(ParseRouteProperties(rp_path).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
+                    try
+                    {
+                        list.Add(new RouteInfo(ParseRouteProperties(rp_path).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("Nastala chyba při načítání souboru souboru:" + rp_path, "Chyba", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
                 }
                 else
                 {
