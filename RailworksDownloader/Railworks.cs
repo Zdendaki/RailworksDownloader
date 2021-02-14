@@ -134,8 +134,6 @@ namespace RailworksDownloader
             string path = Path.Combine(RWPath, "Content", "Routes");
             List<RouteInfo> list = new List<RouteInfo>();
 
-            var dataList = Directory.GetDirectories(path);
-
             foreach (string dir in Directory.GetDirectories(path))
             {
                 string rp_path = Path.Combine(dir, "RouteProperties.xml");
@@ -148,7 +146,7 @@ namespace RailworksDownloader
                     }
                     catch (Exception)
                     {
-                        MessageBox.Show("Nastala chyba při načítání souboru souboru:" + rp_path, "Chyba", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show("An unexpected error occured during parsing following file.\nUsually it means the file is corrupted:" + rp_path, "Error parsing RouteProperties", MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
                 }
                 else
