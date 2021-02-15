@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Xml;
 using static RailworksDownloader.Utils;
 
@@ -139,7 +140,14 @@ namespace RailworksDownloader
 
                 if (File.Exists(rp_path))
                 {
-                    list.Add(new RouteInfo(ParseRouteProperties(rp_path).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
+                    try
+                    {
+                        list.Add(new RouteInfo(ParseRouteProperties(rp_path).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("An unexpected error occured during parsing following file.\nUsually it means the file is corrupted:" + rp_path, "Error parsing RouteProperties", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
                 }
                 else
                 {
