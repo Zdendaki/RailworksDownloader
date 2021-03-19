@@ -3,14 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:RailworksDownloader"
+        xmlns:loc="clr-namespace:RailworksDownloader.Localization"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         ui:WindowHelper.UseModernWindowStyle="True"
         mc:Ignorable="d"
         Title="" Height="450" Width="800" ResizeMode="CanResize">
     <Grid>
         <TabControl>
-            <TabItem Header="Route dependencies">
+            <TabItem Header="{x:Static loc:Strings.DepWindowTitle1}">
                 <ListView x:Name="DependenciesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
@@ -32,13 +32,13 @@
                                     <TextBlock Text="{Binding Name}" />
                                 </Label>
                                 
-                                <Label Grid.Column="1" Content="{Binding State}" Margin="10,0" VerticalContentAlignment="Center" />
+                                <Label Grid.Column="1" Content="{Binding PrettyState}" Margin="10,0" VerticalContentAlignment="Center" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
             </TabItem>
-            <TabItem Header="Scenarios dependencies">
+            <TabItem Header="{x:Static loc:Strings.DepWindowTitle2}">
                 <ListView x:Name="ScenarioDepsList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
@@ -59,7 +59,7 @@
                                 <Label Grid.Column="0" Margin="10,0" VerticalContentAlignment="Center">
                                     <TextBlock Text="{Binding Name}" />
                                 </Label>
-                                <Label Grid.Column="1" Content="{Binding State}" Margin="10,0" VerticalContentAlignment="Center" />
+                                <Label Grid.Column="1" Content="{Binding PrettyState}" Margin="10,0" VerticalContentAlignment="Center" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>

@@ -30,7 +30,7 @@ namespace RailworksDownloader
             if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(pass))
             {
                 args.Cancel = true;
-                ErrorLabel.Content = "You haven't filled all required fields.";
+                ErrorLabel.Content = Localization.Strings.LoginMissingField;
                 ErrorLabel.Visibility = Visibility.Visible;
             }
             else
@@ -57,7 +57,7 @@ namespace RailworksDownloader
                                 if (result != null)
                                     ErrorLabel.Content = result.message;
                                 else
-                                    ErrorLabel.Content = "Unknown error";
+                                    ErrorLabel.Content = Localization.Strings.UnknownError;
                                 ErrorLabel.Visibility = Visibility.Visible;
                             });
                         }).Start();

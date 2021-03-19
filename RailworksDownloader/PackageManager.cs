@@ -29,19 +29,19 @@ namespace RailworksDownloader
                 switch (Category)
                 {
                     case 0:
-                        return "Locomotives";
+                        return Localization.Strings.CatLoco;
                     case 1:
-                        return "Wagons";
+                        return Localization.Strings.CatWag;
                     case 2:
-                        return "Rail vehicle dependencies";
+                        return Localization.Strings.CatRVDep;
                     case 3:
-                        return "Scenery";
+                        return Localization.Strings.CatScenery;
                     case 4:
-                        return "Track objects";
+                        return Localization.Strings.CatTrackObj;
                     case 5:
-                        return "Enviroment";
+                        return Localization.Strings.CatEnv;
                     default:
-                        return "Other/uncategorized";
+                        return Localization.Strings.CatOther;
                 }
             }
         }
@@ -56,19 +56,19 @@ namespace RailworksDownloader
                 switch (Era)
                 {
                     case 1:
-                        return "I.";
+                        return Localization.Strings.Era1;
                     case 2:
-                        return "II.";
+                        return Localization.Strings.Era2;
                     case 3:
-                        return "III.";
+                        return Localization.Strings.Era3;
                     case 4:
-                        return "IV.";
+                        return Localization.Strings.Era4;
                     case 5:
-                        return "V.";
+                        return Localization.Strings.Era5;
                     case 6:
-                        return "VI.";
+                        return Localization.Strings.Era6;
                     default:
-                        return "Indeterminate";
+                        return Localization.Strings.EraNon;
                 }
             }
         }
@@ -82,12 +82,8 @@ namespace RailworksDownloader
             {
                 switch (Country)
                 {
-                    case 1:
-                        return "Czech Republic";
-                    case 2:
-                        return "Slovak Republic";
                     default:
-                        return "Not specified";
+                        return Localization.Strings.CountryNon;
                 }
             }
         }
@@ -268,7 +264,7 @@ namespace RailworksDownloader
                     {
                         List<int> packages = await FindFile(conflictDeps.ElementAt(i), false);
 
-                        Trace.Assert(packages.Count > 0, $"FindFile for {conflictDeps.ElementAt(i)} returned no packages!");
+                        Trace.Assert(packages.Count > 0, string.Format(Localization.Strings.FindFileFail, conflictDeps.ElementAt(i)));
 
                         if (packages.Count > 0)
                         {
@@ -400,9 +396,9 @@ namespace RailworksDownloader
                         {
                             MainWindow.ErrorDialog = new ContentDialog()
                             {
-                                Title = "Cannot download packages",
-                                Content = "All availaible packages were downloaded.",
-                                SecondaryButtonText = "OK",
+                                Title = Localization.Strings.CantDownload,
+                                Content = Localization.Strings.AllDownDesc,
+                                SecondaryButtonText = Localization.Strings.Ok,
                                 Owner = App.Window
                             };
 
@@ -436,10 +432,10 @@ namespace RailworksDownloader
                         Task<ContentDialogResult> t = null;
                         MainWindow.Dispatcher.Invoke(() =>
                         {
-                            MainWindow.ContentDialog.Title = "Newer package found!";
-                            MainWindow.ContentDialog.Content = string.Format("Newer version of following package was found on server:\n{0}\nDo you want to update it?", package.DisplayName);
-                            MainWindow.ContentDialog.PrimaryButtonText = "Yes, update";
-                            MainWindow.ContentDialog.SecondaryButtonText = "No, keep local";
+                            MainWindow.ContentDialog.Title = Localization.Strings.NewerTitle;
+                            MainWindow.ContentDialog.Content = string.Format(Localization.Strings.NewerDesc, package.DisplayName);
+                            MainWindow.ContentDialog.PrimaryButtonText = Localization.Strings.NewerPrimary;
+                            MainWindow.ContentDialog.SecondaryButtonText = Localization.Strings.NewerSecond;
                             MainWindow.ContentDialog.Owner = MainWindow;
                             t = MainWindow.ContentDialog.ShowAsync();
                         });
@@ -545,9 +541,9 @@ namespace RailworksDownloader
                             {
                                 MainWindow.ErrorDialog = new ContentDialog()
                                 {
-                                    Title = "Cannot download package",
-                                    Content = "This is paid package. Paid packages cannot be downloaded through this app.",
-                                    SecondaryButtonText = "OK",
+                                    Title = Localization.Strings.CantDownload,
+                                    Content = Localization.Strings.PaidPackageFail,
+                                    SecondaryButtonText = Localization.Strings.Ok,
                                     Owner = App.Window
                                 };
 
@@ -576,9 +572,9 @@ namespace RailworksDownloader
                                 {
                                     MainWindow.ErrorDialog = new ContentDialog()
                                     {
-                                        Title = "Cannot download packages",
-                                        Content = "An error ocured when trying to install package.",
-                                        SecondaryButtonText = "OK",
+                                        Title = Localization.Strings.CantDownload,
+                                        Content = Localization.Strings.InstalFail,
+                                        SecondaryButtonText = Localization.Strings.Ok,
                                         Owner = App.Window
                                     };
 
@@ -594,9 +590,9 @@ namespace RailworksDownloader
                     {
                         MainWindow.ErrorDialog = new ContentDialog()
                         {
-                            Title = "Cannot download package",
-                            Content = "This package is already downloaded.",
-                            SecondaryButtonText = "OK",
+                            Title = Localization.Strings.CantDownload,
+                            Content = Localization.Strings.AlreadyInstalFail,
+                            SecondaryButtonText = Localization.Strings.Ok,
                             Owner = App.Window
                         };
 

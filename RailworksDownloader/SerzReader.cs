@@ -188,6 +188,8 @@ namespace RailworksDownloader
 
         private int DebugStep { get; set; }
 
+        private string DebugFname { get; set; }
+
         private bool AwaitDisplayName { get; set; } = false;
 
         private Stream InputStream { get; set; }
@@ -204,13 +206,15 @@ namespace RailworksDownloader
         public SerzReader(string inputFile, MODES serzMode = MODES.wholeFile)
         {
             InputStream = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
+            DebugFname = inputFile;
             SERZ_MODE = serzMode;
             Deserialize();
         }
 
-        public SerzReader(Stream fileStream, MODES serzMode = MODES.wholeFile)
+        public SerzReader(Stream fileStream, string debugFname, MODES serzMode = MODES.wholeFile)
         {
             InputStream = fileStream;
+            DebugFname = debugFname;
             SERZ_MODE = serzMode;
             Deserialize();
         }
@@ -265,7 +269,7 @@ namespace RailworksDownloader
                 catch (Exception e)
                 {
                     if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
-                        Trace.Assert(false, $"Error when parsing bin file:\n{e}");
+                        Trace.Assert(false, string.Format(Localization.Strings.SerzCommonFail, DebugFname), e.ToString());
                 }
             }
         }
@@ -274,7 +278,7 @@ namespace RailworksDownloader
         {
             ushort string_id = br.ReadUInt16(); //read two bytes as short
 
-            Debug.Assert(string_id < SIndex || string_id == 0xFFFF, string.Format("Adding non loaded string id {0} at position {1}, step {2}!", string_id, br.BaseStream.Position, DebugStep));
+            Debug.Assert(string_id < SIndex || string_id == 0xFFFF, string.Format(Localization.Strings.SerzNLoadStringFail, string_id, br.BaseStream.Position, DebugStep, DebugFname));
 
             if (string_id == 0xFFFF) //if string index == FFFF then it is string itself
             {
@@ -399,7 +403,7 @@ namespace RailworksDownloader
                     }
                 default:
                     {
-                        Debug.Assert(false, string.Format("Unknown data type {0} at position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
+                        Debug.Assert(false, string.Format(Localization.Strings.SerzUnkTypeFail, Strings[format_id], br.BaseStream.Position, DebugStep, DebugFname));
                         return;
                         //throw new Exception(string.Format("Unknown data type {0} at position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
                     }
@@ -533,7 +537,7 @@ namespace RailworksDownloader
             ushort tagName_id = ReadString(ref br); //reads name of tag
             ushort format_id = ReadString(ref br); //reads format of saved data
 
-            Debug.Assert(Strings[format_id] == "sFloat32", string.Format("Unknown format {0} in mattrice on position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
+            Debug.Assert(Strings[format_id] == "sFloat32", string.Format(Localization.Strings.SerzUnkFormatFail, Strings[format_id], br.BaseStream.Position, DebugStep, DebugFname));
 
             ushort num_elements = br.ReadByte();
             float[] elements = new float[num_elements];
@@ -667,7 +671,7 @@ namespace RailworksDownloader
                         break;
                     }
                 default:
-                    Debug.Assert(false, string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
+                    Debug.Assert(false, string.Format(Localization.Strings.SerzUnkTagFormFail, command_type, br.BaseStream.Position, DebugStep, DebugFname));
                     break;
                     //throw new Exception(string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
             }
@@ -756,7 +760,7 @@ namespace RailworksDownloader
             }
             catch
             {
-                Debug.Assert(false, $"Unable to parse position {br.BaseStream.Position}!");
+                Debug.Assert(false, string.Format(Localization.Strings.SerzParseExTagFail, br.BaseStream.Position, DebugStep, DebugFname));
             }
 
         }
@@ -789,7 +793,7 @@ namespace RailworksDownloader
                 Tag currentTag = AllTags[i];
                 Tag nextTag = i + 1 < AllTags.Count ? AllTags[i + 1] : null;
 
-                Debug.Assert(currentTag.TagNameID < SIndex, $"Attempted to flush unreaded string!");
+                Debug.Assert(currentTag.TagNameID < SIndex, string.Format(Localization.Strings.SerzFlushNStringFail, currentTag.TagNameID, DebugStep, DebugFname));
 
                 if (i == 0)
                 {

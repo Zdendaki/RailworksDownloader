@@ -110,7 +110,7 @@ namespace RailworksDownloader
                     catch (Exception e)
                     {
                         if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
-                            Trace.Assert(false, $"Error when crawling route \"{RoutePath}\":\n{e}");
+                            Trace.Assert(false, string.Format(Localization.Strings.CrawlingRouteFail, RoutePath), e.ToString());
                     }
 
                     // If crawling skipped because cache or inaccuracy, adds to 100 %
@@ -145,7 +145,7 @@ namespace RailworksDownloader
                 Progress += fsize;
             }
 
-            Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize + "\nRoute: " + RoutePath);
+            Debug.Assert(Progress <= AllFilesSize, string.Format(Localization.Strings.ProgressFail, Progress ,AllFilesSize, RoutePath));
             if (Progress <= AllFilesSize)
             {
 
@@ -180,7 +180,7 @@ namespace RailworksDownloader
                 {
                     using (Stream fs = File.OpenRead(blueprintPath))
                     {
-                        ParseBlueprint(fs);
+                        ParseBlueprint(fs, blueprintPath);
                     }
                 }
             });
@@ -199,7 +199,7 @@ namespace RailworksDownloader
             {
                 using (Stream fs = File.OpenRead(blueprintPath))
                 {
-                    ParseBlueprint(fs, isScenario);
+                    ParseBlueprint(fs, blueprintPath, isScenario);
                 }
             }
         }
@@ -210,7 +210,7 @@ namespace RailworksDownloader
         /// <param name="stream">Blueprint stream</param>
         /// <param name="isScenario">Is scenario file</param>
         /// <returns></returns>
-        private void ParseBlueprint(Stream istream, bool isScenario = false)
+        private void ParseBlueprint(Stream istream, string debugFname, bool isScenario = false)
         {
             Stream stream = new MemoryStream();
             istream.CopyTo(stream);
@@ -221,7 +221,7 @@ namespace RailworksDownloader
             {
                 if (Utils.CheckIsSerz(stream))
                 {
-                    SerzReader sr = new SerzReader(stream);
+                    SerzReader sr = new SerzReader(stream, debugFname);
 
                     if (isScenario)
                         lock (ScenarioDeps)
@@ -453,7 +453,7 @@ namespace RailworksDownloader
                 string ext = Path.GetExtension(entry.Name).ToLower();
                 if (inputStream.CanRead && (ext == ".xml" || ext == ".bin"))
                 {
-                    ParseBlueprint(inputStream, isScenario);
+                    ParseBlueprint(inputStream, Path.Combine(file.Name, entry.Name), isScenario);
 
                     ReportProgress(entry.Size);
                 }
@@ -461,7 +461,7 @@ namespace RailworksDownloader
             catch (Exception e)
             {
                 if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
-                    Trace.Assert(false, $"Error when reading gzip entry of file \"{file.Name}\":\n{e}");
+                    Trace.Assert(false, string.Format(Localization.Strings.GzipEntryFail, file.Name), e.ToString());
             }
         }
 
@@ -511,14 +511,14 @@ namespace RailworksDownloader
                             }
                             else
                             {
-                                Trace.Assert(false, $"Gzip file \"{file}\" is corrupted!");
+                                Trace.Assert(false, string.Format(Localization.Strings.GzipFileFail, file));
                             }
                         }
                     }
                     catch (Exception e)
                     {
                         if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
-                            Trace.Assert(false, $"Error while reading gzip file: \"{file}\":\n{e}");
+                            Trace.Assert(false, string.Format(Localization.Strings.GzipReadFail, file), e.ToString());
                     }
                 });
             }
@@ -619,7 +619,7 @@ namespace RailworksDownloader
                     }
                     catch
                     {
-                        Trace.Assert(false, $"Error while counting size of file: \"{file}\"!");
+                        Trace.Assert(false, string.Format(Localization.Strings.CountSizeFail, file));
                     }
                 }
             }

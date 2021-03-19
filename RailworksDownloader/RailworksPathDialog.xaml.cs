@@ -35,7 +35,7 @@ namespace RailworksDownloader
             {
                 Filter = "RailWorks|RailWorks.exe",
                 FileName = "RailWorks.exe",
-                Title = "Select RailWorks installation path"
+                Title = Localization.Strings.SelectRWPathTitle
             };
 
             if (ofd.ShowDialog() == true)

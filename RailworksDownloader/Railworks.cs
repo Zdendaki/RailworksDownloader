@@ -97,7 +97,7 @@ namespace RailworksDownloader
 
                 if (Utils.CheckIsSerz(stream))
                 {
-                    SerzReader sr = new SerzReader(stream, SerzReader.MODES.routeName);
+                    SerzReader sr = new SerzReader(stream, file, SerzReader.MODES.routeName);
                     return sr.RouteName;
                 }
                 else
@@ -111,7 +111,7 @@ namespace RailworksDownloader
                     }
                     catch (Exception)
                     {
-                        MessageBox.Show("An unexpected error occured during parsing following file:\n" + file + "\nUsually it means the file is corrupted. Please report this error message including the corrupted file.", "Error parsing RouteProperties", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show(string.Format(Localization.Strings.ParseRoutePropFail, file), Localization.Strings.ParseRoutePropFailTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
                 }
             }
@@ -183,7 +183,7 @@ namespace RailworksDownloader
                         }
                         catch
                         {
-                            Trace.Assert(false, $"Error reading zip file {file}!");
+                            Trace.Assert(false, string.Format(Localization.Strings.ReadingZipFail, file));
                         }
                     }
                 }

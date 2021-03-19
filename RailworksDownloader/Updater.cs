@@ -78,7 +78,7 @@ namespace RailworksDownloader
             }
             catch
             {
-                MessageBox.Show("You need to confirm administrator privileges to update Railworks Download Station.", "UAC required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                MessageBox.Show(Localization.Strings.UpdaterAdminDesc, Localization.Strings.UpdaterAdminTitle, MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 ExecuteCommand(command);
             }
         }

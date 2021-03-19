@@ -63,7 +63,7 @@ namespace RailworksDownloader
                 }
                 catch
                 {
-                    Debug.Assert(false, "Initialision of SteamManager failed!");
+                    Debug.Assert(false, Localization.Strings.SteamInitFail);
                 }
 
                 Closing += MainWindowDialog_Closing;
@@ -126,7 +126,7 @@ namespace RailworksDownloader
                 }
                 catch (Exception e)
                 {
-                    Trace.Assert(false, $"Updater panic!\n{e}");
+                    Trace.Assert(false, Localization.Strings.UpdaterPanic, e.ToString());
                 }
             }
             catch (Exception e)
@@ -159,10 +159,10 @@ namespace RailworksDownloader
 
                 ContentDialog dialog = new ContentDialog
                 {
-                    Title = "Warning",
-                    Content = "Some operations are still running.\nDo you really want to close the app?",
-                    PrimaryButtonText = "Yes",
-                    SecondaryButtonText = "No"
+                    Title = Localization.Strings.Warning,
+                    Content = Localization.Strings.OperationsRunning,
+                    PrimaryButtonText = Localization.Strings.Yes,
+                    SecondaryButtonText = Localization.Strings.No
                 };
 
                 Task<ContentDialogResult> result = dialog.ShowAsync();
@@ -252,7 +252,7 @@ namespace RailworksDownloader
                         DownloadMissing.IsEnabled = true;
 
                     ScanRailworks.IsEnabled = true;
-                    ScanRailworks.Content = "Rescan assets...";
+                    ScanRailworks.Content = Localization.Strings.MainRescan;
                 });
             }
             catch (Exception e)
@@ -283,13 +283,13 @@ namespace RailworksDownloader
         private void RW_CheckingDLC(bool @checked)
         {
             CheckingDLC = !@checked;
-            ToggleSavingGrid("Checking installed DLCs");
+            ToggleSavingGrid(Localization.Strings.CheckingDLC);
         }
 
         private void RW_RouteSaving(bool saved)
         {
             Saving = !saved;
-            ToggleSavingGrid("Saving");
+            ToggleSavingGrid(Localization.Strings.Saving);
         }
 
         private void RW_ProgressUpdated(int percent)
@@ -347,7 +347,7 @@ namespace RailworksDownloader
             }
             catch
             {
-                Trace.Assert(false, "Loading routes failed!");
+                Trace.Assert(false, Localization.Strings.RoutesLoadFail);
             }
         }
 

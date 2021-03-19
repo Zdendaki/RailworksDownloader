@@ -25,7 +25,7 @@ namespace RailworksDownloader
         public DownloadDialog(bool cancel = true)
         {
             InitializeComponent();
-            Title = "Preparing download!";
+            Title = Localization.Strings.PrepareTitle;
             CancelButton = cancel;
             //FileName.Content = "";
         }
@@ -39,8 +39,8 @@ namespace RailworksDownloader
                 p.Version = pair.Value;
                 Dispatcher.Invoke(() =>
                 {
-                    Title = $"Updating packages {i + 1}/{update.Count}";
-                    FileName.Content = p?.DisplayName ?? "#INVALID FILE NAME";
+                    Title = string.Format(Localization.Strings.UpdateTitle, i + 1, update.Count);
+                    FileName.Content = p?.DisplayName ?? Localization.Strings.InvalidFileName;
                 });
 
                 await Task.Run(async () =>
@@ -84,7 +84,7 @@ namespace RailworksDownloader
                             }
                         }
 
-                        Trace.Assert(failedFiles.Count == 0, "Failed to copy following files!", string.Join("\n", failedFiles));
+                        Trace.Assert(failedFiles.Count == 0, Localization.Strings.FailedCopyFiles, string.Join("\n", failedFiles));
 
                         sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
                         installedPackages[installedPackages.FindIndex(x => x.PackageId == pkgId)] = p;
@@ -105,9 +105,9 @@ namespace RailworksDownloader
                             {
                                 MainWindow.ErrorDialog = new ContentDialog()
                                 {
-                                    Title = "Error occured while downloading",
+                                    Title = Localization.Strings.DownloadError,
                                     Content = dl_result.message,
-                                    SecondaryButtonText = "OK",
+                                    SecondaryButtonText = Localization.Strings.Ok,
                                     Owner = App.Window
                                 };
 
@@ -138,9 +138,9 @@ namespace RailworksDownloader
                     {
                         MainWindow.ErrorDialog = new ContentDialog()
                         {
-                            Title = "Critical error",
-                            Content = "Attempted to download non cached package!",
-                            SecondaryButtonText = "OK",
+                            Title = Localization.Strings.CriticalError,
+                            Content = Localization.Strings.NonCached,
+                            SecondaryButtonText = Localization.Strings.Ok,
                             Owner = App.Window
                         };
 
@@ -151,16 +151,16 @@ namespace RailworksDownloader
 
                 Dispatcher.Invoke(() =>
                 {
-                    Title = $"Downloading packages {i + 1}/{count}";
+                    Title = string.Format(Localization.Strings.DownloadTitle, i + 1, count);
                     string DisplayNameShort = null;
 
                     if (p?.DisplayName.Length > 50)
                     {
-                        DisplayNameShort = (p?.DisplayName.Substring(0, 50) + "...") ?? "#INVALID FILE NAME";
+                        DisplayNameShort = (p?.DisplayName.Substring(0, 50) + "...") ?? Localization.Strings.InvalidFileName;
                     }
                     else
                     {
-                        DisplayNameShort = p?.DisplayName ?? "#INVALID FILE NAME";
+                        DisplayNameShort = p?.DisplayName ?? Localization.Strings.InvalidFileName;
                     }
                     FileName.Content = DisplayNameShort;
                 });
@@ -200,7 +200,7 @@ namespace RailworksDownloader
                         }
                     }
 
-                    Trace.Assert(failedFiles.Count == 0, "Failed to copy following files!", string.Join("\n", failedFiles));
+                    Trace.Assert(failedFiles.Count == 0, Localization.Strings.FailedCopyFiles, string.Join("\n", failedFiles));
 
                     sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
                     installedPackages.Add(p);
@@ -218,9 +218,9 @@ namespace RailworksDownloader
                         {
                             MainWindow.ErrorDialog = new ContentDialog()
                             {
-                                Title = "Error occured while downloading",
+                                Title = Localization.Strings.DownloadError,
                                 Content = dl_result.message,
-                                SecondaryButtonText = "OK",
+                                SecondaryButtonText = Localization.Strings.Ok,
                                 Owner = App.Window
                             };
 
@@ -240,7 +240,7 @@ namespace RailworksDownloader
         {
             Dispatcher.Invoke(() =>
             {
-                Title = $"Downloading update of application...";
+                Title = Localization.Strings.DownloadingUpdate;
                 FileName.Content = null;
                 CancelButton = false;
                 DownloadProgress.IsIndeterminate = false;
@@ -261,8 +261,8 @@ namespace RailworksDownloader
             {
                 Dispatcher.Invoke(() =>
                 {
-                    Title = $"Installing update...";
-                    FileName.Content = "Application will be restarted";
+                    Title = Localization.Strings.InstallingUpdate;
+                    FileName.Content = Localization.Strings.ApplicationRestart;
                     DownloadProgress.Value = 100;
                     DownloadProgress.IsIndeterminate = true;
                     Progress.Content = null;
@@ -279,7 +279,7 @@ namespace RailworksDownloader
                     if (progress >= 100)
                     {
                         DownloadProgress.IsIndeterminate = true;
-                        Progress.Content = "Installing...";
+                        Progress.Content = Localization.Strings.Installing;
                     }
                     else
                     {
