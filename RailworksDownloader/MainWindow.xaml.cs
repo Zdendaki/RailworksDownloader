@@ -55,8 +55,6 @@ namespace RailworksDownloader
 
                 App.Window = this;
 
-                Utils.CheckIsSerz(@"G:\\Steam\\steamapps\\common\\RailWorks\\Content\\Routes\\7b94423c-d469-4f09-bbba-812b61cea620\\Scenery\\-000001+000000.bin");
-
                 try
                 {
                     App.SteamManager = new SteamManager();
