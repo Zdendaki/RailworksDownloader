@@ -21,21 +21,43 @@
                             <EventSetter Event="PreviewMouseDoubleClick" Handler="ListViewItem_PreviewMouseDoubleClick" />
                         </Style>
                     </ListView.ItemContainerStyle>
+                    <ListView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel Orientation="Vertical">
+
+                            </VirtualizingStackPanel>
+                        </ItemsPanelTemplate>
+                    </ListView.ItemsPanel>
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="7*" />
-                                    <ColumnDefinition Width="3*" />
-                                </Grid.ColumnDefinitions>
-                                <Label Grid.Column="0" Margin="10,0" VerticalContentAlignment="Center">
-                                    <TextBlock Text="{Binding Name}" />
-                                </Label>
-                                
-                                <Label Grid.Column="1" Content="{Binding PrettyState}" Margin="10,0" VerticalContentAlignment="Center" />
-                            </Grid>
+                            <VirtualizingStackPanel>
+                                <TextBlock Text="{Binding Name}" Margin="10,0" />
+                                <TextBlock Text="{Binding PrettyState}" Margin="10,2,10,5" FontWeight="Bold" />
+                            </VirtualizingStackPanel>
                         </DataTemplate>
                     </ListView.ItemTemplate>
+                    <ListView.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.ContainerStyle>
+                                <Style TargetType="{x:Type GroupItem}">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <Expander IsExpanded="True" Margin="10,0,0,0">
+                                                    <Expander.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="{Binding Name}" Margin="10" FontWeight="Bold" VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </Expander.Header>
+                                                    <ItemsPresenter />
+                                                </Expander>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </GroupStyle.ContainerStyle>
+                        </GroupStyle>
+                    </ListView.GroupStyle>
                 </ListView>
             </TabItem>
             <TabItem Header="{x:Static loc:Strings.DepWindowTitle2}">
@@ -49,18 +71,41 @@
                             <EventSetter Event="PreviewMouseDoubleClick" Handler="ListViewItem_PreviewMouseDoubleClick" />
                         </Style>
                     </ListView.ItemContainerStyle>
+                    <ListView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel Orientation="Vertical">
+
+                            </VirtualizingStackPanel>
+                        </ItemsPanelTemplate>
+                    </ListView.ItemsPanel>
+                    <ListView.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.ContainerStyle>
+                                <Style TargetType="{x:Type GroupItem}">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <Expander IsExpanded="True" Margin="10,0,0,0">
+                                                    <Expander.Header>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="{Binding Name}" Margin="10" FontWeight="Bold" VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </Expander.Header>
+                                                    <ItemsPresenter />
+                                                </Expander>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </GroupStyle.ContainerStyle>
+                        </GroupStyle>
+                    </ListView.GroupStyle>
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="7*" />
-                                    <ColumnDefinition Width="3*" />
-                                </Grid.ColumnDefinitions>
-                                <Label Grid.Column="0" Margin="10,0" VerticalContentAlignment="Center">
-                                    <TextBlock Text="{Binding Name}" />
-                                </Label>
-                                <Label Grid.Column="1" Content="{Binding PrettyState}" Margin="10,0" VerticalContentAlignment="Center" />
-                            </Grid>
+                            <VirtualizingStackPanel>
+                                <TextBlock Text="{Binding Name}" Margin="10,0" />
+                                <TextBlock Text="{Binding PrettyState}" Margin="10,2,10,5" FontWeight="Bold" />
+                            </VirtualizingStackPanel>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>

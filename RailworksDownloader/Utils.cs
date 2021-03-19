@@ -191,7 +191,7 @@ namespace RailworksDownloader
                 }
 
                 string login = Settings.Default.Username;
-                string passwd = Utils.PasswordEncryptor.Decrypt(Settings.Default.Password, login.Trim());
+                string passwd = PasswordEncryptor.Decrypt(Settings.Default.Password, login.Trim());
 
                 ObjectResult<LoginContent> result = await WebWrapper.Login(login, passwd, ApiUrl);
 

@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace RailworksDownloader
@@ -37,6 +39,15 @@ namespace RailworksDownloader
             ScenarioDeps = ScenarioDeps.OrderBy(x => x.State).ThenBy(x => x.Name).ToList();
             DependenciesList.ItemsSource = Dependencies;
             ScenarioDepsList.ItemsSource = ScenarioDeps;
+
+            CollectionView depsView = (CollectionView)CollectionViewSource.GetDefaultView(DependenciesList.ItemsSource);
+            PropertyGroupDescription depsGroups = new PropertyGroupDescription("State");
+            depsView.GroupDescriptions.Add(depsGroups);
+
+
+            CollectionView scenView = (CollectionView)CollectionViewSource.GetDefaultView(ScenarioDepsList.ItemsSource);
+            PropertyGroupDescription scenGroups = new PropertyGroupDescription("State");
+            scenView.GroupDescriptions.Add(scenGroups);
         }
 
         private void ListViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e)
