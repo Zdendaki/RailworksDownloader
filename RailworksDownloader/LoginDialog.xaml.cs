@@ -11,16 +11,14 @@ namespace RailworksDownloader
     /// </summary>
     public partial class LoginDialog : ContentDialog
     {
-        private PackageManager PM { get; set; }
-        private int Invoker { get; set; } //0 - DownloadDeps, 1 - CheckUpates
+        private Action CallBack { get; set; }
         private Uri ApiUrl { get; set; }
 
-        public LoginDialog(PackageManager pm, Uri apiUrl, int invoker)
+        public LoginDialog(Uri apiUrl, Action callback)
         {
             InitializeComponent();
-            PM = pm;
             ApiUrl = apiUrl;
-            Invoker = invoker;
+            CallBack = callback;
             ShowAsync();
         }
 
@@ -40,21 +38,13 @@ namespace RailworksDownloader
                 Task.Run(async () =>
                 {
                     ObjectResult<LoginContent> result = await WebWrapper.Login(login.Trim(), pass, ApiUrl);
-                    if (result != null && result.code == 1 && result.content?.privileges >= 0)
+                    if (result != null && Utils.IsSuccessStatusCode(result.code) && result.content?.privileges >= 0)
                     {
                         Settings.Default.Username = login.Trim();
                         Settings.Default.Password = Utils.PasswordEncryptor.Encrypt(pass, login.Trim());
                         Settings.Default.Save();
                         App.Token = result.content.token;
-                        switch (Invoker)
-                        {
-                            case 0:
-                                PM.DownloadDependencies();
-                                break;
-                            case 1:
-                                PM.CheckUpdates();
-                                break;
-                        }
+                        CallBack();
                     }
                     else
                     {
@@ -64,7 +54,10 @@ namespace RailworksDownloader
                         {
                             Dispatcher.Invoke(() =>
                             {
-                                ErrorLabel.Content = result.message;
+                                if (result != null)
+                                    ErrorLabel.Content = result.message;
+                                else
+                                    ErrorLabel.Content = "Unknown error";
                                 ErrorLabel.Visibility = Visibility.Visible;
                             });
                         }).Start();

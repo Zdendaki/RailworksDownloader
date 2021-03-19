@@ -167,9 +167,18 @@ namespace RailworksDownloader
             public string Asset { get; set; }
         }
 
-        private const uint SERZ_MAGIC = 1515341139U;
+        public enum MODES
+        {
+            wholeFile = 0,
+            routeName = 1,
+        }
+
+        public const uint SERZ_MAGIC = 1515341139U;
         private const string XML_HEADER = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n";
         private const byte BINDEX_MAX = 0xFF;
+        private MODES SERZ_MODE;
+
+        public string RouteName { get; set; } = string.Empty;
 
         private int CurrentXMLlevel { get; set; }
 
@@ -178,6 +187,8 @@ namespace RailworksDownloader
         private ushort SIndex { get; set; }
 
         private int DebugStep { get; set; }
+
+        private bool AwaitDisplayName { get; set; } = false;
 
         private Stream InputStream { get; set; }
         private FileStream OutputStream { get; set; }
@@ -190,15 +201,17 @@ namespace RailworksDownloader
 
         private readonly List<SerzDependency> Dependencies = new List<SerzDependency>();
 
-        public SerzReader(string inputFile)
+        public SerzReader(string inputFile, MODES serzMode = MODES.wholeFile)
         {
             InputStream = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
+            SERZ_MODE = serzMode;
             Deserialize();
         }
 
-        public SerzReader(Stream fileStream)
+        public SerzReader(Stream fileStream, MODES serzMode = MODES.wholeFile)
         {
             InputStream = fileStream;
+            SERZ_MODE = serzMode;
             Deserialize();
         }
 
@@ -236,6 +249,16 @@ namespace RailworksDownloader
                                 ParseExistingTag(cur_byte, ref binaryReader);
                             }
                             DebugStep++;
+
+                            switch(SERZ_MODE)
+                            {
+                                case MODES.routeName:
+                                    {
+                                        if (AwaitDisplayName && !string.IsNullOrWhiteSpace(RouteName))
+                                            return;
+                                        break;
+                                    }
+                            }
                         }
                     }
                 }
@@ -300,6 +323,19 @@ namespace RailworksDownloader
                                     {
                                         if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Asset))
                                             Dependencies.Last().Asset = elemContent;
+                                        break;
+                                    }
+                                case "English":
+                                case "French":
+                                case "Italian":
+                                case "German":
+                                case "Spanish":
+                                case "Dutch":
+                                case "Polish":
+                                case "Russian":
+                                    {
+                                        if (AwaitDisplayName)
+                                            RouteName = elemContent;
                                         break;
                                     }
                             }
@@ -408,6 +444,19 @@ namespace RailworksDownloader
                                     {
                                         if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Asset))
                                             Dependencies.Last().Asset = elemContent;
+                                        break;
+                                    }
+                                case "English":
+                                case "French":
+                                case "Italian":
+                                case "German":
+                                case "Spanish":
+                                case "Dutch":
+                                case "Polish":
+                                case "Russian":
+                                    {
+                                        if (AwaitDisplayName)
+                                            RouteName = elemContent;
                                         break;
                                     }
                             }
@@ -535,6 +584,9 @@ namespace RailworksDownloader
                         AllTags.Add(st);
 
                         CurrentXMLlevel++;
+
+                        if (Strings[tagName_id] == "DisplayName")
+                            AwaitDisplayName = true;
 
                         break;
                     }

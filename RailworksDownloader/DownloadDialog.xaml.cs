@@ -1,6 +1,7 @@
 ﻿using ModernWpf.Controls;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -48,25 +49,44 @@ namespace RailworksDownloader
                     wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
                     ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
-                    if (dl_result.code == 1)
+                    if (Utils.IsSuccessStatusCode(dl_result.code))
                     {
                         Dispatcher.Invoke(() => CancelButton = false);
 
+                        //cleanup before installig new version
+                        List<string> removedFiles = Utils.RemoveFiles(sqLiteAdapter.LoadPackageFiles(pkgId));
+                        sqLiteAdapter.RemovePackageFiles(removedFiles);
+
+                        List<string> installedFiles = new List<string>();
+                        List<string> failedFiles = new List<string>();
                         using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
                         {
                             foreach (ZipArchiveEntry e in a.Entries)
                             {
-                                if (e.Name == string.Empty)
+                                if (e.Name == string.Empty) //is directory
                                     continue;
 
-                                string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, installedPackages.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName));
+                                string rel_assets_path = Utils.NormalizePath(Path.Combine(installedPackages.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName));
+                                string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
 
-                                if (!Directory.Exists(path))
-                                    Directory.CreateDirectory(path);
+                                try
+                                {
+                                    if (!Directory.Exists(path))
+                                        Directory.CreateDirectory(path);
 
-                                e.ExtractToFile(Path.Combine(path, e.Name), true);
+                                    e.ExtractToFile(Path.Combine(path, e.Name), true);
+                                    installedFiles.Add(rel_assets_path);
+                                }
+                                catch
+                                {
+                                    failedFiles.Add(e.FullName);
+                                }
                             }
                         }
+
+                        Trace.Assert(failedFiles.Count == 0, "Failed to copy following files!", string.Join("\n", failedFiles));
+
+                        sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
                         installedPackages[installedPackages.FindIndex(x => x.PackageId == pkgId)] = p;
                         sqLiteAdapter.SaveInstalledPackage(p);
                         new Task(() =>
@@ -149,10 +169,12 @@ namespace RailworksDownloader
                 wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
                 ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
-                if (dl_result.code == 1)
+                if (Utils.IsSuccessStatusCode(dl_result.code))
                 {
                     Dispatcher.Invoke(() => CancelButton = false);
 
+                    List<string> installedFiles = new List<string>();
+                    List<string> failedFiles = new List<string>();
                     using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
                     {
                         foreach (ZipArchiveEntry e in a.Entries)
@@ -160,14 +182,27 @@ namespace RailworksDownloader
                             if (e.Name == string.Empty)
                                 continue;
 
-                            string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName));
+                            string rel_assets_path = Path.Combine(cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName);
+                            string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
 
-                            if (!Directory.Exists(path))
-                                Directory.CreateDirectory(path);
+                            try
+                            {
+                                if (!Directory.Exists(path))
+                                    Directory.CreateDirectory(path);
 
-                            e.ExtractToFile(Path.Combine(path, e.Name), true);
+                                e.ExtractToFile(Path.Combine(path, e.Name), true);
+                                installedFiles.Add(rel_assets_path);
+                            }
+                            catch
+                            {
+                                failedFiles.Add(e.FullName);
+                            }
                         }
                     }
+
+                    Trace.Assert(failedFiles.Count == 0, "Failed to copy following files!", string.Join("\n", failedFiles));
+
+                    sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
                     installedPackages.Add(p);
                     sqLiteAdapter.SaveInstalledPackage(p);
                     sqLiteAdapter.FlushToFile(true);

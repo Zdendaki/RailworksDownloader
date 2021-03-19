@@ -23,7 +23,7 @@ namespace RailworksDownloader
                 rwPath = value;
 
                 if (rwPath != null)
-                    AssetsPath = Path.Combine(RWPath, "Assets");
+                    AssetsPath = Utils.NormalizePath(Path.Combine(RWPath, "Assets"));
             }
         }
 
@@ -55,7 +55,7 @@ namespace RailworksDownloader
             RWPath = string.IsNullOrWhiteSpace(path) ? GetRWPath() : path;
 
             if (RWPath != null)
-                AssetsPath = Path.Combine(RWPath, "Assets");
+                AssetsPath = Utils.NormalizePath(Path.Combine(RWPath, "Assets"));
 
             Routes = new List<RouteInfo>();
         }
@@ -86,20 +86,44 @@ namespace RailworksDownloader
             return null;
         }
 
-        private string ParseRouteProperties(Stream fstream)
+        private string ParseRouteProperties(Stream istream, string file)
         {
-            XmlDocument doc = new XmlDocument();
-            doc.Load(XmlReader.Create(RemoveInvalidXmlChars(fstream), new XmlReaderSettings() { CheckCharacters = false }));
+            if (istream.Length > 4)
+            {
+                Stream stream = new MemoryStream();
+                istream.CopyTo(stream);
+                istream.Close();
+                stream.Seek(0, SeekOrigin.Begin);
 
-            return ParseDisplayNameNode(doc.DocumentElement.SelectSingleNode("DisplayName"));
+                if (Utils.CheckIsSerz(stream))
+                {
+                    SerzReader sr = new SerzReader(stream, SerzReader.MODES.routeName);
+                    return sr.RouteName;
+                }
+                else
+                {
+                    try
+                    {
+                        XmlDocument doc = new XmlDocument();
+                        doc.Load(XmlReader.Create(RemoveInvalidXmlChars(stream), new XmlReaderSettings() { CheckCharacters = false }));
+
+                        return ParseDisplayNameNode(doc.DocumentElement.SelectSingleNode("DisplayName"));
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("An unexpected error occured during parsing following file:\n" + file + "\nUsually it means the file is corrupted. Please report this error message including the corrupted file.", "Error parsing RouteProperties", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                }
+            }
+            return default;
         }
 
         private string ParseRouteProperties(string fpath)
         {
-            XmlDocument doc = new XmlDocument();
-            doc.Load(XmlReader.Create(RemoveInvalidXmlChars(fpath), new XmlReaderSettings() { CheckCharacters = false }));
-
-            return ParseDisplayNameNode(doc.DocumentElement.SelectSingleNode("DisplayName"));
+            using (Stream fs = File.OpenRead(fpath))
+            {
+                return ParseRouteProperties(fs, fpath);
+            }
         }
 
         internal static void DeleteDirectory(string directory)
@@ -136,18 +160,11 @@ namespace RailworksDownloader
 
             foreach (string dir in Directory.GetDirectories(path))
             {
-                string rp_path = Path.Combine(dir, "RouteProperties.xml");
+                string rp_path = Utils.FindFile(dir, "RouteProperties.*");
 
                 if (File.Exists(rp_path))
                 {
-                    try
-                    {
-                        list.Add(new RouteInfo(ParseRouteProperties(rp_path).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
-                    }
-                    catch (Exception)
-                    {
-                        MessageBox.Show("An unexpected error occured during parsing following file.\nUsually it means the file is corrupted:" + rp_path, "Error parsing RouteProperties", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    }
+                    list.Add(new RouteInfo(ParseRouteProperties(rp_path).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
                 }
                 else
                 {
@@ -159,7 +176,8 @@ namespace RailworksDownloader
                             {
                                 foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("RouteProperties")))
                                 {
-                                    list.Add(new RouteInfo(ParseRouteProperties(entry.Open()).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
+                                    list.Add(new RouteInfo(ParseRouteProperties(entry.Open(), Path.Combine(file, entry.FullName)).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
+                                    break;
                                 }
                             }
                         }

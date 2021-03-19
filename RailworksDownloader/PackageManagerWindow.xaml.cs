@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 
 namespace RailworksDownloader
 {
@@ -23,6 +24,21 @@ namespace RailworksDownloader
         private void InstallPackage_Click(object sender, RoutedEventArgs e)
         {
             IPD.ShowAsync();
+        }
+
+        private void RemoveSelectedPackage_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (Package package in PackagesList.SelectedItems)
+            {
+                PM.RemovePackage(package.PackageId);
+            }
+            PackagesList.ItemsSource = null;
+            PackagesList.ItemsSource = PM.InstalledPackages;
+        }
+
+        private void PackagesList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            RemoveSelectedPackage.IsEnabled = PackagesList.SelectedItems.Count > 0;
         }
     }
 }

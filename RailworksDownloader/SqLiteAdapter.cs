@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data.SQLite;
 using System.IO;
 using System.Linq;
@@ -13,14 +14,12 @@ namespace RailworksDownloader
 
         private readonly string ConnectionString;
 
-        private bool Empty = true;
-
         private SQLiteConnection MemoryConn { get; set; }
         private SQLiteConnection FileConn { get; set; }
 
         private readonly object DBLock = new object();
 
-        public SqLiteAdapter(string path)
+        public SqLiteAdapter(string path, bool isMainCache = false)
         {
             DatabasePath = path;
             ConnectionString = $"Data Source={DatabasePath}; Version = 3; Compress = True;";
@@ -29,12 +28,16 @@ namespace RailworksDownloader
 
             if (File.Exists(DatabasePath))
             {
-                Empty = false;
                 FileConn = new SQLiteConnection(ConnectionString);
                 FileConn.Open();
                 FileConn.BackupDatabase(MemoryConn, "main", "main", -1, null, 0);
                 FileConn.Close();
             }
+
+            if (isMainCache)
+                CreateMainCacheFile();
+            else
+                CreateRouteCacheFile();
         }
 
         public void FlushToFile(bool keepOpen = false)
@@ -185,26 +188,19 @@ namespace RailworksDownloader
 
         internal void CreateRouteCacheFile()
         {
-            if (!Empty)
-                return;
-
             SQLiteCommand command = new SQLiteCommand(MemoryConn)
             {
-                CommandText = "CREATE TABLE dependencies (id INTEGER PRIMARY KEY, path TEXT, isScenario INTEGER);CREATE TABLE checksums (id INTEGER PRIMARY KEY, folder VARCHAR(32) UNIQUE, chcksum VARCHAR(32));"
+                CommandText = "CREATE TABLE IF NOT EXISTS dependencies (id INTEGER PRIMARY KEY, path TEXT, isScenario INTEGER); CREATE TABLE IF NOT EXISTS checksums (id INTEGER PRIMARY KEY, folder VARCHAR(32) UNIQUE, chcksum VARCHAR(32));"
             };
             command.ExecuteNonQuery();
             command.Dispose();
-            Empty = false;
         }
 
         internal void CreateMainCacheFile()
         {
-            if (!Empty)
-                return;
-
             SQLiteCommand command = new SQLiteCommand(MemoryConn)
             {
-                CommandText = @"CREATE TABLE package_list (
+                CommandText = @"CREATE TABLE IF NOT EXISTS package_list (
     id INTEGER PRIMARY KEY,
     file_name VARCHAR(260),
     display_name VARCHAR(1000),
@@ -217,47 +213,69 @@ namespace RailworksDownloader
     description VARCHAR(10000),
     target_path VARCHAR(260)
 );
-CREATE TABLE file_list (
+CREATE TABLE IF NOT EXISTS file_list (
     id INTEGER PRIMARY KEY,
     package_id INTEGER,
-    file_name VARCHAR(260)
-)"
+    file_name VARCHAR(260),
+    UNIQUE(package_id, file_name)
+);
+CREATE TABLE IF NOT EXISTS installed_files (
+    id INTEGER PRIMARY KEY,
+    package_id INTEGER,
+    file_name VARCHAR(260),
+    UNIQUE(package_id, file_name)
+);"
             };
             command.ExecuteNonQuery();
             command.Dispose();
-            Empty = false;
         }
 
         internal void SaveInstalledPackage(Package package)
         {
-            if (!File.Exists(DatabasePath))
-                CreateMainCacheFile();
-
-            SQLiteCommand cmd = new SQLiteCommand("DELETE FROM file_list WHERE `id` = @id;", MemoryConn);
-            cmd.Parameters.AddWithValue("id", package.PackageId);
-            cmd.ExecuteNonQuery();
-            cmd.Dispose();
-
-            cmd = new SQLiteCommand("INSERT INTO package_list (id, file_name, display_name, category, era, country, version, owner, datetime, description, target_path) VALUES (@id,@file_name,@display_name,@category,@era,@country,@version,@owner,@datetime,@description,@target_path) ON CONFLICT(id) DO UPDATE SET file_name = @file_name, display_name = @display_name, category = @category, era = @era, country = @country, version = @version, owner = @owner, datetime = @datetime, description = @description, version = @version;", MemoryConn);
-            cmd.Parameters.AddWithValue("id", package.PackageId);
-            cmd.Parameters.AddWithValue("file_name", package.FileName);
-            cmd.Parameters.AddWithValue("display_name", package.DisplayName);
-            cmd.Parameters.AddWithValue("category", package.Category);
-            cmd.Parameters.AddWithValue("era", package.Era);
-            cmd.Parameters.AddWithValue("country", package.Country);
-            cmd.Parameters.AddWithValue("version", package.Version);
-            cmd.Parameters.AddWithValue("owner", package.Owner);
-            cmd.Parameters.AddWithValue("datetime", package.Datetime);
-            cmd.Parameters.AddWithValue("description", package.Description);
-            cmd.Parameters.AddWithValue("target_path", package.TargetPath);
-            cmd.ExecuteNonQuery();
-            cmd.Dispose();
-
-            cmd = new SQLiteCommand("INSERT INTO file_list (package_id, file_name) VALUES (@package_id,@file_name);", MemoryConn);
-            cmd.Parameters.AddWithValue("package_id", package.PackageId);
-            foreach (string file in package.FilesContained)
+            using (SQLiteCommand cmd = new SQLiteCommand("DELETE FROM file_list WHERE `package_id` = @id;", MemoryConn))
             {
-                cmd.Parameters.AddWithValue("file_name", file);
+                cmd.Parameters.AddWithValue("id", package.PackageId);
+                cmd.ExecuteNonQuery();
+            }
+
+            using (SQLiteCommand cmd = new SQLiteCommand("INSERT INTO package_list (id, file_name, display_name, category, era, country, version, owner, datetime, description, target_path) VALUES (@id,@file_name,@display_name,@category,@era,@country,@version,@owner,@datetime,@description,@target_path) ON CONFLICT(id) DO UPDATE SET file_name = @file_name, display_name = @display_name, category = @category, era = @era, country = @country, version = @version, owner = @owner, datetime = @datetime, description = @description, version = @version;", MemoryConn))
+            {
+                cmd.Parameters.AddWithValue("id", package.PackageId);
+                cmd.Parameters.AddWithValue("file_name", package.FileName);
+                cmd.Parameters.AddWithValue("display_name", package.DisplayName);
+                cmd.Parameters.AddWithValue("category", package.Category);
+                cmd.Parameters.AddWithValue("era", package.Era);
+                cmd.Parameters.AddWithValue("country", package.Country);
+                cmd.Parameters.AddWithValue("version", package.Version);
+                cmd.Parameters.AddWithValue("owner", package.Owner);
+                cmd.Parameters.AddWithValue("datetime", package.Datetime);
+                cmd.Parameters.AddWithValue("description", package.Description);
+                cmd.Parameters.AddWithValue("target_path", package.TargetPath);
+                cmd.ExecuteNonQuery();
+            }
+
+            using (SQLiteCommand cmd = new SQLiteCommand("INSERT INTO file_list (package_id, file_name) VALUES (@package_id,@file_name);", MemoryConn))
+            {
+                cmd.Parameters.AddWithValue("package_id", package.PackageId);
+                foreach (string file in package.FilesContained)
+                {
+                    cmd.Parameters.AddWithValue("file_name", file);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        internal void RemoveInstalledPackage(int pkgId)
+        {
+            using (SQLiteCommand cmd = new SQLiteCommand("DELETE FROM file_list WHERE `package_id` = @id;", MemoryConn))
+            {
+                cmd.Parameters.AddWithValue("id", pkgId);
+                cmd.ExecuteNonQuery();
+            }
+
+            using (SQLiteCommand cmd = new SQLiteCommand("DELETE FROM package_list WHERE `id` = @id;", MemoryConn))
+            {
+                cmd.Parameters.AddWithValue("id", pkgId);
                 cmd.ExecuteNonQuery();
             }
         }
@@ -266,49 +284,85 @@ CREATE TABLE file_list (
         {
             List<Package> loadedPackages = new List<Package>();
 
-            if (File.Exists(DatabasePath))
+            using (SQLiteCommand command = new SQLiteCommand("SELECT * FROM package_list;", MemoryConn))
             {
-                SQLiteCommand command = new SQLiteCommand(MemoryConn)
-                {
-                    CommandText = "SELECT * FROM package_list;"
-                };
                 SQLiteDataReader reader = command.ExecuteReader();
-                while (reader.Read())
+                using (SQLiteCommand cmd = new SQLiteCommand("SELECT * FROM file_list WHERE package_id = @package_id;", MemoryConn))
                 {
-                    Package loadedPackage = new Package(
-                        Convert.ToInt32(reader["id"]),
-                        Convert.ToString(reader["display_name"]),
-                        Convert.ToInt32(reader["category"]),
-                        Convert.ToInt32(reader["era"]),
-                        Convert.ToInt32(reader["country"]),
-                        Convert.ToInt32(reader["owner"]),
-                        Convert.ToString(reader["datetime"]),
-                        Convert.ToString(reader["target_path"]),
-                        new List<string>(),
-                        Convert.ToString(reader["file_name"]),
-                        Convert.ToString(reader["description"]),
-                        Convert.ToInt32(reader["version"])
-                    );
-
-                    SQLiteCommand cmd = new SQLiteCommand("SELECT * FROM file_list WHERE package_id = @package_id;", MemoryConn);
-                    cmd.Parameters.AddWithValue("@package_id", loadedPackage.PackageId);
-                    SQLiteDataReader r = cmd.ExecuteReader();
-                    while (r.Read())
+                    while (reader.Read())
                     {
-                        loadedPackage.FilesContained.Add(NormalizePath(Convert.ToString(r["file_name"])));
-                    }
-                    cmd.Dispose();
+                        Package loadedPackage = new Package(
+                            Convert.ToInt32(reader["id"]),
+                            Convert.ToString(reader["display_name"]),
+                            Convert.ToInt32(reader["category"]),
+                            Convert.ToInt32(reader["era"]),
+                            Convert.ToInt32(reader["country"]),
+                            Convert.ToInt32(reader["owner"]),
+                            Convert.ToString(reader["datetime"]),
+                            Convert.ToString(reader["target_path"]),
+                            new List<string>(),
+                            Convert.ToString(reader["file_name"]),
+                            Convert.ToString(reader["description"]),
+                            Convert.ToInt32(reader["version"])
+                        );
 
-                    loadedPackages.Add(loadedPackage);
+                        cmd.Parameters.AddWithValue("@package_id", loadedPackage.PackageId);
+                        using (SQLiteDataReader r = cmd.ExecuteReader())
+                        {
+                            while (r.Read())
+                            {
+                                loadedPackage.FilesContained.Add(NormalizePath(Convert.ToString(r["file_name"])));
+                            }
+                        }
+
+                        loadedPackages.Add(loadedPackage);
+                    }
                 }
-                command.Dispose();
-            }
-            else
-            {
-                CreateMainCacheFile();
             }
 
             return loadedPackages;
+        }
+
+        internal void SavePackageFiles(int id, List<string> filesToAdd)
+        {
+            using (SQLiteCommand cmd = new SQLiteCommand("INSERT INTO installed_files (package_id, file_name) VALUES (@package_id,@file_name);", MemoryConn))
+            {
+                cmd.Parameters.AddWithValue("package_id", id);
+                foreach (string file in filesToAdd)
+                {
+                    cmd.Parameters.AddWithValue("file_name", file);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        internal void RemovePackageFiles(List<string> filesToRemove)
+        {
+            using (SQLiteCommand cmd = new SQLiteCommand("DELETE FROM installed_files WHERE `file_name` = @file_name;", MemoryConn))
+            {
+                foreach (string file in filesToRemove)
+                {
+                    cmd.Parameters.AddWithValue("file_name", file);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        internal List<string> LoadPackageFiles(int id)
+        {
+            List<string> loadedFiles = new List<string>();
+
+            using (SQLiteCommand cmd = new SQLiteCommand("SELECT * FROM installed_files WHERE package_id = @package_id;", MemoryConn))
+            {
+                cmd.Parameters.AddWithValue("@package_id", id);
+                SQLiteDataReader r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    loadedFiles.Add(Convert.ToString(r["file_name"]));
+                }
+            }
+
+            return loadedFiles;
         }
     }
 }

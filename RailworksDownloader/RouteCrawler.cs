@@ -131,6 +131,7 @@ namespace RailworksDownloader
         /// Report route progress
         /// </summary>
         /// <param name="file"></param>
+        /// <returns></returns>
         private void ReportProgress(string file)
         {
             ReportProgress(GetFileSize(file));
@@ -166,116 +167,84 @@ namespace RailworksDownloader
         }
 
         /// <summary>
-        /// Parse blueprint ID node
+        /// Get single file dependencies
         /// </summary>
-        /// <param name="blueprintIDNode">Blueprint node</param>
-        /// <returns>Parsed node</returns>
-        private string ParseAbsoluteBlueprintIDNode(XmlNode blueprintIDNode)
+        /// <param name="blueprintPath">Route properties path</param>
+        /// <returns></returns>
+        private async Task GetSingleFileDependencies(string blueprintPath)
         {
-            if (blueprintIDNode != null)
-            {
-                XmlNode absoluteBlueprintID = blueprintIDNode.FirstChild;
-                XmlNode blueprintSetID = absoluteBlueprintID.FirstChild.FirstChild;
-                string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
-                if (string.IsNullOrWhiteSpace(fname) || !(Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
-                    return string.Empty;
-                return NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname));
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Parse skies node
-        /// </summary>
-        /// <param name="skiesNode">Skies node</param>
-        /// <returns>Parsed node</returns>
-        private IEnumerable<string> ParseSkiesNode(XmlNode skiesNode)
-        {
-            foreach (XmlNode n in skiesNode.FirstChild)
-            {
-                yield return ParseAbsoluteBlueprintIDNode(n);
-            }
-        }
-
-        /// <summary>
-        /// Get all route properties dependencies
-        /// </summary>
-        /// <param name="propertiesPath">Route properties path</param>
-        /// <returns>All route properties dependencies</returns>
-        private async Task<List<string>> GetRoutePropertiesDependencies(string propertiesPath)
-        {
-            // Check if route properties exists
-            if (!File.Exists(propertiesPath))
-                return new List<string>();
-
-            List<string> dependencies = new List<string>();
-
-            // Load route properties file
-            XmlDocument doc = new XmlDocument();
-
-            doc.Load(XmlReader.Create(RemoveInvalidXmlChars(propertiesPath), new XmlReaderSettings() { CheckCharacters = false }));
-
-            XmlElement root = doc.DocumentElement;
-
-            // Parse route properties entries
             await Task.Run(() =>
             {
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("BlueprintID"))));
-                dependencies.AddRange(ParseSkiesNode(root.SelectSingleNode("Skies")));
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("WeatherBlueprint"))));
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("TerrainBlueprint"))));
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("MapBlueprint"))));
+                // Check if route properties exists
+                if (File.Exists(blueprintPath))
+                {
+                    using (Stream fs = File.OpenRead(blueprintPath))
+                    {
+                        ParseBlueprint(fs);
+                    }
+                }
             });
-
-            ReportProgress(propertiesPath);
-
-            return dependencies;
         }
 
         /// <summary>
         /// Parse blueprint file
         /// </summary>
         /// <param name="blueprintPath">Blueprint file path</param>
-        /// <returns>Parsed file</returns>
+        /// <param name="isScenario">Is scenario file</param>
+        /// <returns></returns>
         private void ParseBlueprint(string blueprintPath, bool isScenario = false)
         {
-            if (!File.Exists(blueprintPath))
-                return;
-
-            // Load blueprint file
-            XmlDocument doc = new XmlDocument();
-
-            try
+            // Check if blueprint exists
+            if (File.Exists(blueprintPath))
             {
-                doc.Load(XmlReader.Create(RemoveInvalidXmlChars(blueprintPath), new XmlReaderSettings() { CheckCharacters = false }));
-            }
-            catch
-            {
-                return;
-            }
-
-            // Parse blueprint file
-            //Parallel.ForEach(Routes, (ri) => ri.Crawler.Start());
-            foreach (XmlNode node in doc.SelectNodes("//Provider").Cast<XmlNode>().ToArray())
-            {
-                XmlNode blueprintSetID = node.ParentNode;
-                XmlNode absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
-                string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
-                if (!string.IsNullOrWhiteSpace(fname) && (Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
+                using (Stream fs = File.OpenRead(blueprintPath))
                 {
-                    if (isScenario)
-                        lock (ScenarioDeps)
-                            ScenarioDeps.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
-                    else
-                        lock (Dependencies)
-                            Dependencies.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
+                    ParseBlueprint(fs, isScenario);
                 }
             }
         }
 
-        private void ParseBlueprint(Stream stream, bool isScenario = false)
+        /// <summary>
+        /// Parse blueprint file
+        /// </summary>
+        /// <param name="stream">Blueprint stream</param>
+        /// <param name="isScenario">Is scenario file</param>
+        /// <returns></returns>
+        private void ParseBlueprint(Stream istream, bool isScenario = false)
         {
+            Stream stream = new MemoryStream();
+            istream.CopyTo(stream);
+            istream.Close();
+            stream.Seek(0, SeekOrigin.Begin);
 
+            if (stream.Length > 4)
+            {
+                if (Utils.CheckIsSerz(stream))
+                {
+                    SerzReader sr = new SerzReader(stream);
+
+                    if (isScenario)
+                        lock (ScenarioDeps)
+                            ScenarioDeps.UnionWith(sr.GetDependencies());
+                    else
+                        lock (Dependencies)
+                            Dependencies.UnionWith(sr.GetDependencies());
+                }
+                else
+                {
+                    ParseXMLBlueprint(stream, isScenario);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Parse XML blueprint file
+        /// </summary>
+        /// <param name="stream">XML blueprint stream</param>
+        /// <param name="isScenario">Is scenario file</param>
+        /// <returns></returns>
+        private void ParseXMLBlueprint(Stream stream, bool isScenario = false)
+        {
             // Load blueprint file
             XmlDocument doc = new XmlDocument();
 
@@ -293,7 +262,8 @@ namespace RailworksDownloader
                 XmlNode blueprintSetID = node.ParentNode;
                 XmlNode absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
                 string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
-                if (!string.IsNullOrWhiteSpace(fname) && (Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
+                string ext = Path.GetExtension(fname).ToLower();
+                if (!string.IsNullOrWhiteSpace(fname) && (ext == ".xml" || ext == ".bin"))
                 {
                     if (isScenario)
                         lock (ScenarioDeps)
@@ -326,19 +296,9 @@ namespace RailworksDownloader
                         foreach (string file in Directory.GetFiles(dirs[i], "*", SearchOption.AllDirectories))
                         {
                             string ext = Path.GetExtension(file).ToLower();
-                            if (ext == ".bin")
-                            {
-                                SerzReader sr = new SerzReader(file);
-
-                                lock (ScenarioDeps)
-                                    ScenarioDeps.UnionWith(sr.GetDependencies());
-
-                                ReportProgress(file);
-                            }
-                            else if (ext == ".xml")
+                            if (ext == ".xml" || ext == ".bin")
                             {
                                 ParseBlueprint(file, true);
-
                                 ReportProgress(file);
                             }
                         }
@@ -348,45 +308,23 @@ namespace RailworksDownloader
         }
 
         /// <summary>
-        /// Get network dependencies
+        /// Get tiles dependencies
         /// </summary>
-        /// <param name="path">Network directory path</param>
+        /// <param name="path">Directory path</param>
         /// <returns></returns>
-        private async Task GetNetworkDependencies(string dir)
+        private async Task GetTilesDependencies(string dir)
         {
             await Task.Run(() =>
             {
-                // Foreach all Network files
-                foreach (string file in Directory.GetFiles(dir, "*.bin"))
+                // Foreach all tiles files
+                foreach (string file in Directory.GetFiles(dir))
                 {
-                    SerzReader sr = new SerzReader(file);
-
-                    lock (Dependencies)
-                        Dependencies.UnionWith(sr.GetDependencies());
-
-                    ReportProgress(file);
-                }
-            });
-        }
-
-        /// <summary>
-        /// Get scenery depencencies
-        /// </summary>
-        /// <param name="path">Route scenery directory</param>
-        /// <returns></returns>
-        private async Task GetSceneryDependencies(string path)
-        {
-            await Task.Run(() =>
-            {
-                // Foreach all Network files
-                foreach (string file in Directory.GetFiles(path, "*.bin"))
-                {
-                    SerzReader sr = new SerzReader(file);
-
-                    lock (Dependencies)
-                        Dependencies.UnionWith(sr.GetDependencies());
-
-                    ReportProgress(file);
+                    string ext = Path.GetExtension(file).ToLower();
+                    if (ext == ".xml" || ext == ".bin")
+                    {
+                        ParseBlueprint(file);
+                        ReportProgress(file);
+                    }
                 }
             });
         }
@@ -420,10 +358,10 @@ namespace RailworksDownloader
                 Task n3 = null;
                 Task s = null;
                 Task t = null;
-                Task<List<string>> prop = null;
+                Task prop = null;
 
                 if (rpChanged)
-                    prop = GetRoutePropertiesDependencies(Path.Combine(RoutePath, "RouteProperties.xml"));
+                    prop = GetSingleFileDependencies(Utils.FindFile(RoutePath, "RouteProperties.*"));
 
                 Parallel.ForEach(Directory.GetDirectories(RoutePath), dir =>
                 {
@@ -437,15 +375,15 @@ namespace RailworksDownloader
                                 {
                                     case "loft tiles":
                                         if (loftsChanged)
-                                            n1 = GetNetworkDependencies(network_dir);
+                                            n1 = GetTilesDependencies(network_dir);
                                         break;
                                     case "road tiles":
                                         if (roadsChanged)
-                                            n2 = GetNetworkDependencies(network_dir);
+                                            n2 = GetTilesDependencies(network_dir);
                                         break;
                                     case "track tiles":
                                         if (tracksChanged)
-                                            n3 = GetNetworkDependencies(network_dir);
+                                            n3 = GetTilesDependencies(network_dir);
                                         break;
                                 }
                             });
@@ -456,7 +394,7 @@ namespace RailworksDownloader
                             break;
                         case "scenery":
                             if (sceneryChanged)
-                                t = GetSceneryDependencies(dir);
+                                t = GetTilesDependencies(dir);
                             break;
                     }
                 });
@@ -471,15 +409,8 @@ namespace RailworksDownloader
                     await s;
                 if (t != null)
                     await t;
-
-                List<string> routeProperties = new List<string>();
                 if (prop != null)
-                {
-                    routeProperties = await prop;
-
-                    lock (Dependencies)
-                        Dependencies.UnionWith(routeProperties);
-                }
+                    await prop;
             }
 
             await md5;
@@ -519,24 +450,10 @@ namespace RailworksDownloader
             {
                 Stream inputStream = file.GetInputStream(entry);
 
-                if (inputStream.CanRead && inputStream.CanSeek)
+                string ext = Path.GetExtension(entry.Name).ToLower();
+                if (inputStream.CanRead && (ext == ".xml" || ext == ".bin"))
                 {
-                    string ext = Path.GetExtension(entry.Name).ToLower();
-                    if (ext == ".xml")
-                    {
-                        ParseBlueprint(inputStream, isScenario);
-                    }
-                    else if (ext == ".bin")
-                    {
-                        SerzReader sr = new SerzReader(inputStream);
-
-                        if (isScenario)
-                            lock (ScenarioDeps)
-                                ScenarioDeps.UnionWith(sr.GetDependencies());
-                        else
-                            lock (Dependencies)
-                                Dependencies.UnionWith(sr.GetDependencies());
-                    }
+                    ParseBlueprint(inputStream, isScenario);
 
                     ReportProgress(entry.Size);
                 }

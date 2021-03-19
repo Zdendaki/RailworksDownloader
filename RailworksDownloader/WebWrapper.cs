@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -96,6 +97,16 @@ namespace RailworksDownloader
         public string file_path { get; set; }
     }
 
+    public class ReportDLCcontent
+    {
+        public string token { get; set; }
+        public List<SteamManager.DLC> dlcList { get; set; }
+        public ReportDLCcontent(string token, List<SteamManager.DLC> dlcList)
+        {
+            this.token = token;
+            this.dlcList = dlcList;
+        }
+    }
 
     public class WebWrapper
     {
@@ -133,13 +144,16 @@ namespace RailworksDownloader
 
             if (ZipTools.IsCompressedData(tempFname))
             {
-                return new ObjectResult<object>(1, "Package succesfully downloaded!", tempFname);
+                return new ObjectResult<object>(200, "Package succesfully downloaded!", tempFname);
             }
             else
             {
                 ObjectResult<object> obj = JsonConvert.DeserializeObject<ObjectResult<object>>(File.ReadAllText(tempFname));
-                obj.code = 0;
-                obj.content = tempFname;
+                if (obj != null)
+                {
+                    obj.code = 404;
+                    obj.content = tempFname;
+                }
                 return obj;
             }
         }
@@ -154,7 +168,7 @@ namespace RailworksDownloader
             {
                 ObjectResult<QueryContent> responseContent = JsonConvert.DeserializeObject<ObjectResult<QueryContent>>(await response.Content.ReadAsStringAsync());
 
-                if (responseContent.code > 0)
+                if (Utils.IsSuccessStatusCode(responseContent.code))
                     return new Package(responseContent.content);
             }
 
@@ -171,7 +185,7 @@ namespace RailworksDownloader
             {
                 ObjectResult<QueryContent> responseContent = JsonConvert.DeserializeObject<ObjectResult<QueryContent>>(await response.Content.ReadAsStringAsync());
 
-                if (responseContent.code > 0)
+                if (Utils.IsSuccessStatusCode(responseContent.code))
                     return new Package(responseContent.content);
             }
 
@@ -199,7 +213,7 @@ namespace RailworksDownloader
             if (response.IsSuccessStatusCode)
             {
                 ArrayResult jsonObject = JsonConvert.DeserializeObject<ArrayResult>(await response.Content.ReadAsStringAsync());
-                if (jsonObject.code > 0)
+                if (Utils.IsSuccessStatusCode(jsonObject.code))
                 {
                     HashSet<string> buffer = new HashSet<string>();
 
@@ -215,10 +229,9 @@ namespace RailworksDownloader
             return null;
         }
 
-        public static async Task ReportDLC(List<SteamManager.DLC> dlcList, Uri apiUrl)
+        public static async Task ReportDLC(List<SteamManager.DLC> dlcList, string token, Uri apiUrl)
         {
-            StringContent encodedContent = new StringContent(JsonConvert.SerializeObject(dlcList), Encoding.UTF8, "application/json");
-
+            StringContent encodedContent = new StringContent(JsonConvert.SerializeObject(new ReportDLCcontent(token, dlcList)), Encoding.UTF8, "application/json");
             await Client.PostAsync(apiUrl + "reportDLC", encodedContent);
         }
 
@@ -231,7 +244,7 @@ namespace RailworksDownloader
             if (response.IsSuccessStatusCode)
             {
                 ObjectResult<Dictionary<string, int>> jsonObject = JsonConvert.DeserializeObject<ObjectResult<Dictionary<string, int>>>(await response.Content.ReadAsStringAsync());
-                if (jsonObject.code > 0)
+                if (Utils.IsSuccessStatusCode(jsonObject.code))
                 {
                     return jsonObject.content.ToDictionary(x => int.Parse(x.Key), x => x.Value); ;
                 }

@@ -20,7 +20,11 @@ namespace RailworksDownloader
     /// </summary>
     public partial class MainWindow : Window
     {
+#if DEBUG
+        public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/tests/api/");
+#else
         public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/api/");
+#endif
 
         internal static Brush Blue = new SolidColorBrush(Color.FromArgb(255, 0, 151, 230));
         internal static Brush Green = new SolidColorBrush(Color.FromArgb(255, 76, 209, 55));
@@ -34,6 +38,7 @@ namespace RailworksDownloader
 
         private bool Saving = false;
         private bool CheckingDLC = false;
+        public bool ReportedDLC = false;
         private Railworks RW;
         private PackageManager PM;
         private bool crawlingComplete = false;
@@ -49,6 +54,8 @@ namespace RailworksDownloader
                 Title = $"Railworks DLS client v{App.Version}";
 
                 App.Window = this;
+
+                Utils.CheckIsSerz(@"G:\\Steam\\steamapps\\common\\RailWorks\\Content\\Routes\\7b94423c-d469-4f09-bbba-812b61cea620\\Scenery\\-000001+000000.bin");
 
                 try
                 {
@@ -83,39 +90,36 @@ namespace RailworksDownloader
                     else
                     {
 #endif
-                    if (string.IsNullOrWhiteSpace(RW.RWPath))
-                    {
-                        RailworksPathDialog rpd = new RailworksPathDialog();
-                        rpd.ShowAsync();
-                    }
-
-                    if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
-                    {
-                        Settings.Default.RailworksLocation = RW.RWPath;
-                        Settings.Default.Save();
-                    }
-
-                    PathChanged();
-
-                    Settings.Default.PropertyChanged += PropertyChanged;
-
-                    DownloadDialog.Owner = this;
-
-                    RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
-                    key.SetValue("URL Protocol", "");
-                    //key.SetValue("DefaultIcon", "");
-                    key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
-
-                    if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
-                    {
-                        Task.Run(async () =>
+                        if (string.IsNullOrWhiteSpace(RW.RWPath))
                         {
-                            RW_CheckingDLC(false);
-                            List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
-                            await WebWrapper.ReportDLC(dlcList, ApiUrl);
-                            RW_CheckingDLC(true);
-                        });
-                    }
+                            RailworksPathDialog rpd = new RailworksPathDialog();
+                            rpd.ShowAsync();
+                        }
+
+                        if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                        {
+                            Settings.Default.RailworksLocation = RW.RWPath;
+                            Settings.Default.Save();
+                        }
+
+                        PathChanged();
+
+                        Settings.Default.PropertyChanged += PropertyChanged;
+
+                        DownloadDialog.Owner = this;
+
+                        RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
+                        key.SetValue("URL Protocol", "");
+                        //key.SetValue("DefaultIcon", "");
+                        key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
+
+                        if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
+                        {
+                            Task.Run(async () =>
+                            {
+                                await Utils.CheckLogin(ReportDLC, this, ApiUrl);
+                            });
+                        }
 #if !DEBUG
                     }
 #endif
@@ -130,6 +134,18 @@ namespace RailworksDownloader
                 if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
                     Trace.Assert(false, e.ToString());
             }
+        }
+
+        public void ReportDLC()
+        {
+            Task.Run(async () =>
+            {
+                RW_CheckingDLC(false);
+                List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
+                await WebWrapper.ReportDLC(dlcList, App.Token, ApiUrl);
+                ReportedDLC = true;
+                RW_CheckingDLC(true);
+            });
         }
 
         private async void MainWindowDialog_Closing(object sender, CancelEventArgs e)

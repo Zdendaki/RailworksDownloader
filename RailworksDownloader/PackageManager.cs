@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -160,9 +161,9 @@ namespace RailworksDownloader
 
         public HashSet<string> MissingDeps { get; set; }
 
-        private readonly SqLiteAdapter SqLiteAdapter = new SqLiteAdapter(Path.GetFullPath("packages.mcf"));
+        private SqLiteAdapter SqLiteAdapter { get; set; }
 
-        private HashSet<string> DownloadableDeps { get; set; }
+        private HashSet<string> DownloadableDeps { get; set; } = new HashSet<string>();
 
         internal HashSet<int> PkgsToDownload { get; set; } = new HashSet<int>();
 
@@ -179,7 +180,7 @@ namespace RailworksDownloader
             ApiUrl = apiUrl;
             MainWindow = mw;
 
-            SqLiteAdapter = new SqLiteAdapter(Path.Combine(RWPath, "main.dls"));
+            SqLiteAdapter = new SqLiteAdapter(Path.Combine(RWPath, "main.dls"), true);
             InstalledPackages = SqLiteAdapter.LoadInstalledPackages();
             CachedPackages = CachedPackages.Union(InstalledPackages).ToList();
             WebWrapper = new WebWrapper(ApiUrl);
@@ -249,6 +250,9 @@ namespace RailworksDownloader
             InstalledPackages = SqLiteAdapter.LoadInstalledPackages();
 
             HashSet<string> allDownloadableDeps = await WebWrapper.QueryArray("listFiles");
+
+            if (allDownloadableDeps == null)
+                return DownloadableDeps;
 
             HashSet<string> conflictDeps = existing.Intersect(allDownloadableDeps).Except(InstalledPackages.SelectMany(x => x.FilesContained)).ToHashSet();
 
@@ -337,41 +341,17 @@ namespace RailworksDownloader
 
         public async Task<HashSet<string>> GetPaidDependencies(HashSet<string> globalDependencies)
         {
-            return (await WebWrapper.QueryArray("listPaid")).Intersect(globalDependencies).ToHashSet();
-        }
-
-        private async Task<int> CheckLogin(int owner)
-        {
-            if (App.Token == default)
-            {
-                if (string.IsNullOrWhiteSpace(Settings.Default.Username) || string.IsNullOrWhiteSpace(Settings.Default.Password))
-                {
-                    MainWindow.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(this, ApiUrl, owner); });
-                    return -1;
-                }
-
-                string login = Settings.Default.Username;
-                string passwd = Utils.PasswordEncryptor.Decrypt(Settings.Default.Password, login.Trim());
-
-                ObjectResult<LoginContent> result = await WebWrapper.Login(login, passwd, ApiUrl);
-
-                if (result == null || result.code != 1 || result.content == null || result.content.privileges < 0)
-                {
-                    MainWindow.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(this, ApiUrl, owner); });
-                    return -1;
-                }
-
-                LoginContent loginContent = result.content;
-                App.Token = loginContent.token;
-            }
-            return 1;
+            HashSet<string> paid = await WebWrapper.QueryArray("listPaid");
+            if (paid == null)
+                return new HashSet<string>();
+            return paid.Intersect(globalDependencies).ToHashSet();
         }
 
         public void DownloadDependencies()
         {
             Task.Run(async () =>
             {
-                if (await CheckLogin(1) < 0 || App.IsDownloading)
+                if (!await Utils.CheckLogin(DownloadDependencies, MainWindow, ApiUrl) || App.IsDownloading)
                 {
                     App.Window.Dispatcher.Invoke(() =>
                     {
@@ -472,7 +452,7 @@ namespace RailworksDownloader
                     }
                 }
 
-                if (await CheckLogin(1) < 0 || pkgsToUpdate.Count == 0 || App.IsDownloading)
+                if (!await Utils.CheckLogin(CheckUpdates, MainWindow, ApiUrl) || pkgsToUpdate.Count == 0 || App.IsDownloading)
                     return;
 
                 App.IsDownloading = true;
@@ -506,6 +486,15 @@ namespace RailworksDownloader
             }
         }
 
+        public void RemovePackage(int pkgId)
+        {
+            InstalledPackages.RemoveAll(x => x.PackageId == pkgId);
+            List<string> removedFiles = Utils.RemoveFiles(SqLiteAdapter.LoadPackageFiles(pkgId));
+            SqLiteAdapter.RemovePackageFiles(removedFiles);
+            SqLiteAdapter.RemoveInstalledPackage(pkgId);
+            SqLiteAdapter.FlushToFile(true);
+        }
+
         private void OnChanged(object source, FileSystemEventArgs e)
         {
             System.Threading.Thread.Sleep(500);
@@ -528,9 +517,12 @@ namespace RailworksDownloader
             if (queuedPkgs.Count > 0)
             {
                 MainWindow.Dispatcher.Invoke(() => { MainWindow.Activate(); });
-                if (await CheckLogin(1) < 0 || App.IsDownloading)
+                if (!await Utils.CheckLogin(async delegate {
+                    await ReceiveMSMQ();
+                    MSMQRunning = false;
+                }, MainWindow, ApiUrl) || App.IsDownloading)
                 {
-                    File.WriteAllText(queueFile, string.Empty);
+                    //File.WriteAllText(queueFile, string.Empty);
                     return;
                 }
 
