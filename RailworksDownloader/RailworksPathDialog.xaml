@@ -17,7 +17,7 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="80" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <TextBlock Margin="0" TextWrapping="Wrap" Grid.Row="0" Height="Auto" Grid.ColumnSpan="2">
             <Run Text="{x:Static loc:Strings.SelectRWDlgDesc}"/>

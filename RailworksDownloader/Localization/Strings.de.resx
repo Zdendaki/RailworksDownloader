@@ -118,100 +118,101 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AllDownDesc" xml:space="preserve">
-    <value>Všechny dostupné balíčky již byly staženy.</value>
+    <value>Alle erreichbare Pakete sind bereits heruntergeladen.</value>
   </data>
   <data name="AlreadyInstalFail" xml:space="preserve">
-    <value>Tento balíček je již nainstalován.</value>
+    <value>Dieses Paket ist bereits heruntergeladen.</value>
   </data>
   <data name="ApplicationRestart" xml:space="preserve">
-    <value>Aplikace bude restartována</value>
+    <value>Aplikation werde neugestartet worden.</value>
   </data>
   <data name="Cancel" xml:space="preserve">
-    <value>Zrušit</value>
+    <value>Abbrechen</value>
   </data>
   <data name="CantDownload" xml:space="preserve">
-    <value>Nelze stáhnout balíček</value>
+    <value>Paket kann nicht heruntergeladen werden</value>
   </data>
   <data name="CatDLC" xml:space="preserve">
     <value>Steam DLC</value>
   </data>
   <data name="CatEnv" xml:space="preserve">
-    <value>Prostředí</value>
+    <value>Umgebung</value>
   </data>
   <data name="CatLoco" xml:space="preserve">
-    <value>Lokomotivy</value>
+    <value>Loks</value>
   </data>
   <data name="CatOther" xml:space="preserve">
-    <value>Ostatní/Nezařazené</value>
+    <value>Andere/Uneingeordnet</value>
   </data>
   <data name="CatRVDep" xml:space="preserve">
-    <value>Příslušenství vozidel</value>
+    <value>Fahrzeugabhängigkeiten</value>
   </data>
   <data name="CatScenery" xml:space="preserve">
     <value>Scenery</value>
   </data>
   <data name="CatSystem" xml:space="preserve">
-    <value>SYSTÉMOVÝ BALÍČEK</value>
+    <value>SYSTEMPAKET</value>
   </data>
   <data name="CatTrackObj" xml:space="preserve">
-    <value>Traťové objekty</value>
+    <value>Streckenobjekte</value>
   </data>
   <data name="CatWag" xml:space="preserve">
-    <value>Vozy</value>
+    <value>Wagen</value>
   </data>
   <data name="CheckingDLC" xml:space="preserve">
-    <value>Hledání nainstalovaných DLC</value>
+    <value>Suchen nach den installierten DLC</value>
   </data>
   <data name="ConflictFileDesc1" xml:space="preserve">
-    <value>Následující balíčky jsou již staženy, ale ne prostřednictvím této aplikace:</value>
+    <value>Folgende Pakete sind bereits heruntergeladen, aber nicht durch diese Aplikation:</value>
+    <comment>Následující balíčky jsou již staženy, ale ne prostřednictvím této aplikace:</comment>
   </data>
   <data name="ConflictFileDesc2" xml:space="preserve">
-    <value>Prosím rozhodněte jak pokračovat!</value>
+    <value>Bitte entscheiden Sie, wie Sie fortfahren möchten!</value>
   </data>
   <data name="ConflictFileTitle" xml:space="preserve">
-    <value>Nalezen konfliktní soubor!</value>
+    <value>Konfliktdatei gefunden!</value>
   </data>
   <data name="CountryNon" xml:space="preserve">
-    <value>Neuvedeno</value>
+    <value>Undefiniert</value>
   </data>
   <data name="CountSizeFail" xml:space="preserve">
-    <value>Chyba při počítání velikosti souboru {0}!</value>
+    <value>Fehler bei der Berechnung der Dateigröße von {0}!</value>
   </data>
   <data name="CrawlingRouteFail" xml:space="preserve">
-    <value>Chyba při procházení tratě "{0}"!</value>
+    <value>Fehler beim Parsen der Strecke "{0}"!</value>
   </data>
   <data name="CriticalError" xml:space="preserve">
-    <value>Kritická chyba!</value>
+    <value>Kritischer Fehler!</value>
   </data>
   <data name="DepStateAvail" xml:space="preserve">
-    <value>Dostupné</value>
+    <value>Erreichbar</value>
   </data>
   <data name="DepStateDown" xml:space="preserve">
-    <value>Staženo</value>
+    <value>Heruntergeladen</value>
   </data>
   <data name="DepStatePaid" xml:space="preserve">
-    <value>Placené DLC</value>
+    <value>Bezahlte DLC</value>
   </data>
   <data name="DepStateUnav" xml:space="preserve">
-    <value>Nedostupné</value>
+    <value>Unerreichbar</value>
   </data>
   <data name="DepStateUnk" xml:space="preserve">
-    <value>Neznámý</value>
+    <value>Unbekannt</value>
   </data>
   <data name="DepWindowTitle1" xml:space="preserve">
-    <value>Závislosti tratě</value>
+    <value>Abhängigkeiten der Strecke</value>
   </data>
   <data name="DepWindowTitle2" xml:space="preserve">
-    <value>Závislosti scénářů</value>
+    <value>Abhängigkeiten des Scenarios</value>
   </data>
   <data name="DownloadError" xml:space="preserve">
-    <value>Nastala neočekávaná chyba při stahování</value>
+    <value>Unerwarteter Fehler beim Herunterladen</value>
   </data>
   <data name="DownloadingUpdate" xml:space="preserve">
-    <value>Stahování aktualizace aplikace...</value>
+    <value>Client-Update herunterladen...</value>
   </data>
   <data name="DownloadTitle" xml:space="preserve">
-    <value>Stahování balíčku {0}/{1}</value>
+    <value>Herunterladen Paket {0}/{1}</value>
   </data>
   <data name="Era1" xml:space="preserve">
     <value>I.</value>
@@ -232,103 +233,106 @@
     <value>VI.</value>
   </data>
   <data name="EraNon" xml:space="preserve">
-    <value>Nedefinováno</value>
+    <value>Undefinierbar</value>
   </data>
   <data name="FailedCopyFiles" xml:space="preserve">
-    <value>Nepovedlo se zkopírovat následující soubory!</value>
+    <value>Die folgenden Dateien konnten nicht kopiert werden!</value>
   </data>
   <data name="FindFileFail" xml:space="preserve">
-    <value>FindFile pro {0} vrátil prázdný výsledek!</value>
+    <value>FindFile für {0} leeres Ergebnis zurückgegeben!</value>
   </data>
   <data name="GzipEntryFail" xml:space="preserve">
-    <value>Chyba při čtení gzip záznamu v souboru {0}!</value>
+    <value>Fehler beim Lesen des gzip-Eintrags in der Datei {0}!</value>
   </data>
   <data name="GzipFileFail" xml:space="preserve">
-    <value>Gzip soubor {0} je poškozen!</value>
+    <value>Gzip-Datei {0} ist beschädigt!</value>
   </data>
   <data name="GzipReadFail" xml:space="preserve">
-    <value>Chyba při čtení gzip souboru {0}!</value>
+    <value>Fehler beim Lesen der gzip-Datei {0}!</value>
   </data>
   <data name="InstalFail" xml:space="preserve">
     <value>Při pokusu o nainstalování balíčku nastala neočekávaná chyba.</value>
   </data>
   <data name="Installing" xml:space="preserve">
-    <value>Probíhá instalace...</value>
+    <value>Die Installation ist im Gange...</value>
   </data>
   <data name="InstallingUpdate" xml:space="preserve">
-    <value>Instalace aktualizace...</value>
+    <value>Die Installation der Aktualisierung ist im Gange...</value>
   </data>
   <data name="InvalidFileName" xml:space="preserve">
-    <value>#NEPLATNÝ NÁZEV</value>
+    <value>#UNGÜLTIGER NAME</value>
   </data>
   <data name="KeepAll" xml:space="preserve">
-    <value>Ponechat vše!</value>
+    <value>Verlasse alles!</value>
   </data>
   <data name="KeepLocal" xml:space="preserve">
-    <value>Ponechat!</value>
+    <value>Verlassen!</value>
   </data>
   <data name="LoginCheckbox" xml:space="preserve">
-    <value>Zůstat přihlášen</value>
+    <value>Angemeldet bleiben</value>
   </data>
   <data name="LoginDesc" xml:space="preserve">
-    <value>Prosím přihlašte se vaším RailWorks DLS účtem!</value>
+    <value>Bitte melden Sie sich mit Ihrem RailWorks DLS-Konto an!</value>
   </data>
   <data name="LoginEmailHint" xml:space="preserve">
-    <value>E-mailová adresa...</value>
+    <value>E-mailová Adress...</value>
   </data>
   <data name="LoginForgot" xml:space="preserve">
-    <value>Zapomenuté heslo</value>
+    <value>Verlassen passwort</value>
   </data>
   <data name="LoginMissingField" xml:space="preserve">
-    <value>Nebyla vyplněna všechna požadovaná políčka!</value>
+    <value>Nicht alle erforderlichen Felder wurden ausgefüllt!</value>
   </data>
   <data name="LoginPasswordHint" xml:space="preserve">
-    <value>Heslo...</value>
+    <value>Passwort...</value>
   </data>
   <data name="LoginPrimary" xml:space="preserve">
-    <value>Zrušit</value>
+    <value>Abbrechen</value>
   </data>
   <data name="LoginSecondary" xml:space="preserve">
-    <value>Přihlásit se</value>
+    <value>Angemelden</value>
   </data>
   <data name="LoginTitle" xml:space="preserve">
-    <value>Přihlášení</value>
+    <value>Angemeldung</value>
   </data>
   <data name="MainDown" xml:space="preserve">
-    <value>Stáhnout dostupné balíčky</value>
+    <value>Herunterladen alle erreichbare Pakete</value>
   </data>
   <data name="MainManage" xml:space="preserve">
-    <value>Spravovat balíčky</value>
+    <value>Pakete verwalten</value>
   </data>
   <data name="MainRescan" xml:space="preserve">
-    <value>Znovu naskenovat...</value>
+    <value>Noch einmal durchsuchen...</value>
   </data>
   <data name="MainScan" xml:space="preserve">
-    <value>Skenovat závislosti...</value>
+    <value>Abhängigkeiten suchen...</value>
   </data>
   <data name="MainSelectFolder" xml:space="preserve">
-    <value>Vyberte složku s RailWorks</value>
+    <value>Wählen Sie den RailWorks-Ordner</value>
   </data>
   <data name="NewerDesc" xml:space="preserve">
-    <value>Na serveru byla nalezena novější verze následujícího balíčku:\n{0}\nChcete ho aktualizovat?</value>
+    <value>Auf dem Server wurde eine neuere Version des folgenden Pakets gefunden:
+{0}
+Möchten Sie es aktualisieren?</value>
   </data>
   <data name="NewerPrimary" xml:space="preserve">
-    <value>Ano, aktualizovat</value>
+    <value>Ja, aktualisiert</value>
   </data>
   <data name="NewerSecond" xml:space="preserve">
-    <value>Ne, ponechat lokální verzi</value>
+    <value>Nein, bleib Mir Lokalversion</value>
   </data>
   <data name="NewerTitle" xml:space="preserve">
     <value>Nalezena novější verze balíčku!</value>
   </data>
   <data name="No" xml:space="preserve">
-    <value>Ne</value>
+    <value>Nein</value>
   </data>
   <data name="NonCached" xml:space="preserve">
     <value>Pokus o stažení nenačteného balíčku!</value>
   </data>
   <data name="Ok" xml:space="preserve">
-    <value>Budiž!</value>
+    <value>Ja wohl!</value>
+    <comment>Es musst hier bleiben!!!!</comment>
   </data>
   <data name="OperationsRunning" xml:space="preserve">
     <value>Na pozadí stále probíhají některé činnosti.\nOpravdu chcete skončit?</value>
@@ -370,10 +374,10 @@
     <value>Chyba při načítání seznamu tratí!</value>
   </data>
   <data name="Save" xml:space="preserve">
-    <value>Uložit</value>
+    <value>Speichern</value>
   </data>
   <data name="Saving" xml:space="preserve">
-    <value>Ukládání</value>
+    <value>Speicherung</value>
   </data>
   <data name="SelectRWDlgAuto" xml:space="preserve">
     <value>Pokusit se nalézt složku s RailWorks automaticky</value>
@@ -391,37 +395,37 @@
     <value>Vybrat složku s RailWorks</value>
   </data>
   <data name="SerzCommonFail" xml:space="preserve">
-    <value>Chyba při čtení bin souboru {0}!</value>
+    <value>Chyab při čtení bin souboru {0}!</value>
   </data>
   <data name="SerzFlushNStringFail" xml:space="preserve">
-    <value>Vnitřní chyba SERZ! Pokus o výpis nepřečteného stringu s id {0}, krok {1} v souboru {2}!</value>
+    <value>SERZ-Innenfehler! Pokus o výpis nepřečteného stringu s id {0}, krok {1} v souboru {2}!</value>
   </data>
   <data name="SerzNLoadStringFail" xml:space="preserve">
-    <value>Vnitřní chyba SERZ! Zápis nenačteného stringu s id {0} na pozici {1}, krok {2} v souboru {3}!</value>
+    <value>SERZ-Innenfehler! Zápis nenačteného stringu s id {0} na pozici {1}, krok {2} v souboru {3}!</value>
   </data>
   <data name="SerzParseExTagFail" xml:space="preserve">
-    <value>Vnitřní chyba SERZ! Chyba při čtení již načteného tagu na pozici {0}, krok {1} v souboru {2}!</value>
+    <value>SERZ-Innenfehler! Chyba při čtení již načteného tagu na pozici {0}, krok {1} v souboru {2}!</value>
   </data>
   <data name="SerzUnkFormatFail" xml:space="preserve">
-    <value>Vnitřní chyba SERZ! Neznámý formát matice {0} na pozici {1}, krok {2} v souboru {3}!</value>
+    <value>SERZ-Innenfehler! Neznámý formát matice {0} na pozici {1}, krok {2} v souboru {3}!</value>
   </data>
   <data name="SerzUnkTagFormFail" xml:space="preserve">
-    <value>Vnitřní chyba SERZ! Neznámý formát tagu {0} na pozici {1}, krok {2}, v souboru {3}!</value>
+    <value>SERZ-Innenfehler! Neznámý formát tagu {0} na pozici {1}, krok {2}, v souboru {3}!</value>
   </data>
   <data name="SerzUnkTypeFail" xml:space="preserve">
-    <value>Vnitřní chyba SERZ! Neznámý datový typ {0} na pozici {1}, krok {2} v souboru {3}!</value>
+    <value>SERZ-Innenfehler! Neznámý datový typ {0} na pozici {1}, krok {2} v souboru {3}!</value>
   </data>
   <data name="SteamInitFail" xml:space="preserve">
     <value>Inicializace SteamManageru selhala!</value>
   </data>
   <data name="UnknownError" xml:space="preserve">
-    <value>Neznámá chyba</value>
+    <value>Unbekante fehler</value>
   </data>
   <data name="UpdaterAdminDesc" xml:space="preserve">
     <value>Pro aktualizaci Railworks DLS musíte potvrdit práva správce.</value>
   </data>
   <data name="UpdaterAdminTitle" xml:space="preserve">
-    <value>Požadováno UAC</value>
+    <value>UAC erfordert!</value>
   </data>
   <data name="UpdaterPanic" xml:space="preserve">
     <value>Kritická chyba při aktualizaci!</value>
@@ -430,9 +434,9 @@
     <value>Aktualizace balíčku {0}/{1}</value>
   </data>
   <data name="Warning" xml:space="preserve">
-    <value>Varování</value>
+    <value>Warnung</value>
   </data>
   <data name="Yes" xml:space="preserve">
-    <value>Ano</value>
+    <value>Ja</value>
   </data>
 </root>

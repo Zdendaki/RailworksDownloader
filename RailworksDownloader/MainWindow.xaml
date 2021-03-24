@@ -7,7 +7,7 @@
         xmlns:loc = "clr-namespace:RailworksDownloader.Localization"
         ui:WindowHelper.UseModernWindowStyle="True"
         mc:Ignorable="d"
-        Title="" Height="400" Width="600" MinWidth="600" MinHeight="400" Loaded="Window_Loaded" Icon="dls.png">
+        Title="" Height="400" Width="800" MinWidth="600" MinHeight="600" Loaded="Window_Loaded" Icon="dls.png">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -15,10 +15,17 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
-            <CheckBox x:Name="PathSelected" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="32" IsEnabled="False"/>
-            <Button x:Name="SelectRailworksLocation" Content="{x:Static loc:Strings.MainSelectFolder}" HorizontalAlignment="Left" Margin="38,10,0,0" VerticalAlignment="Top" Click="SelectRailworksLocation_Click" />
-            <Button x:Name="ScanRailworks" Content="{x:Static loc:Strings.MainScan}" HorizontalAlignment="Left" Margin="254,10,0,10" VerticalAlignment="Top" Click="ScanRailworks_Click" />
-            <ProgressBar x:Name="TotalProgress" VerticalContentAlignment="Stretch" Margin="425,24,10,0" VerticalAlignment="Top" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                
+                <Button x:Name="SelectRailworksLocation" Content="{x:Static loc:Strings.MainSelectFolder}" HorizontalAlignment="Left" Margin="10" VerticalAlignment="Top" Click="SelectRailworksLocation_Click" Grid.Column="0" />
+                <Button x:Name="ScanRailworks" Content="{x:Static loc:Strings.MainScan}" HorizontalAlignment="Left" Margin="0,10" VerticalAlignment="Top" Click="ScanRailworks_Click" Grid.Column="1" />
+                <ProgressBar x:Name="TotalProgress" VerticalContentAlignment="Stretch" Margin="10" VerticalAlignment="Center" Grid.Column="2" />
+            </Grid>
         </Grid>
 
         <Grid Grid.Row="1">
@@ -58,16 +65,24 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Grid x:Name="SavingGrid" Grid.Column="0"  Visibility="Hidden">
+                <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Label x:Name="SavingLabel" Content="Saving" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="10,10,0,10" VerticalAlignment="Center" Height="26" />
-                    <ProgressBar Margin="10,0,10,0" VerticalAlignment="Center" IsIndeterminate="True" Grid.Column="1" Height="2" HorizontalAlignment="Stretch"/>
+                    <Grid x:Name="SavingGrid" Grid.Column="0" Visibility="Hidden">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Label x:Name="SavingLabel" Content="Saving" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="10,10,0,10" VerticalAlignment="Center" Height="26" />
+                        <ProgressBar Margin="10,0,10,0" VerticalAlignment="Center" IsIndeterminate="True" Grid.Column="1" Height="2" HorizontalAlignment="Stretch"/>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="1">
+                        <Button x:Name="DownloadMissing" Grid.Column="2" IsEnabled="False" Content="{x:Static loc:Strings.MainDown}" Margin="0,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="32" Click="DownloadMissing_Click" />
+                        <Button x:Name="ManagePackages" Grid.Column="1" IsEnabled="true" Content="{x:Static loc:Strings.MainManage}" HorizontalAlignment="Left" Margin="10" VerticalAlignment="Bottom" Click="ManagePackages_Click" Height="32" />
+                    </StackPanel>
                 </Grid>
-                <Button x:Name="DownloadMissing" Grid.Column="2" IsEnabled="False" Content="{x:Static loc:Strings.MainDown}" Margin="5,10,10,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="32" Click="DownloadMissing_Click" />
-                <Button x:Name="ManagePackages" Grid.Column="1" IsEnabled="true" Content="{x:Static loc:Strings.MainManage}" HorizontalAlignment="Left" Margin="5,10" VerticalAlignment="Bottom" Click="ManagePackages_Click" Height="32" />
             </Grid>
         </Grid>
         <Grid>

@@ -25,6 +25,7 @@ namespace RailworksDownloader
 #else
         public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/api/");
 #endif
+        
 
         internal static Brush Blue = new SolidColorBrush(Color.FromArgb(255, 0, 151, 230));
         internal static Brush Green = new SolidColorBrush(Color.FromArgb(255, 76, 209, 55));
@@ -71,8 +72,9 @@ namespace RailworksDownloader
                 App.Railworks.ProgressUpdated += RW_ProgressUpdated;
                 App.Railworks.RouteSaving += RW_RouteSaving;
                 App.Railworks.CrawlingComplete += RW_CrawlingComplete;
-
                 RW = App.Railworks;
+
+                
 
                 try
                 {
@@ -310,7 +312,7 @@ namespace RailworksDownloader
         private void PathChanged()
         {
             bool flag = RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath);
-            PathSelected.IsChecked = ScanRailworks.IsEnabled = flag;
+            ScanRailworks.IsEnabled = flag;
 
             if (flag)
             {
@@ -381,7 +383,7 @@ namespace RailworksDownloader
 
             if (item?.IsSelected == true && crawlingComplete && loadingComplete)
             {
-                DependencyWindow dw = new DependencyWindow((RouteInfo)item.Content);
+                DependencyWindow dw = new DependencyWindow((RouteInfo)item.Content, PM);
                 dw.ShowDialog();
             }
         }

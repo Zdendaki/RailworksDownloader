@@ -23,7 +23,7 @@ namespace RailworksDownloader
                 rwPath = value;
 
                 if (rwPath != null)
-                    AssetsPath = Utils.NormalizePath(Path.Combine(RWPath, "Assets"));
+                    AssetsPath = NormalizePath(Path.Combine(RWPath, "Assets"));
             }
         }
 
