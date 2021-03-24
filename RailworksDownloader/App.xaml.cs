@@ -34,7 +34,7 @@ namespace RailworksDownloader
         protected override void OnStartup(StartupEventArgs e)
         {
             Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("de-DE");
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("pl-PL");
 
             if (e.Args.Length > 0)
             {

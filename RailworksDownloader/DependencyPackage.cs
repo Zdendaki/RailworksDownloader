@@ -24,20 +24,12 @@
 
         public DependencyState State { get; set; }
 
-        public bool IsScenario { get; set; }
+        public DependencyPackage(string name) : this(name, DependencyState.Unknown) { }
 
-        public bool IsRoute { get; set; }
-
-        public DependencyPackage(string name) : this(name, false) { }
-
-        public DependencyPackage(string name, bool scenario) : this(name, DependencyState.Unknown, scenario, !scenario) { }
-
-        public DependencyPackage(string name, DependencyState state, bool scenario, bool route)
+        public DependencyPackage(string name, DependencyState state)
         {
             Name = name;
             State = state;
-            IsScenario = scenario;
-            IsRoute = route;
         }
     }
 }

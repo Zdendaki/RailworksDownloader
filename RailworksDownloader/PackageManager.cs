@@ -159,6 +159,10 @@ namespace RailworksDownloader
 
         private SqLiteAdapter SqLiteAdapter { get; set; }
 
+        public HashSet<string> ServerDeps { get; set; } = new HashSet<string>();
+
+        public HashSet<string> ServerPaidDeps { get; set; } = new HashSet<string>();
+
         private HashSet<string> DownloadableDeps { get; set; } = new HashSet<string>();
 
         internal HashSet<int> PkgsToDownload { get; set; } = new HashSet<int>();
@@ -220,6 +224,9 @@ namespace RailworksDownloader
             if (package != default)
                 return new List<int>() { package.PackageId };
 
+            if (!ServerDeps.Contains(file_name) && !ServerPaidDeps.Contains(file_name))
+                return new List<int>();
+
             Package onlinePackage = await WebWrapper.SearchForFile(file_name);
             if (onlinePackage != null && onlinePackage.PackageId > 0)
             {
@@ -244,13 +251,12 @@ namespace RailworksDownloader
         public async Task<HashSet<string>> GetDownloadableDependencies(HashSet<string> globalDependencies, HashSet<string> existing, MainWindow mw)
         {
             InstalledPackages = SqLiteAdapter.LoadInstalledPackages();
+            ServerDeps = await WebWrapper.QueryArray("listFiles");
 
-            HashSet<string> allDownloadableDeps = await WebWrapper.QueryArray("listFiles");
-
-            if (allDownloadableDeps == null)
+            if (ServerDeps == null)
                 return DownloadableDeps;
 
-            HashSet<string> conflictDeps = existing.Intersect(allDownloadableDeps).Except(InstalledPackages.SelectMany(x => x.FilesContained)).ToHashSet();
+            HashSet<string> conflictDeps = existing.Intersect(ServerDeps).Except(InstalledPackages.SelectMany(x => x.FilesContained)).ToHashSet();
 
             HashSet<int> conflictPackages = new HashSet<int>();
 
@@ -331,16 +337,16 @@ namespace RailworksDownloader
 
             CheckUpdates();
 
-            DownloadableDeps = allDownloadableDeps.Intersect(globalDependencies).ToHashSet();
+            DownloadableDeps = ServerDeps.Intersect(globalDependencies).ToHashSet();
             return DownloadableDeps;
         }
 
         public async Task<HashSet<string>> GetPaidDependencies(HashSet<string> globalDependencies)
         {
-            HashSet<string> paid = await WebWrapper.QueryArray("listPaid");
-            if (paid == null)
+            ServerPaidDeps = await WebWrapper.QueryArray("listPaid");
+            if (ServerPaidDeps == null)
                 return new HashSet<string>();
-            return paid.Intersect(globalDependencies).ToHashSet();
+            return ServerPaidDeps.Intersect(globalDependencies).ToHashSet();
         }
 
         public void DownloadDependencies()
