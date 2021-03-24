@@ -310,7 +310,9 @@
     <value>Vyberte složku s RailWorks</value>
   </data>
   <data name="NewerDesc" xml:space="preserve">
-    <value>Na serveru byla nalezena novější verze následujícího balíčku:\n{0}\nChcete ho aktualizovat?</value>
+    <value>Na serveru byla nalezena novější verze následujícího balíčku:
+{0}
+Chcete ho aktualizovat?</value>
   </data>
   <data name="NewerPrimary" xml:space="preserve">
     <value>Ano, aktualizovat</value>
@@ -331,7 +333,8 @@
     <value>Budiž!</value>
   </data>
   <data name="OperationsRunning" xml:space="preserve">
-    <value>Na pozadí stále probíhají některé činnosti.\nOpravdu chcete skončit?</value>
+    <value>Na pozadí stále probíhají některé činnosti.
+Opravdu chcete skončit?</value>
   </data>
   <data name="OverAll" xml:space="preserve">
     <value>Přepsat vše!</value>
@@ -352,7 +355,9 @@
     <value>Vybraný balíček je placené DLC! Placené balíčky nelze stahovat touto aplikací!</value>
   </data>
   <data name="ParseRoutePropFail" xml:space="preserve">
-    <value>Při parsování následujícího souboru nastala neočekávaná výjimka:\n{0}\nObvykle to znamená že daný soubor je poškozený. Prosím nahlašte tuto chybu spolu s poškozeným souborem pro další analýzu.</value>
+    <value>Při parsování následujícího souboru nastala neočekávaná výjimka:
+{0}
+Obvykle to znamená že daný soubor je poškozený. Prosím nahlašte tuto chybu spolu s poškozeným souborem pro další analýzu.</value>
   </data>
   <data name="ParseRoutePropFailTitle" xml:space="preserve">
     <value>Chyba při parsování RouteProperties</value>
@@ -361,7 +366,8 @@
     <value>Příprava stahování!</value>
   </data>
   <data name="ProgressFail" xml:space="preserve">
-    <value>Jejda! Aktuální postup je větší než velikost všech souborů! {0}:{1}\nTrať: {1}</value>
+    <value>Jejda! Aktuální postup je větší než velikost všech souborů! {0}:{1}
+Trať: {1}</value>
   </data>
   <data name="ReadingZipFail" xml:space="preserve">
     <value>Chyba při čtení gzip souboru {0}!</value>

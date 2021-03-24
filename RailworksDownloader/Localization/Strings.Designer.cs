@@ -637,7 +637,9 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný Newer version of following package was found on server:\n{0}\nDo you want to update it?.
+        ///   Vyhledá lokalizovaný řetězec podobný Newer version of following package was found on server:
+        ///{0}
+        ///Do you want to update it?.
         /// </summary>
         public static string NewerDesc {
             get {
@@ -700,7 +702,8 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný Some operations are still running.\nDo you really want to close the app?.
+        ///   Vyhledá lokalizovaný řetězec podobný Some operations are still running.
+        ///Do you really want to close the app?.
         /// </summary>
         public static string OperationsRunning {
             get {
@@ -763,7 +766,9 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný An unexpected error occured during parsing following file:\n{0}\nUsually it means the file is corrupted. Please report this error message including the corrupted file..
+        ///   Vyhledá lokalizovaný řetězec podobný An unexpected error occured during parsing following file:
+        ///{0}
+        ///Usually it means the file is corrupted. Please report this error message including the corrupted file..
         /// </summary>
         public static string ParseRoutePropFail {
             get {
@@ -790,7 +795,8 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný Fatal! Progress is bigger than size of all files! {0}:{1}\nRoute: {1}.
+        ///   Vyhledá lokalizovaný řetězec podobný Fatal! Progress is bigger than size of all files! {0}:{1}
+        ///Route: {1}.
         /// </summary>
         public static string ProgressFail {
             get {
