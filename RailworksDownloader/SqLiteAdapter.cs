@@ -16,8 +16,8 @@ namespace RailworksDownloader
             public string Key;
             public bool Validated = false;
             public bool IsKey = false;
-                
-            public Column(string name, bool isKey = true) : this(name, "", "") {IsKey = isKey;}
+
+            public Column(string name, bool isKey = true) : this(name, "", "") { IsKey = isKey; }
 
             public Column(string name, string type) : this(name, type, "") { }
 
@@ -28,11 +28,7 @@ namespace RailworksDownloader
                 Key = key;
             }
 
-            public string SQL { get
-                {
-                    return $"{Name} {Type} {Key}";
-                }
-            }
+            public string SQL => $"{Name} {Type} {Key}";
         }
 
         private class TableScheme
@@ -46,7 +42,9 @@ namespace RailworksDownloader
                 Cols = cols;
             }
 
-            public string SQL { get
+            public string SQL
+            {
+                get
                 {
                     string content = string.Join(", ", Cols.Select(x => x.SQL));
                     return $"CREATE TABLE {Name} ({content});";
@@ -54,7 +52,8 @@ namespace RailworksDownloader
             }
         }
 
-        private class DatabaseScheme {
+        private class DatabaseScheme
+        {
 
             public string Name;
             public List<TableScheme> Tables;
@@ -160,7 +159,8 @@ namespace RailworksDownloader
 
         internal void SaveRoute(LoadedRoute route)
         {
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.InsertChckSum, MemoryConn)) {
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.InsertChckSum, MemoryConn))
+            {
                 for (int i = 0; i < 7; i++)
                 {
                     switch (i)
@@ -210,7 +210,8 @@ namespace RailworksDownloader
                 cmd.ExecuteNonQuery();
             }
 
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.InsertDeps, MemoryConn)) {
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.InsertDeps, MemoryConn))
+            {
                 int depsCount = route.Dependencies.Count;
                 for (int i = 0; i < depsCount + route.ScenarioDeps.Count; i++)
                 {
@@ -238,12 +239,14 @@ namespace RailworksDownloader
         {
             LoadedRoute loadedRoute = new LoadedRoute();
 
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.SelectAllChckSums, MemoryConn)) {
-                using (SQLiteDataReader reader = cmd.ExecuteReader()) {
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.SelectAllChckSums, MemoryConn))
+            {
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                {
                     while (reader.Read())
                     {
                         DateTime lastWrite = new DateTime();
-                        var _lastWrite = reader["last_write"];
+                        object _lastWrite = reader["last_write"];
                         if (!(_lastWrite is DBNull))
                             lastWrite = Convert.ToDateTime(_lastWrite);
 
@@ -284,10 +287,10 @@ namespace RailworksDownloader
 
             loadedRoute.Dependencies = new HashSet<string>();
             loadedRoute.ScenarioDeps = new HashSet<string>();
-            
+
             using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.SelectAllDeps, MemoryConn))
             {
-                using (SQLiteDataReader reader = cmd.ExecuteReader()) 
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
@@ -444,10 +447,11 @@ namespace RailworksDownloader
 
         private void ValidateTableScheme(TableScheme tableScheme)
         {
-            try {
+            try
+            {
                 using (SQLiteCommand cmd = new SQLiteCommand(string.Format(SQLqueries.ListTableRows, tableScheme.Name), MemoryConn))
                 {
-                    using (SQLiteDataReader reader = cmd.ExecuteReader()) 
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
@@ -458,7 +462,7 @@ namespace RailworksDownloader
                     }
                 }
 
-                foreach (var col in tableScheme.Cols.Where(x => !x.Validated && !x.IsKey))
+                foreach (Column col in tableScheme.Cols.Where(x => !x.Validated && !x.IsKey))
                     using (SQLiteCommand cmd = new SQLiteCommand(string.Format(SQLqueries.AddColumn, tableScheme.Name, col.Name, col.Type), MemoryConn))
                         cmd.ExecuteNonQuery();
             }

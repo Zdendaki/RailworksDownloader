@@ -3,8 +3,6 @@ using Newtonsoft.Json;
 using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -565,7 +563,8 @@ namespace RailworksDownloader
             if (queuedPkgs.Count > 0)
             {
                 MainWindow.Dispatcher.Invoke(() => { MainWindow.Activate(); });
-                if (!await Utils.CheckLogin(async delegate {
+                if (!await Utils.CheckLogin(async delegate
+                {
                     await ReceiveMSMQ();
                     MSMQRunning = false;
                 }, MainWindow, ApiUrl) || App.IsDownloading)

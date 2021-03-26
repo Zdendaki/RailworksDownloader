@@ -153,7 +153,7 @@ namespace RailworksDownloader
                 Progress += fsize;
             }
 
-            Debug.Assert(Progress <= AllFilesSize, string.Format(Localization.Strings.ProgressFail, Progress ,AllFilesSize, RoutePath));
+            Debug.Assert(Progress <= AllFilesSize, string.Format(Localization.Strings.ProgressFail, Progress, AllFilesSize, RoutePath));
             if (Progress <= AllFilesSize)
             {
 
@@ -525,7 +525,7 @@ namespace RailworksDownloader
             {
                 APchanged = GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum;
             }
-            
+
             LoftsChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Loft Tiles"), ref SavedRoute.LoftLastWrite, ref SavedRoute.LoftChecksum);
             RoadsChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Road Tiles"), ref SavedRoute.RoadLastWrite, ref SavedRoute.LoftChecksum);
             TracksChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Track Tiles"), ref SavedRoute.TrackLastWrite, ref SavedRoute.TrackChecksum);
@@ -724,8 +724,8 @@ namespace RailworksDownloader
         {
             DateTime newestLastWrite = new DateTime();
             //string[] filePaths = isAP ? Directory.GetFiles(path, "*.ap", SearchOption.AllDirectories).OrderBy(p => p).ToArray() : Directory.GetFiles(path, "*.bin", SearchOption.AllDirectories).OrderBy(p => p).ToArray();
-            string[] filePaths = isAP ? Directory.GetFiles(path, "*.ap", SearchOption.AllDirectories).OrderBy(p => p).ToArray() : (new List<string>{path}).ToArray();
-            
+            string[] filePaths = isAP ? Directory.GetFiles(path, "*.ap", SearchOption.AllDirectories).OrderBy(p => p).ToArray() : (new List<string> { path }).ToArray();
+
             foreach (string fpath in filePaths)
             {
                 DateTime lastWrite = GetPathLastWriteTime(fpath);

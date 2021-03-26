@@ -235,7 +235,7 @@ namespace RailworksDownloader
         public static string FindFile(string dir, string pattern)
         {
             DirectoryInfo di = new DirectoryInfo(dir);
-            foreach (var file in di.GetFiles(pattern))
+            foreach (FileInfo file in di.GetFiles(pattern))
             {
                 string fe = file.Extension.ToLower();
                 if (fe == ".xml" || fe == ".bin")
@@ -286,8 +286,7 @@ namespace RailworksDownloader
                 else
                     path += Path.DirectorySeparatorChar + "*";
 
-                WIN32_FIND_DATA findData;
-                var findHandle = FindFirstFile(path, out findData);
+                IntPtr findHandle = FindFirstFile(path, out WIN32_FIND_DATA findData);
 
                 if (findHandle != INVALID_HANDLE_VALUE)
                 {
