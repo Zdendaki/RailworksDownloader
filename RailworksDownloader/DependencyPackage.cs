@@ -2,6 +2,8 @@
 {
     public class DependencyPackage
     {
+        public int ID { get; set; }
+
         public string Name { get; set; }
 
         public string PrettyState
@@ -28,10 +30,13 @@
 
         public DependencyPackage(string name) : this(name, DependencyState.Unknown) { }
 
-        public DependencyPackage(string name, DependencyState state)
+        public DependencyPackage(string name, DependencyState state, int id)
         {
             Name = name;
             State = state;
+            ID = id;
         }
+
+        public DependencyPackage(string name, DependencyState state) : this(name, state, -1) { }
     }
 }

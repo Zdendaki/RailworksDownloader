@@ -275,10 +275,10 @@
     <value>Bitte melden Sie sich mit Ihrem RailWorks DLS-Konto an!</value>
   </data>
   <data name="LoginEmailHint" xml:space="preserve">
-    <value>E-mailová Adress...</value>
+    <value>E-mail Adresse...</value>
   </data>
   <data name="LoginForgot" xml:space="preserve">
-    <value>Verlassen passwort</value>
+    <value>Passwort vergessen</value>
   </data>
   <data name="LoginMissingField" xml:space="preserve">
     <value>Nicht alle erforderlichen Felder wurden ausgefüllt!</value>
@@ -290,10 +290,10 @@
     <value>Abbrechen</value>
   </data>
   <data name="LoginSecondary" xml:space="preserve">
-    <value>Angemelden</value>
+    <value>Anmelden</value>
   </data>
   <data name="LoginTitle" xml:space="preserve">
-    <value>Angemeldung</value>
+    <value>Anmeldung</value>
   </data>
   <data name="MainDown" xml:space="preserve">
     <value>Herunterladen alle erreichbare Pakete</value>
@@ -316,13 +316,13 @@
 Möchten Sie es aktualisieren?</value>
   </data>
   <data name="NewerPrimary" xml:space="preserve">
-    <value>Ja, aktualisiert</value>
+    <value>Ja, aktualisieren</value>
   </data>
   <data name="NewerSecond" xml:space="preserve">
-    <value>Nein, bleib Mir Lokalversion</value>
+    <value>Nein, bleib mir Lokalversion</value>
   </data>
   <data name="NewerTitle" xml:space="preserve">
-    <value>Nalezena novější verze balíčku!</value>
+    <value>Eine neuere Version des pakets gefunden!</value>
   </data>
   <data name="No" xml:space="preserve">
     <value>Nein</value>
@@ -344,10 +344,10 @@ Möchten Sie es aktualisieren?</value>
     <value>Přepsat!</value>
   </data>
   <data name="PackManInstall" xml:space="preserve">
-    <value>Nainstalovat balíčky</value>
+    <value>Pakets installieren</value>
   </data>
   <data name="PackManRemove" xml:space="preserve">
-    <value>Odinstalovat balíčky</value>
+    <value>Packets deinstallieren</value>
   </data>
   <data name="PackManTitle" xml:space="preserve">
     <value>Správce balíčků</value>
@@ -419,7 +419,7 @@ Möchten Sie es aktualisieren?</value>
     <value>Inicializace SteamManageru selhala!</value>
   </data>
   <data name="UnknownError" xml:space="preserve">
-    <value>Unbekante fehler</value>
+    <value>Unbekannte Fehler</value>
   </data>
   <data name="UpdaterAdminDesc" xml:space="preserve">
     <value>Pro aktualizaci Railworks DLS musíte potvrdit práva správce.</value>

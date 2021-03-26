@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Linq;
+using System.Windows;
 
 namespace RailworksDownloader
 {
@@ -7,9 +8,12 @@ namespace RailworksDownloader
     /// </summary>
     public partial class DependencyDetailsWindow : Window
     {
-        public DependencyDetailsWindow()
+        public DependencyDetailsWindow(DependencyPackage package, RouteInfo info)
         {
             InitializeComponent();
+
+            PackageFilesList.ItemsSource = info.ParsedDependencies.Items.Where(x => x.PkgID == package.ID);
+            Title += $" [{package.Name}]";
         }
     }
 }
