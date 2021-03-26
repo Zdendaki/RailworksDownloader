@@ -327,7 +327,7 @@ Do you want to update it?</value>
     <value>No</value>
   </data>
   <data name="NonCached" xml:space="preserve">
-    <value>Attempted to download non cached package!</value>
+    <value>Attempted to access non cached package!</value>
   </data>
   <data name="Ok" xml:space="preserve">
     <value>OK</value>

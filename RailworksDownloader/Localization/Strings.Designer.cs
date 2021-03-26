@@ -684,7 +684,7 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný Attempted to download non cached package!.
+        ///   Vyhledá lokalizovaný řetězec podobný Attempted to access non cached package!.
         /// </summary>
         public static string NonCached {
             get {

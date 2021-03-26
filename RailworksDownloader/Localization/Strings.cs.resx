@@ -327,7 +327,7 @@ Chcete ho aktualizovat?</value>
     <value>Ne</value>
   </data>
   <data name="NonCached" xml:space="preserve">
-    <value>Pokus o stažení nenačteného balíčku!</value>
+    <value>Pokus o přístup k nenačtenému balíčku!</value>
   </data>
   <data name="Ok" xml:space="preserve">
     <value>Budiž!</value>

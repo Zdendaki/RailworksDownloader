@@ -296,7 +296,7 @@ namespace RailworksDownloader
             }
         }
 
-        public async Task<HashSet<string>> GetMissing(HashSet<string> globalDeps)
+        public async Task<HashSet<string>> GetInstalledDeps(HashSet<string> globalDeps)
         {
             HashSet<string> existingDeps = new HashSet<string>();
 
@@ -316,7 +316,7 @@ namespace RailworksDownloader
                             string relative_path = NormalizePath(GetRelativePath(AssetsPath, path));
                             string relative_path_bin = NormalizePath(relative_path, ".bin");
 
-                            bool exists = File.Exists(path_bin) || File.Exists(path) || APDependencies.Contains(relative_path_bin) || APDependencies.Contains(relative_path) || CheckForFileInAP(Directory.GetParent(path).FullName, relative_path);
+                            bool exists = APDependencies.Contains(relative_path_bin) || APDependencies.Contains(relative_path) || File.Exists(path_bin) || File.Exists(path) || CheckForFileInAP(Directory.GetParent(path).FullName, relative_path);
 
                             if (exists)
                                 lock (existingDeps)

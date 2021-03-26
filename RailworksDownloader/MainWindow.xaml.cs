@@ -25,7 +25,6 @@ namespace RailworksDownloader
 #else
         public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/api/");
 #endif
-        
 
         internal static Brush Blue = new SolidColorBrush(Color.FromArgb(255, 0, 151, 230));
         internal static Brush Green = new SolidColorBrush(Color.FromArgb(255, 76, 209, 55));
@@ -187,21 +186,26 @@ namespace RailworksDownloader
                 TotalProgress.IsIndeterminate = true;
             });
 
-            HashSet<string> globalDeps = new HashSet<string>();
+            HashSet<string> allRequiredDeps = new HashSet<string>();
 
             try
             {
                 for (int i = 0; i < RW.Routes.Count; i++)
                 {
                     RW.Routes[i].AllDependencies = RW.Routes[i].Dependencies.Union(RW.Routes[i].ScenarioDeps).ToArray();
-                    globalDeps.UnionWith(RW.Routes[i].AllDependencies);
+                    allRequiredDeps.UnionWith(RW.Routes[i].AllDependencies);
                 }
 
-                HashSet<string> existing = await RW.GetMissing(globalDeps);
+                #if DEBUG
+                    System.IO.File.WriteAllLines("testDeps.txt", allRequiredDeps);
+                #endif
 
-                globalDeps.ExceptWith(existing);
-                HashSet<string> downloadable = await PM.GetDownloadableDependencies(globalDeps, existing, this);
-                HashSet<string> paid = await PM.GetPaidDependencies(globalDeps);
+                HashSet<string> allInstalledDeps = await RW.GetInstalledDeps(allRequiredDeps);
+
+                allRequiredDeps.ExceptWith(allInstalledDeps);
+                //IEnumerable<string> allMissingDeps = allRequiredDeps.Except(allInstalledDeps);
+                Dictionary<string, int> downloadable = await PM.GetDownloadableDependencies(allRequiredDeps, allInstalledDeps, this); //FIXME: bottleneck (57s on my PC :P)!!!!!
+                Dictionary<string, int> paid = await PM.GetPaidDependencies(allRequiredDeps);
 
                 RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); }); // BUG: NullReferenceException
 
@@ -222,18 +226,28 @@ namespace RailworksDownloader
                             {
                                 bool isRoute = RW.Routes[_i].Dependencies.Contains(dep);
                                 bool isScenario = RW.Routes[_i].ScenarioDeps.Contains(dep);
+                                int? pkgId = null;
 
                                 DependencyState state = DependencyState.Unknown;
-                                if (existing.Contains(dep))
+                                if (allInstalledDeps.Contains(dep)) 
+                                {
                                     state = DependencyState.Downloaded;
-                                else if (downloadable.Contains(dep))
+                                    pkgId = PM.CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(dep))?.PackageId;
+                                }
+                                else if (downloadable.ContainsKey(dep)) 
+                                {
                                     state = DependencyState.Available;
-                                else if (paid.Contains(dep))
+                                    pkgId = downloadable[dep];
+                                }
+                                else if (paid.ContainsKey(dep)) 
+                                {
                                     state = DependencyState.Paid;
+                                    pkgId = paid[dep];
+                                }
                                 else
                                     state = DependencyState.Unavailable;
 
-                                deps.Add(new Dependency(dep, state, isScenario, isRoute));
+                                deps.Add(new Dependency(dep, state, isScenario, isRoute, pkgId));
                             }
                         }
 

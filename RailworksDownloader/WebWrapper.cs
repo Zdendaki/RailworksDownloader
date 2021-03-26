@@ -80,13 +80,13 @@ namespace RailworksDownloader
         public string token { get; set; }
     }
 
-    public class ArrayResult
+    public class ArrayResult<T>
     {
         public int code { get; set; }
 
         public string message { get; set; }
 
-        public string[] content { get; set; }
+        public T[] content { get; set; }
     }
 
     public class AppVersionContent
@@ -212,7 +212,7 @@ namespace RailworksDownloader
             HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
             if (response.IsSuccessStatusCode)
             {
-                ArrayResult jsonObject = JsonConvert.DeserializeObject<ArrayResult>(await response.Content.ReadAsStringAsync());
+                ArrayResult<string> jsonObject = JsonConvert.DeserializeObject<ArrayResult<string>>(await response.Content.ReadAsStringAsync());
                 if (Utils.IsSuccessStatusCode(jsonObject.code))
                 {
                     HashSet<string> buffer = new HashSet<string>();
@@ -227,6 +227,31 @@ namespace RailworksDownloader
             }
 
             return null;
+        }
+
+        public async Task<IEnumerable<Package>> GetDownloadableFromMissing(IEnumerable<string> missing)
+        {
+            MultipartFormDataContent content = new MultipartFormDataContent{
+                {new StringContent(string.Join("\n", missing)), "getAvailableFrom"}
+            };
+
+            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", content);
+            if (response.IsSuccessStatusCode)
+            {
+                string responseString = await response.Content.ReadAsStringAsync();
+                ArrayResult<QueryContent> jsonObject = JsonConvert.DeserializeObject<ArrayResult<QueryContent>>(responseString);
+                if (Utils.IsSuccessStatusCode(jsonObject.code))
+                {
+                    List<Package> pkgs = new List<Package>();
+                    foreach (QueryContent qc in jsonObject.content)
+                    {
+                        pkgs.Add(new Package(qc));
+                    }
+                    return pkgs;
+                }
+            }
+
+            return new Package[0];
         }
 
         public static async Task ReportDLC(List<SteamManager.DLC> dlcList, string token, Uri apiUrl)

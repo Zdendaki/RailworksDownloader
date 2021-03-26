@@ -41,18 +41,21 @@ namespace RailworksDownloader
 
         public bool IsRoute { get; set; }
 
+        public int? PkgID { get; set; }
+
         public HashSet<string> Presence { get; set; }
 
-        public Dependency(string name) : this(name, false) { }
+        public Dependency(string name, int? pkgId) : this(name, false, pkgId) { }
 
-        public Dependency(string name, bool scenario) : this(name, DependencyState.Unknown, scenario, !scenario) { }
+        public Dependency(string name, bool scenario, int? pkgId) : this(name, DependencyState.Unknown, scenario, !scenario, pkgId) { }
 
-        public Dependency(string name, DependencyState state, bool scenario, bool route)
+        public Dependency(string name, DependencyState state, bool scenario, bool route, int? pkgId)
         {
             Name = name;
             State = state;
             IsScenario = scenario;
             IsRoute = route;
+            PkgID = pkgId;
         }
     }
 

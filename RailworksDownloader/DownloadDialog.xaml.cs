@@ -30,7 +30,7 @@ namespace RailworksDownloader
             //FileName.Content = "";
         }
 
-        public async Task UpdatePackages(Dictionary<int, int> update, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
+        internal async Task UpdatePackages(Dictionary<int, int> update, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
         {
             for (int i = 0; i < update.Count; i++)
             {
@@ -124,7 +124,7 @@ namespace RailworksDownloader
             App.Window.Dispatcher.Invoke(() => Hide());
         }
 
-        public async Task DownloadPackages(HashSet<int> download, List<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
+        internal async Task DownloadPackages(HashSet<int> download, List<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
         {
             download.RemoveWhere(x => cached.Any(y => y.PackageId == x && (y.IsPaid || installedPackages.Any(z => z.PackageId == x))));
             int count = download.Count;

@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
 
 namespace RailworksDownloader
@@ -68,41 +66,42 @@ namespace RailworksDownloader
 
         private void IterateDependenices(IEnumerable<Dependency> items, List<Dependency> depList, List<DependencyPackage> pkgList, HashSet<string> parsedFiles, PackageManager pm)
         {
-            Task.Run(async () =>
+            foreach (Dependency dep in items)
             {
-                foreach (Dependency dep in items)
+                if (dep.State == DependencyState.Unknown)
                 {
-                    if (dep.State == DependencyState.Unknown)
+                    depList.Add(dep);
+                }
+                else if (!parsedFiles.Contains(dep.Name))
+                {
+                    if (dep.PkgID == null)
                     {
                         depList.Add(dep);
+                        continue;
                     }
-                    else if (!parsedFiles.Contains(dep.Name))
+                    else
                     {
-                        List<int> ids = await pm.FindFile(dep.Name);
-
-                        if (ids.Count == 0)
-                        {
-                            depList.Add(dep);
-                            continue;
-                        }
-
-                        foreach (Package pkg in pm.CachedPackages.Where(x => ids.Contains(x.PackageId)))
-                        {
-                            if (!pkgList.Any(x => x.Name == pkg.DisplayName))
-                            {
-                                pkgList.Add(new DependencyPackage(pkg.DisplayName, dep.State));
-                            }
-
-                            parsedFiles.UnionWith(pkg.FilesContained);
-                        }
-                        /*Package pkg = pm.CachedPackages.FirstOrDefault(x => x.FilesContained.Any(y => y == dep.Name));
-
-                        if (pkg == default)
-                            continue;*/
-
+                        Package pkg = pm.CachedPackages.FirstOrDefault(x => x.PackageId == dep.PkgID);
+                        Trace.Assert(pkg != null, Localization.Strings.NonCached);
+                        pkgList.Add(new DependencyPackage(pkg.DisplayName, dep.State));
+                        parsedFiles.UnionWith(pkg.FilesContained);
                     }
+
+                    /*foreach (Package pkg in pm.CachedPackages.Where(x => ids.Contains(x.PackageId)))
+                    {
+                        if (!pkgList.Any(x => x.Name == pkg.DisplayName))
+                        {
+                            pkgList.Add(new DependencyPackage(pkg.DisplayName, dep.State));
+                        }
+
+                    }*/
+                    /*Package pkg = pm.CachedPackages.FirstOrDefault(x => x.FilesContained.Any(y => y == dep.Name));
+
+                    if (pkg == default)
+                        continue;*/
+
                 }
-            }).Wait();
+            }
         }
     }
 }
