@@ -156,7 +156,7 @@ namespace RailworksDownloader
 
         public HashSet<string> MissingDeps { get; set; }
 
-        private SqLiteAdapter SqLiteAdapter { get; set; }
+        internal SqLiteAdapter SqLiteAdapter { get; set; }
 
         public HashSet<string> ServerDeps { get; set; } = new HashSet<string>();
 

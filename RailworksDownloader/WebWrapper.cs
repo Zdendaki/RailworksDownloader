@@ -237,8 +237,7 @@ namespace RailworksDownloader
             HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", content);
             if (response.IsSuccessStatusCode)
             {
-                string responseString = await response.Content.ReadAsStringAsync();
-                ArrayResult<QueryContent> jsonObject = JsonConvert.DeserializeObject<ArrayResult<QueryContent>>(responseString);
+                ArrayResult<QueryContent> jsonObject = JsonConvert.DeserializeObject<ArrayResult<QueryContent>>(await response.Content.ReadAsStringAsync());
                 if (Utils.IsSuccessStatusCode(jsonObject.code))
                 {
                     List<Package> pkgs = new List<Package>();
@@ -253,10 +252,25 @@ namespace RailworksDownloader
             return new Package[0];
         }
 
-        public static async Task ReportDLC(List<SteamManager.DLC> dlcList, string token, Uri apiUrl)
+        public static async Task<IEnumerable<Package>> ReportDLC(List<SteamManager.DLC> dlcList, string token, Uri apiUrl)
         {
             StringContent encodedContent = new StringContent(JsonConvert.SerializeObject(new ReportDLCcontent(token, dlcList)), Encoding.UTF8, "application/json");
-            await Client.PostAsync(apiUrl + "reportDLC", encodedContent);
+            HttpResponseMessage response = await Client.PostAsync(apiUrl + "reportDLC", encodedContent);
+            if (response.IsSuccessStatusCode)
+            {
+                ArrayResult<QueryContent> jsonObject = JsonConvert.DeserializeObject<ArrayResult<QueryContent>>(await response.Content.ReadAsStringAsync());
+                if (Utils.IsSuccessStatusCode(jsonObject.code))
+                {
+                    List<Package> pkgs = new List<Package>();
+                    foreach (QueryContent qc in jsonObject.content)
+                    {
+                        pkgs.Add(new Package(qc));
+                    }
+                    return pkgs;
+                }
+            }
+
+            return new Package[0];
         }
 
         public async Task<Dictionary<int, int>> GetVersions(List<int> packages)

@@ -36,6 +36,7 @@ namespace RailworksDownloader
         internal static ContentDialog ContentDialog = new ContentDialog();
         internal static ContentDialog ErrorDialog = new ContentDialog();
 
+        private EventWaitHandle dlcReportFinishedHandler = new EventWaitHandle(false, EventResetMode.ManualReset);
         private bool Saving = false;
         private bool CheckingDLC = false;
         public bool ReportedDLC = false;
@@ -87,36 +88,36 @@ namespace RailworksDownloader
                     else
                     {
 #endif
-                    if (string.IsNullOrWhiteSpace(RW.RWPath))
-                    {
-                        RailworksPathDialog rpd = new RailworksPathDialog();
-                        rpd.ShowAsync();
-                    }
-
-                    if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
-                    {
-                        Settings.Default.RailworksLocation = RW.RWPath;
-                        Settings.Default.Save();
-                    }
-
-                    PathChanged();
-
-                    Settings.Default.PropertyChanged += PropertyChanged;
-
-                    DownloadDialog.Owner = this;
-
-                    RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
-                    key.SetValue("URL Protocol", "");
-                    //key.SetValue("DefaultIcon", "");
-                    key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
-
-                    if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
-                    {
-                        Task.Run(async () =>
+                        if (string.IsNullOrWhiteSpace(RW.RWPath))
                         {
-                            await Utils.CheckLogin(ReportDLC, this, ApiUrl);
-                        });
-                    }
+                            RailworksPathDialog rpd = new RailworksPathDialog();
+                            rpd.ShowAsync();
+                        }
+
+                        if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                        {
+                            Settings.Default.RailworksLocation = RW.RWPath;
+                            Settings.Default.Save();
+                        }
+
+                        PathChanged();
+
+                        Settings.Default.PropertyChanged += PropertyChanged;
+
+                        DownloadDialog.Owner = this;
+
+                        RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
+                        key.SetValue("URL Protocol", "");
+                        //key.SetValue("DefaultIcon", "");
+                        key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
+
+                        if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
+                        {
+                            Task.Run(async () =>
+                            {
+                                await Utils.CheckLogin(ReportDLC, this, ApiUrl);
+                            });
+                        }
 #if !DEBUG
                     }
 #endif
@@ -139,7 +140,18 @@ namespace RailworksDownloader
             {
                 RW_CheckingDLC(false);
                 List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
-                await WebWrapper.ReportDLC(dlcList, App.Token, ApiUrl);
+                IEnumerable<Package> pkgs = await WebWrapper.ReportDLC(dlcList, App.Token, ApiUrl);
+                PM.InstalledPackages = PM.InstalledPackages.Union(pkgs).ToList();
+                new Task(() =>
+                {
+                    foreach (Package pkg in pkgs)
+                    {
+                        PM.SqLiteAdapter.SaveInstalledPackage(pkg);
+                    }
+                    PM.SqLiteAdapter.FlushToFile(true);
+                }).Start();
+                PM.CachedPackages = PM.CachedPackages.Union(PM.InstalledPackages).ToList();
+                dlcReportFinishedHandler.Set();
                 ReportedDLC = true;
                 RW_CheckingDLC(true);
             });
@@ -194,10 +206,6 @@ namespace RailworksDownloader
                     allRequiredDeps.UnionWith(RW.Routes[i].AllDependencies);
                 }
 
-#if DEBUG
-                System.IO.File.WriteAllLines("testDeps.txt", allRequiredDeps);
-#endif
-
                 HashSet<string> allInstalledDeps = await RW.GetInstalledDeps(allRequiredDeps);
 
                 allRequiredDeps.ExceptWith(allInstalledDeps);
@@ -206,6 +214,8 @@ namespace RailworksDownloader
                 Dictionary<string, int> paid = await PM.GetPaidDependencies(allRequiredDeps);
 
                 RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); }); // BUG: NullReferenceException
+
+                dlcReportFinishedHandler.WaitOne();
 
                 int maxThreads = Math.Min(Environment.ProcessorCount, RW.Routes.Count);
                 Parallel.For(0, maxThreads, workerId =>
@@ -279,14 +289,13 @@ namespace RailworksDownloader
             }).Start();
         }
 
-        private void ToggleSavingGrid(string type)
+        private void UpdateSavingGrid()
         {
             if (!SavingGrid.Dispatcher.HasShutdownStarted)
             {
                 SavingGrid.Dispatcher.Invoke(() =>
                 {
-                    if (SavingGrid.Visibility == Visibility.Hidden)
-                        SavingLabel.Content = type;
+                    SavingLabel.Content = Saving ? CheckingDLC ? $"{Localization.Strings.Saving} | {Localization.Strings.CheckingDLC}" : Localization.Strings.Saving : Localization.Strings.CheckingDLC;
                     SavingGrid.Visibility = (Saving || CheckingDLC) ? Visibility.Visible : Visibility.Hidden;
                 });
             }
@@ -295,13 +304,13 @@ namespace RailworksDownloader
         private void RW_CheckingDLC(bool @checked)
         {
             CheckingDLC = !@checked;
-            ToggleSavingGrid(Localization.Strings.CheckingDLC);
+            UpdateSavingGrid();
         }
 
         private void RW_RouteSaving(bool saved)
         {
             Saving = !saved;
-            ToggleSavingGrid(Localization.Strings.Saving);
+            UpdateSavingGrid();
         }
 
         private void RW_ProgressUpdated(int percent)
