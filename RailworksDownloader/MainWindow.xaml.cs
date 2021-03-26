@@ -87,36 +87,36 @@ namespace RailworksDownloader
                     else
                     {
 #endif
-                        if (string.IsNullOrWhiteSpace(RW.RWPath))
+                    if (string.IsNullOrWhiteSpace(RW.RWPath))
+                    {
+                        RailworksPathDialog rpd = new RailworksPathDialog();
+                        rpd.ShowAsync();
+                    }
+
+                    if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                    {
+                        Settings.Default.RailworksLocation = RW.RWPath;
+                        Settings.Default.Save();
+                    }
+
+                    PathChanged();
+
+                    Settings.Default.PropertyChanged += PropertyChanged;
+
+                    DownloadDialog.Owner = this;
+
+                    RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
+                    key.SetValue("URL Protocol", "");
+                    //key.SetValue("DefaultIcon", "");
+                    key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
+
+                    if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
+                    {
+                        Task.Run(async () =>
                         {
-                            RailworksPathDialog rpd = new RailworksPathDialog();
-                            rpd.ShowAsync();
-                        }
-
-                        if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
-                        {
-                            Settings.Default.RailworksLocation = RW.RWPath;
-                            Settings.Default.Save();
-                        }
-
-                        PathChanged();
-
-                        Settings.Default.PropertyChanged += PropertyChanged;
-
-                        DownloadDialog.Owner = this;
-
-                        RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
-                        key.SetValue("URL Protocol", "");
-                        //key.SetValue("DefaultIcon", "");
-                        key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
-
-                        if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
-                        {
-                            Task.Run(async () =>
-                            {
-                                await Utils.CheckLogin(ReportDLC, this, ApiUrl);
-                            });
-                        }
+                            await Utils.CheckLogin(ReportDLC, this, ApiUrl);
+                        });
+                    }
 #if !DEBUG
                     }
 #endif
@@ -194,9 +194,9 @@ namespace RailworksDownloader
                     allRequiredDeps.UnionWith(RW.Routes[i].AllDependencies);
                 }
 
-                #if DEBUG
-                    System.IO.File.WriteAllLines("testDeps.txt", allRequiredDeps);
-                #endif
+#if DEBUG
+                System.IO.File.WriteAllLines("testDeps.txt", allRequiredDeps);
+#endif
 
                 HashSet<string> allInstalledDeps = await RW.GetInstalledDeps(allRequiredDeps);
 
@@ -227,17 +227,17 @@ namespace RailworksDownloader
                                 int? pkgId = null;
 
                                 DependencyState state = DependencyState.Unknown;
-                                if (allInstalledDeps.Contains(dep)) 
+                                if (allInstalledDeps.Contains(dep))
                                 {
                                     state = DependencyState.Downloaded;
                                     pkgId = PM.CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(dep))?.PackageId;
                                 }
-                                else if (downloadable.ContainsKey(dep)) 
+                                else if (downloadable.ContainsKey(dep))
                                 {
                                     state = DependencyState.Available;
                                     pkgId = downloadable[dep];
                                 }
-                                else if (paid.ContainsKey(dep)) 
+                                else if (paid.ContainsKey(dep))
                                 {
                                     state = DependencyState.Paid;
                                     pkgId = paid[dep];

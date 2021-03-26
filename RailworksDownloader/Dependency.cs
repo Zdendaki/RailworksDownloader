@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace RailworksDownloader
 {
@@ -17,8 +16,10 @@ namespace RailworksDownloader
     {
         public string Name { get; set; }
 
-        public string PrettyState { 
-            get { 
+        public string PrettyState
+        {
+            get
+            {
                 switch (State)
                 {
                     case DependencyState.Available:
@@ -32,7 +33,7 @@ namespace RailworksDownloader
                     default:
                         return Localization.Strings.DepStateUnk;
                 }
-            } 
+            }
         }
 
         public DependencyState State { get; set; }

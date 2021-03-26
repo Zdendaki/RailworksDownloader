@@ -31,7 +31,7 @@ namespace RailworksDownloader
         public HashSet<string> ScenarioDeps { get; set; }
 
         public LoadedRoute(string loftChecksum, string roadChecksum, string trackChecksum, string sceneryChecksum, string routePropertiesChecksum,
-            string apChecksum, string scenariosChecksum, HashSet<string> dependencies, HashSet<string> scenarioDeps,DateTime loftLastWrite = default, 
+            string apChecksum, string scenariosChecksum, HashSet<string> dependencies, HashSet<string> scenarioDeps, DateTime loftLastWrite = default,
             DateTime roadLastWrite = default, DateTime trackLastWrite = default, DateTime sceneryLastWrite = default, DateTime routePropertiesLastWrite = default,
             DateTime scenariosLastWrite = default, DateTime apLastWrite = default)
         {

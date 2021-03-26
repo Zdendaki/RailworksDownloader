@@ -176,7 +176,7 @@ namespace RailworksDownloader
         public const uint SERZ_MAGIC = 1515341139U;
         private const string XML_HEADER = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n";
         private const byte BINDEX_MAX = 0xFF;
-        private MODES SERZ_MODE;
+        private readonly MODES SERZ_MODE;
 
         public string RouteName { get; set; } = string.Empty;
 
@@ -254,7 +254,7 @@ namespace RailworksDownloader
                             }
                             DebugStep++;
 
-                            switch(SERZ_MODE)
+                            switch (SERZ_MODE)
                             {
                                 case MODES.routeName:
                                     {

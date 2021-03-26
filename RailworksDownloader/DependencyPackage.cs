@@ -3,9 +3,11 @@
     public class DependencyPackage
     {
         public string Name { get; set; }
-        
-        public string PrettyState { 
-            get { 
+
+        public string PrettyState
+        {
+            get
+            {
                 switch (State)
                 {
                     case DependencyState.Available:
@@ -19,7 +21,7 @@
                     default:
                         return Localization.Strings.DepStateUnk;
                 }
-            } 
+            }
         }
 
         public DependencyState State { get; set; }
