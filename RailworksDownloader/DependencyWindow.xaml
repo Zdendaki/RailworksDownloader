@@ -13,9 +13,9 @@
             <TabItem Header="{x:Static loc:Strings.DepWindowTitle1}">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="3*" MinHeight="50" />
+                        <RowDefinition x:Name="DPLRD" Height="3*" MinHeight="50" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="2*" MinHeight="100" />
+                        <RowDefinition x:Name="DLRD" Height="2*" MinHeight="100" />
                     </Grid.RowDefinitions>
                     
                     <ListView x:Name="DependenciesPackagesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -25,7 +25,7 @@
                                 <Setter Property="Padding" Value="0,10" />
                                 <Setter Property="BorderThickness" Value="0" />
                                 <Setter Property="Background" Value="Transparent" />
-                                <EventSetter Event="PreviewMouseDoubleClick" Handler="DependenciesGroupsList_DoubleClick" />
+                                <EventSetter Event="PreviewMouseDoubleClick" Handler="ListViewItem_PreviewMouseDoubleClick" />
                             </Style>
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
@@ -43,11 +43,16 @@
                         </ListView.ItemTemplate>
                     </ListView>
 
-                    <GridSplitter Grid.Row="1" Height="2" Foreground="Gray" HorizontalAlignment="Stretch" />
+                    <GridSplitter x:Name="DependencySplitter" Grid.Row="1" Height="2" Foreground="Gray" HorizontalAlignment="Stretch" />
 
-                    <StackPanel Grid.Row="2">
-                        <Label Content="Unknown files" Margin="10,10,0,0" FontWeight="Bold" FontSize="16" />
-                        <ListView x:Name="DependenciesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <Grid x:Name="UnknownDependenciesGrid" Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        
+                        <Label Content="Unknown files" Margin="10,10,0,2" FontWeight="Bold" FontSize="16" Grid.Row="0" />
+                        <ListView x:Name="DependenciesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Row="1">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem">
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -70,15 +75,15 @@
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
             </TabItem>
             <TabItem Header="{x:Static loc:Strings.DepWindowTitle2}">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="3*" MinHeight="50" />
+                        <RowDefinition x:Name="SPLRD" Height="3*" MinHeight="50" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="2*" MinHeight="100" />
+                        <RowDefinition x:Name="SLRD" Height="2*" MinHeight="100" />
                     </Grid.RowDefinitions>
 
                     <ListView x:Name="ScenarioPackagesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -88,7 +93,7 @@
                                 <Setter Property="Padding" Value="0,10" />
                                 <Setter Property="BorderThickness" Value="0" />
                                 <Setter Property="Background" Value="Transparent" />
-                                <EventSetter Event="PreviewMouseDoubleClick" Handler="ScenarioDepsGropusList_PreviewMouseDoubleClick" />
+                                <EventSetter Event="PreviewMouseDoubleClick" Handler="ListViewItem_PreviewMouseDoubleClick" />
                             </Style>
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
@@ -106,11 +111,16 @@
                         </ListView.ItemTemplate>
                     </ListView>
 
-                    <GridSplitter Grid.Row="1" Height="2" Foreground="Gray" HorizontalAlignment="Stretch" />
+                    <GridSplitter x:Name="ScenarioSplitter" Grid.Row="1" Height="2" Foreground="Gray" HorizontalAlignment="Stretch" />
 
-                    <StackPanel Grid.Row="2">
-                        <Label Content="Unknown files" Margin="10,20,0,0" FontWeight="Bold" FontSize="16" />
-                        <ListView x:Name="ScenarioDepsList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <Grid x:Name="UnknownScenarioDepsGrid" Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        
+                        <Label Content="Unknown files" Margin="10,10,0,2" FontWeight="Bold" FontSize="16" Grid.Row="0" />
+                        <ListView x:Name="ScenarioDepsList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Row="1">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem">
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -133,7 +143,7 @@
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
             </TabItem>
         </TabControl>
