@@ -73,8 +73,6 @@ namespace RailworksDownloader
                 App.Railworks.CrawlingComplete += RW_CrawlingComplete;
                 RW = App.Railworks;
 
-                
-
                 try
                 {
                     Updater updater = new Updater();
@@ -359,9 +357,9 @@ namespace RailworksDownloader
 
                 RoutesList.ItemsSource = RW.Routes.OrderBy(x => x.Name);
             }
-            catch
+            catch (Exception e)
             {
-                Trace.Assert(false, Localization.Strings.RoutesLoadFail);
+                Trace.Assert(false, Localization.Strings.RoutesLoadFail, e.ToString());
             }
         }
 
