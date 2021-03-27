@@ -75,7 +75,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Label x:Name="SavingLabel" Content="Saving" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="10,10,0,10" VerticalAlignment="Center" Height="26" />
+                        <Label x:Name="SavingLabel" Content="{x:Static loc:Strings.Saving}" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="10,10,0,10" VerticalAlignment="Center" Height="26" />
                         <ProgressBar Margin="10,0,10,0" VerticalAlignment="Center" IsIndeterminate="True" Grid.Column="1" Height="2" HorizontalAlignment="Stretch"/>
                     </Grid>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="1">

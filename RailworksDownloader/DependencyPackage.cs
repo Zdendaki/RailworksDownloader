@@ -2,10 +2,14 @@
 {
     public class DependencyPackage
     {
+        public int ID { get; set; }
+
         public string Name { get; set; }
-        
-        public string PrettyState { 
-            get { 
+
+        public string PrettyState
+        {
+            get
+            {
                 switch (State)
                 {
                     case DependencyState.Available:
@@ -19,25 +23,20 @@
                     default:
                         return Localization.Strings.DepStateUnk;
                 }
-            } 
+            }
         }
 
         public DependencyState State { get; set; }
 
-        public bool IsScenario { get; set; }
+        public DependencyPackage(string name) : this(name, DependencyState.Unknown) { }
 
-        public bool IsRoute { get; set; }
-
-        public DependencyPackage(string name) : this(name, false) { }
-
-        public DependencyPackage(string name, bool scenario) : this(name, DependencyState.Unknown, scenario, !scenario) { }
-
-        public DependencyPackage(string name, DependencyState state, bool scenario, bool route)
+        public DependencyPackage(string name, DependencyState state, int id)
         {
             Name = name;
             State = state;
-            IsScenario = scenario;
-            IsRoute = route;
+            ID = id;
         }
+
+        public DependencyPackage(string name, DependencyState state) : this(name, state, -1) { }
     }
 }

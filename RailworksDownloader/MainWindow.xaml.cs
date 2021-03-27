@@ -25,7 +25,6 @@ namespace RailworksDownloader
 #else
         public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/api/");
 #endif
-        
 
         internal static Brush Blue = new SolidColorBrush(Color.FromArgb(255, 0, 151, 230));
         internal static Brush Green = new SolidColorBrush(Color.FromArgb(255, 76, 209, 55));
@@ -37,10 +36,11 @@ namespace RailworksDownloader
         internal static ContentDialog ContentDialog = new ContentDialog();
         internal static ContentDialog ErrorDialog = new ContentDialog();
 
+        private readonly EventWaitHandle dlcReportFinishedHandler = new EventWaitHandle(false, EventResetMode.ManualReset);
         private bool Saving = false;
         private bool CheckingDLC = false;
         public bool ReportedDLC = false;
-        private Railworks RW;
+        internal Railworks RW;
         private PackageManager PM;
         private bool crawlingComplete = false;
         private bool loadingComplete = false;
@@ -73,8 +73,6 @@ namespace RailworksDownloader
                 App.Railworks.RouteSaving += RW_RouteSaving;
                 App.Railworks.CrawlingComplete += RW_CrawlingComplete;
                 RW = App.Railworks;
-
-                
 
                 try
                 {
@@ -142,7 +140,19 @@ namespace RailworksDownloader
             {
                 RW_CheckingDLC(false);
                 List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
-                await WebWrapper.ReportDLC(dlcList, App.Token, ApiUrl);
+                IEnumerable<Package> pkgs = await WebWrapper.ReportDLC(dlcList, App.Token, ApiUrl);
+                PM.InstalledPackages = PM.InstalledPackages.Union(pkgs).ToList();
+                new Task(() =>
+                {
+                    foreach (Package pkg in pkgs)
+                    {
+                        PM.SqLiteAdapter.SavePackage(pkg);
+                    }
+                    PM.SqLiteAdapter.FlushToFile(true);
+                }).Start();
+                PM.CacheInit.WaitOne();
+                PM.CachedPackages = PM.CachedPackages.Union(PM.InstalledPackages).ToList();
+                dlcReportFinishedHandler.Set();
                 ReportedDLC = true;
                 RW_CheckingDLC(true);
             });
@@ -153,7 +163,7 @@ namespace RailworksDownloader
             if (exitConfirmed == true)
                 return;
 
-            if (Saving || CheckingDLC)
+            if (Saving || CheckingDLC || App.IsDownloading)
             {
                 e.Cancel = true;
 
@@ -175,9 +185,10 @@ namespace RailworksDownloader
             }
         }
 
-        internal async void RW_CrawlingComplete()
+        internal void RW_CrawlingComplete()
         {
             crawlingComplete = true;
+            PM.StopMSMQ = true;
 
             Dispatcher.Invoke(() =>
             {
@@ -187,23 +198,20 @@ namespace RailworksDownloader
                 TotalProgress.IsIndeterminate = true;
             });
 
-            HashSet<string> globalDeps = new HashSet<string>();
-
             try
             {
                 for (int i = 0; i < RW.Routes.Count; i++)
                 {
                     RW.Routes[i].AllDependencies = RW.Routes[i].Dependencies.Union(RW.Routes[i].ScenarioDeps).ToArray();
-                    globalDeps.UnionWith(RW.Routes[i].AllDependencies);
+                    RW.AllRequiredDeps.UnionWith(RW.Routes[i].AllDependencies);
                 }
 
-                HashSet<string> existing = await RW.GetMissing(globalDeps);
-
-                globalDeps.ExceptWith(existing);
-                HashSet<string> downloadable = await PM.GetDownloadableDependencies(globalDeps, existing, this);
-                HashSet<string> paid = await PM.GetPaidDependencies(globalDeps);
-
                 RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); }); // BUG: NullReferenceException
+
+                RW.getAllInstalledDepsEvent.WaitOne();
+                RW.AllMissingDeps = RW.AllRequiredDeps.Except(RW.AllInstalledDeps);
+                PM.GetPackagesToDownload(RW.AllMissingDeps);
+                dlcReportFinishedHandler.WaitOne();
 
                 int maxThreads = Math.Min(Environment.ProcessorCount, RW.Routes.Count);
                 Parallel.For(0, maxThreads, workerId =>
@@ -222,18 +230,36 @@ namespace RailworksDownloader
                             {
                                 bool isRoute = RW.Routes[_i].Dependencies.Contains(dep);
                                 bool isScenario = RW.Routes[_i].ScenarioDeps.Contains(dep);
+                                int? pkgId = null;
 
                                 DependencyState state = DependencyState.Unknown;
-                                if (existing.Contains(dep))
+                                if (RW.AllInstalledDeps.Contains(dep))
+                                {
                                     state = DependencyState.Downloaded;
-                                else if (downloadable.Contains(dep))
+                                    if (PM.DownloadableDeps.Contains(dep))
+                                    {
+                                        pkgId = PM.DownloadableDepsPackages[dep];
+                                    }
+                                    else if (PM.DownloadablePaidDeps.Contains(dep))
+                                    {
+                                        pkgId = PM.DownloadablePaidDepsPackages[dep];
+                                    }
+                                    //pkgId = PM.CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(dep))?.PackageId;
+                                }
+                                else if (PM.DownloadableDeps.Contains(dep))
+                                {
                                     state = DependencyState.Available;
-                                else if (paid.Contains(dep))
+                                    pkgId = PM.DownloadableDepsPackages[dep];
+                                }
+                                else if (PM.DownloadablePaidDeps.Contains(dep))
+                                {
                                     state = DependencyState.Paid;
+                                    pkgId = PM.DownloadablePaidDepsPackages[dep];
+                                }
                                 else
                                     state = DependencyState.Unavailable;
 
-                                deps.Add(new Dependency(dep, state, isScenario, isRoute));
+                                deps.Add(new Dependency(dep, state, isScenario, isRoute, pkgId));
                             }
                         }
 
@@ -248,9 +274,7 @@ namespace RailworksDownloader
                 {
                     TotalProgress.IsIndeterminate = false;
 
-                    if (downloadable.Count + PM.PkgsToDownload.Count > 0)
-                        DownloadMissing.IsEnabled = true;
-
+                    PM.StopMSMQ = false;
                     ScanRailworks.IsEnabled = true;
                     ScanRailworks.Content = Localization.Strings.MainRescan;
                 });
@@ -261,21 +285,28 @@ namespace RailworksDownloader
                     Trace.Assert(false, e.ToString());
             }
 
-            new Task(() =>
+            new Task(async () =>
             {
+                await PM.ResolveConflicts();
+                PM.CheckUpdates();
+                Dispatcher.Invoke(() =>
+                {
+                    if (PM.PkgsToDownload.Count > 0)
+                        DownloadMissing.IsEnabled = true;
+                });
                 PM.RunQueueWatcher();
             }).Start();
         }
 
-        private void ToggleSavingGrid(string type)
+        private void UpdateSavingGrid()
         {
             if (!SavingGrid.Dispatcher.HasShutdownStarted)
             {
                 SavingGrid.Dispatcher.Invoke(() =>
                 {
-                    if (SavingGrid.Visibility == Visibility.Hidden)
-                        SavingLabel.Content = type;
-                    SavingGrid.Visibility = (Saving || CheckingDLC) ? Visibility.Visible : Visibility.Hidden;
+                    SavingLabel.Content = Saving ? CheckingDLC ? App.IsDownloading ? $"{Localization.Strings.Saving} | {Localization.Strings.CheckingDLC} | {Localization.Strings.Downloading}" :
+                        $"{Localization.Strings.Saving} | {Localization.Strings.CheckingDLC}" : Localization.Strings.Saving : App.IsDownloading ? $"{Localization.Strings.Downloading} | {Localization.Strings.CheckingDLC}" : Localization.Strings.CheckingDLC;
+                    SavingGrid.Visibility = (Saving || CheckingDLC || App.IsDownloading) ? Visibility.Visible : Visibility.Hidden;
                 });
             }
         }
@@ -283,13 +314,13 @@ namespace RailworksDownloader
         private void RW_CheckingDLC(bool @checked)
         {
             CheckingDLC = !@checked;
-            ToggleSavingGrid(Localization.Strings.CheckingDLC);
+            UpdateSavingGrid();
         }
 
         private void RW_RouteSaving(bool saved)
         {
             Saving = !saved;
-            ToggleSavingGrid(Localization.Strings.Saving);
+            UpdateSavingGrid();
         }
 
         private void RW_ProgressUpdated(int percent)
@@ -313,6 +344,7 @@ namespace RailworksDownloader
         {
             bool flag = RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath);
             ScanRailworks.IsEnabled = flag;
+            crawlingComplete = false;
 
             if (flag)
             {
@@ -345,9 +377,9 @@ namespace RailworksDownloader
 
                 RoutesList.ItemsSource = RW.Routes.OrderBy(x => x.Name);
             }
-            catch
+            catch (Exception e)
             {
-                Trace.Assert(false, Localization.Strings.RoutesLoadFail);
+                Trace.Assert(false, Localization.Strings.RoutesLoadFail, e.ToString());
             }
         }
 
@@ -366,6 +398,11 @@ namespace RailworksDownloader
                 TotalProgress.Value = 0;
             });
             loadingComplete = false;
+            RW.getAllInstalledDepsEvent.Reset();
+            new Task(() =>
+            {
+                RW.GetInstalledDeps();
+            }).Start();
             if (!crawlingComplete)
             {
                 crawlingComplete = false;
@@ -373,7 +410,10 @@ namespace RailworksDownloader
             }
             else
             {
-                RW_CrawlingComplete();
+                new Task(() =>
+                {
+                    RW_CrawlingComplete();
+                }).Start();
             }
         }
 

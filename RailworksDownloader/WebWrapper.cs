@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -80,13 +79,13 @@ namespace RailworksDownloader
         public string token { get; set; }
     }
 
-    public class ArrayResult
+    public class ArrayResult<T>
     {
         public int code { get; set; }
 
         public string message { get; set; }
 
-        public string[] content { get; set; }
+        public T[] content { get; set; }
     }
 
     public class AppVersionContent
@@ -116,6 +115,7 @@ namespace RailworksDownloader
 
         internal delegate void OnDownloadProgressChangedEventHandler(float progress);
         internal event OnDownloadProgressChangedEventHandler OnDownloadProgressChanged;
+        public static bool CancelDownload { get; set; } = false;
 
         public WebWrapper(Uri apiUrl)
         {
@@ -129,6 +129,7 @@ namespace RailworksDownloader
 
         public async Task<ObjectResult<object>> DownloadPackage(int packageId, string token)
         {
+            CancelDownload = false;
             Uri url = new Uri(ApiUrl + $"download?token={token}&package_id={packageId}");
 
             OnDownloadProgressChanged?.Invoke(0);
@@ -137,6 +138,8 @@ namespace RailworksDownloader
             webClient.DownloadProgressChanged += (sender, e) =>
             {
                 OnDownloadProgressChanged?.Invoke(e.ProgressPercentage);
+                if (CancelDownload)
+                    webClient.CancelAsync();
             };
 
             string tempFname = Path.GetTempFileName();
@@ -156,23 +159,6 @@ namespace RailworksDownloader
                 }
                 return obj;
             }
-        }
-
-        public async Task<Package> SearchForFile(string fileToFind)
-        {
-            Dictionary<string, string> content = new Dictionary<string, string> { { "file", fileToFind } };
-            FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
-
-            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
-            if (response.IsSuccessStatusCode)
-            {
-                ObjectResult<QueryContent> responseContent = JsonConvert.DeserializeObject<ObjectResult<QueryContent>>(await response.Content.ReadAsStringAsync());
-
-                if (Utils.IsSuccessStatusCode(responseContent.code))
-                    return new Package(responseContent.content);
-            }
-
-            return null;
         }
 
         public async Task<Package> GetPackage(int packageId)
@@ -204,53 +190,51 @@ namespace RailworksDownloader
             return null;
         }
 
-        public async Task<HashSet<string>> QueryArray(string query)
+        public async Task<Tuple<IEnumerable<Package>, HashSet<int>>> ValidateCache(Dictionary<int, int> localVersions)
         {
-            Dictionary<string, string> content = new Dictionary<string, string> { { query, null } };
-            FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
+            MultipartFormDataContent content = new MultipartFormDataContent{
+                {new StringContent(JsonConvert.SerializeObject(localVersions)), "validateCache"}
+            };
 
-            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
+            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", content);
             if (response.IsSuccessStatusCode)
             {
-                ArrayResult jsonObject = JsonConvert.DeserializeObject<ArrayResult>(await response.Content.ReadAsStringAsync());
+                ArrayResult<QueryContent> jsonObject = JsonConvert.DeserializeObject<ArrayResult<QueryContent>>(await response.Content.ReadAsStringAsync());
                 if (Utils.IsSuccessStatusCode(jsonObject.code))
                 {
-                    HashSet<string> buffer = new HashSet<string>();
-
-                    for (int i = 0; i < jsonObject.content.Length; i++)
+                    List<Package> pkgs = new List<Package>();
+                    HashSet<int> remoteVersions = new HashSet<int>();
+                    foreach (QueryContent qc in jsonObject.content)
                     {
-                        buffer.Add(NormalizePath(jsonObject.content[i]));
+                        pkgs.Add(new Package(qc));
+                        remoteVersions.Add(qc.id);
                     }
-
-                    return buffer;
+                    return new Tuple<IEnumerable<Package>, HashSet<int>>(pkgs, remoteVersions);
                 }
             }
 
-            return null;
+            return new Tuple<IEnumerable<Package>, HashSet<int>>(new Package[0], new HashSet<int>());
         }
 
-        public static async Task ReportDLC(List<SteamManager.DLC> dlcList, string token, Uri apiUrl)
+        public static async Task<IEnumerable<Package>> ReportDLC(List<SteamManager.DLC> dlcList, string token, Uri apiUrl)
         {
             StringContent encodedContent = new StringContent(JsonConvert.SerializeObject(new ReportDLCcontent(token, dlcList)), Encoding.UTF8, "application/json");
-            await Client.PostAsync(apiUrl + "reportDLC", encodedContent);
-        }
-
-        public async Task<Dictionary<int, int>> GetVersions(List<int> packages)
-        {
-            Dictionary<string, string> content = new Dictionary<string, string> { { "getVersions", string.Join(",", packages) } };
-            FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
-
-            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
+            HttpResponseMessage response = await Client.PostAsync(apiUrl + "reportDLC", encodedContent);
             if (response.IsSuccessStatusCode)
             {
-                ObjectResult<Dictionary<string, int>> jsonObject = JsonConvert.DeserializeObject<ObjectResult<Dictionary<string, int>>>(await response.Content.ReadAsStringAsync());
+                ArrayResult<QueryContent> jsonObject = JsonConvert.DeserializeObject<ArrayResult<QueryContent>>(await response.Content.ReadAsStringAsync());
                 if (Utils.IsSuccessStatusCode(jsonObject.code))
                 {
-                    return jsonObject.content.ToDictionary(x => int.Parse(x.Key), x => x.Value); ;
+                    List<Package> pkgs = new List<Package>();
+                    foreach (QueryContent qc in jsonObject.content)
+                    {
+                        pkgs.Add(new Package(qc));
+                    }
+                    return pkgs;
                 }
             }
 
-            return new Dictionary<int, int>();
+            return new Package[0];
         }
 
         public static async Task<ObjectResult<AppVersionContent>> GetAppVersion(Uri apiUrl)

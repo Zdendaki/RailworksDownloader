@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace RailworksDownloader
 {
@@ -17,8 +16,10 @@ namespace RailworksDownloader
     {
         public string Name { get; set; }
 
-        public string PrettyState { 
-            get { 
+        public string PrettyState
+        {
+            get
+            {
                 switch (State)
                 {
                     case DependencyState.Available:
@@ -32,7 +33,7 @@ namespace RailworksDownloader
                     default:
                         return Localization.Strings.DepStateUnk;
                 }
-            } 
+            }
         }
 
         public DependencyState State { get; set; }
@@ -41,18 +42,21 @@ namespace RailworksDownloader
 
         public bool IsRoute { get; set; }
 
+        public int? PkgID { get; set; }
+
         public HashSet<string> Presence { get; set; }
 
-        public Dependency(string name) : this(name, false) { }
+        public Dependency(string name, int? pkgId) : this(name, false, pkgId) { }
 
-        public Dependency(string name, bool scenario) : this(name, DependencyState.Unknown, scenario, !scenario) { }
+        public Dependency(string name, bool scenario, int? pkgId) : this(name, DependencyState.Unknown, scenario, !scenario, pkgId) { }
 
-        public Dependency(string name, DependencyState state, bool scenario, bool route)
+        public Dependency(string name, DependencyState state, bool scenario, bool route, int? pkgId)
         {
             Name = name;
             State = state;
             IsScenario = scenario;
             IsRoute = route;
+            PkgID = pkgId;
         }
     }
 

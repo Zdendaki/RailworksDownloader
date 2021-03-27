@@ -183,6 +183,9 @@
   <data name="CriticalError" xml:space="preserve">
     <value>Critical error!</value>
   </data>
+  <data name="DepsDetailsWindowTitle" xml:space="preserve">
+    <value>Files used from package {0} in route {1}:</value>
+  </data>
   <data name="DepStateAvail" xml:space="preserve">
     <value>Available</value>
   </data>
@@ -206,6 +209,9 @@
   </data>
   <data name="DownloadError" xml:space="preserve">
     <value>Error occured while downloading</value>
+  </data>
+  <data name="Downloading" xml:space="preserve">
+    <value>Downloading</value>
   </data>
   <data name="DownloadingUpdate" xml:space="preserve">
     <value>Downloading update of application...</value>
@@ -327,7 +333,7 @@ Do you want to update it?</value>
     <value>No</value>
   </data>
   <data name="NonCached" xml:space="preserve">
-    <value>Attempted to download non cached package!</value>
+    <value>Attempted to access non cached package!</value>
   </data>
   <data name="Ok" xml:space="preserve">
     <value>OK</value>

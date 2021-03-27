@@ -259,6 +259,15 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Files used from package {0} in route {1}:.
+        /// </summary>
+        public static string DepsDetailsWindowTitle {
+            get {
+                return ResourceManager.GetString("DepsDetailsWindowTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný Available.
         /// </summary>
         public static string DepStateAvail {
@@ -327,6 +336,15 @@ namespace RailworksDownloader.Localization {
         public static string DownloadError {
             get {
                 return ResourceManager.GetString("DownloadError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Downloading.
+        /// </summary>
+        public static string Downloading {
+            get {
+                return ResourceManager.GetString("Downloading", resourceCulture);
             }
         }
         
@@ -684,7 +702,7 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný Attempted to download non cached package!.
+        ///   Vyhledá lokalizovaný řetězec podobný Attempted to access non cached package!.
         /// </summary>
         public static string NonCached {
             get {

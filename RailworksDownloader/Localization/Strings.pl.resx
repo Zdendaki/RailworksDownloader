@@ -183,6 +183,9 @@
   <data name="CriticalError" xml:space="preserve">
     <value>Błąd krytyczny!</value>
   </data>
+  <data name="DepsDetailsWindowTitle" xml:space="preserve">
+    <value>Pliki używane z pakietu {0} w trasie {1}:</value>
+  </data>
   <data name="DepStateAvail" xml:space="preserve">
     <value>Dostępne</value>
   </data>
@@ -206,6 +209,9 @@
   </data>
   <data name="DownloadError" xml:space="preserve">
     <value>Wystąpil nieznany bląd przy pobieraniu</value>
+  </data>
+  <data name="Downloading" xml:space="preserve">
+    <value>Pobieranie</value>
   </data>
   <data name="DownloadingUpdate" xml:space="preserve">
     <value>Trwa pobieranie aktualizacji aplikacje...</value>
@@ -327,7 +333,7 @@ Czy chcesz go zaktualizować?</value>
     <value>Nie</value>
   </data>
   <data name="NonCached" xml:space="preserve">
-    <value>Próba pobrania niebuforowanej paczki!</value>
+    <value>Próba wczytania niebuforowanej paczki!</value>
   </data>
   <data name="Ok" xml:space="preserve">
     <value>Niech będzie!</value>

@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Windows;
 using static RailworksDownloader.Properties.Settings;
 
@@ -34,7 +32,6 @@ namespace RailworksDownloader
         protected override void OnStartup(StartupEventArgs e)
         {
             Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("de-DE");
 
             if (e.Args.Length > 0)
             {
