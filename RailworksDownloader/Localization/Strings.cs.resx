@@ -183,6 +183,9 @@
   <data name="CriticalError" xml:space="preserve">
     <value>Kritická chyba!</value>
   </data>
+  <data name="DepsDetailsWindowTitle" xml:space="preserve">
+    <value>Soubory používané z balíčku {0} v trati {1}:</value>
+  </data>
   <data name="DepStateAvail" xml:space="preserve">
     <value>Dostupné</value>
   </data>

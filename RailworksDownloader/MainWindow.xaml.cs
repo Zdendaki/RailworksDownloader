@@ -36,11 +36,11 @@ namespace RailworksDownloader
         internal static ContentDialog ContentDialog = new ContentDialog();
         internal static ContentDialog ErrorDialog = new ContentDialog();
 
-        private EventWaitHandle dlcReportFinishedHandler = new EventWaitHandle(false, EventResetMode.ManualReset);
+        private readonly EventWaitHandle dlcReportFinishedHandler = new EventWaitHandle(false, EventResetMode.ManualReset);
         private bool Saving = false;
         private bool CheckingDLC = false;
         public bool ReportedDLC = false;
-        private Railworks RW;
+        internal Railworks RW;
         private PackageManager PM;
         private bool crawlingComplete = false;
         private bool loadingComplete = false;
@@ -146,10 +146,11 @@ namespace RailworksDownloader
                 {
                     foreach (Package pkg in pkgs)
                     {
-                        PM.SqLiteAdapter.SaveInstalledPackage(pkg);
+                        PM.SqLiteAdapter.SavePackage(pkg);
                     }
                     PM.SqLiteAdapter.FlushToFile(true);
                 }).Start();
+                PM.CacheInit.WaitOne();
                 PM.CachedPackages = PM.CachedPackages.Union(PM.InstalledPackages).ToList();
                 dlcReportFinishedHandler.Set();
                 ReportedDLC = true;
@@ -184,7 +185,7 @@ namespace RailworksDownloader
             }
         }
 
-        internal async void RW_CrawlingComplete()
+        internal void RW_CrawlingComplete()
         {
             crawlingComplete = true;
 
@@ -196,25 +197,17 @@ namespace RailworksDownloader
                 TotalProgress.IsIndeterminate = true;
             });
 
-            HashSet<string> allRequiredDeps = new HashSet<string>();
-
             try
             {
                 for (int i = 0; i < RW.Routes.Count; i++)
                 {
                     RW.Routes[i].AllDependencies = RW.Routes[i].Dependencies.Union(RW.Routes[i].ScenarioDeps).ToArray();
-                    allRequiredDeps.UnionWith(RW.Routes[i].AllDependencies);
+                    RW.AllRequiredDeps.UnionWith(RW.Routes[i].AllDependencies);
                 }
-
-                HashSet<string> allInstalledDeps = await RW.GetInstalledDeps(allRequiredDeps);
-
-                allRequiredDeps.ExceptWith(allInstalledDeps);
-                //IEnumerable<string> allMissingDeps = allRequiredDeps.Except(allInstalledDeps);
-                Dictionary<string, int> downloadable = await PM.GetDownloadableDependencies(allRequiredDeps, allInstalledDeps, this); //FIXME: bottleneck (57s on my PC :P)!!!!!
-                Dictionary<string, int> paid = await PM.GetPaidDependencies(allRequiredDeps);
 
                 RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); }); // BUG: NullReferenceException
 
+                RW.getAllInstalledDepsEvent.WaitOne();
                 dlcReportFinishedHandler.WaitOne();
 
                 int maxThreads = Math.Min(Environment.ProcessorCount, RW.Routes.Count);
@@ -237,20 +230,28 @@ namespace RailworksDownloader
                                 int? pkgId = null;
 
                                 DependencyState state = DependencyState.Unknown;
-                                if (allInstalledDeps.Contains(dep))
+                                if (RW.AllInstalledDeps.Contains(dep))
                                 {
                                     state = DependencyState.Downloaded;
-                                    pkgId = PM.CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(dep))?.PackageId;
+                                    if (PM.DownloadableDeps.Contains(dep))
+                                    {
+                                        pkgId = PM.DownloadableDepsPackages[dep];
+                                    }
+                                    else if (PM.DownloadablePaidDeps.Contains(dep))
+                                    {
+                                        pkgId = PM.DownloadablePaidDepsPackages[dep];
+                                    }
+                                    //pkgId = PM.CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(dep))?.PackageId;
                                 }
-                                else if (downloadable.ContainsKey(dep))
+                                else if (PM.DownloadableDeps.Contains(dep))
                                 {
                                     state = DependencyState.Available;
-                                    pkgId = downloadable[dep];
+                                    pkgId = PM.DownloadableDepsPackages[dep];
                                 }
-                                else if (paid.ContainsKey(dep))
+                                else if (PM.DownloadablePaidDeps.Contains(dep))
                                 {
                                     state = DependencyState.Paid;
-                                    pkgId = paid[dep];
+                                    pkgId = PM.DownloadablePaidDepsPackages[dep];
                                 }
                                 else
                                     state = DependencyState.Unavailable;
@@ -270,7 +271,7 @@ namespace RailworksDownloader
                 {
                     TotalProgress.IsIndeterminate = false;
 
-                    if (downloadable.Count + PM.PkgsToDownload.Count > 0)
+                    if (PM.DownloadableDepsPackages.Count + PM.PkgsToDownload.Count > 0) //TODO: get actuall downloadable missing
                         DownloadMissing.IsEnabled = true;
 
                     ScanRailworks.IsEnabled = true;
@@ -283,8 +284,10 @@ namespace RailworksDownloader
                     Trace.Assert(false, e.ToString());
             }
 
-            new Task(() =>
+            new Task(async () =>
             {
+                await PM.ResolveConflicts(this);
+                PM.CheckUpdates();
                 PM.RunQueueWatcher();
             }).Start();
         }
@@ -390,10 +393,18 @@ namespace RailworksDownloader
             if (!crawlingComplete)
             {
                 crawlingComplete = false;
+                new Task(() =>
+                {
+                    RW.GetInstalledDeps();
+                }).Start();
                 RW.RunAllCrawlers();
             }
             else
             {
+                new Task(() =>
+                {
+                    RW.GetInstalledDeps();
+                }).Start();
                 RW_CrawlingComplete();
             }
         }

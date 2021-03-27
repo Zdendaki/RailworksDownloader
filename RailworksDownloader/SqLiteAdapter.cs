@@ -115,6 +115,42 @@ namespace RailworksDownloader
                 new Column("package_id", "INTEGER"),
                 new Column("file_name", "VARCHAR(260)"),
                 new Column("UNIQUE(package_id, file_name)", true)
+            }),
+            new TableScheme("dependency_list", new List<Column>
+            {
+                new Column("record_id", "INTEGER", "PRIMARY KEY"),
+                new Column("package_id", "INTEGER NOT NULL"),
+                new Column("dependency_package_id", "INTEGER NOT NULL")
+            }),
+            new TableScheme("remote_package_list", new List<Column>
+            {
+                new Column("id", "INTEGER", "PRIMARY KEY"),
+                new Column("file_name", "VARCHAR (260)"),
+                new Column("display_name", "VARCHAR(1000)"),
+                new Column("category", "INTEGER"),
+                new Column("era", "INTEGER"),
+                new Column("country", "INTEGER"),
+                new Column("version", "INTEGER"),
+                new Column("owner", "INTEGER"),
+                new Column("datetime", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"),
+                new Column("description", "VARCHAR(10000)"),
+                new Column("target_path", "VARCHAR(260)"),
+                new Column("paid", "INTEGER"),
+                new Column("steamappid", "INTEGER"),
+                new Column("steam_dev", "VARCHAR(1024)")
+            }),
+            new TableScheme("remote_file_list", new List<Column>
+            {
+                new Column("id", "INTEGER", "PRIMARY KEY"),
+                new Column("package_id", "INTEGER"),
+                new Column("file_name", "VARCHAR(260)"),
+                new Column("UNIQUE(package_id, file_name)", true)
+            }),
+            new TableScheme("remote_dependency_list", new List<Column>
+            {
+                new Column("record_id", "INTEGER", "PRIMARY KEY"),
+                new Column("package_id", "INTEGER NOT NULL"),
+                new Column("dependency_package_id", "INTEGER NOT NULL")
             })
         });
 
@@ -166,39 +202,39 @@ namespace RailworksDownloader
                     switch (i)
                     {
                         case 0:
-                            cmd.Parameters.AddWithValue("@folder", "loft");
-                            cmd.Parameters.AddWithValue("@chcksum", route.LoftChecksum);
-                            cmd.Parameters.AddWithValue("@last_write", route.LoftLastWrite);
+                            cmd.Parameters.AddWithValue("folder", "loft");
+                            cmd.Parameters.AddWithValue("chcksum", route.LoftChecksum);
+                            cmd.Parameters.AddWithValue("last_write", route.LoftLastWrite);
                             break;
                         case 1:
-                            cmd.Parameters.AddWithValue("@folder", "road");
-                            cmd.Parameters.AddWithValue("@chcksum", route.RoadChecksum);
-                            cmd.Parameters.AddWithValue("@last_write", route.RoadLastWrite);
+                            cmd.Parameters.AddWithValue("folder", "road");
+                            cmd.Parameters.AddWithValue("chcksum", route.RoadChecksum);
+                            cmd.Parameters.AddWithValue("last_write", route.RoadLastWrite);
                             break;
                         case 2:
-                            cmd.Parameters.AddWithValue("@folder", "track");
-                            cmd.Parameters.AddWithValue("@chcksum", route.TrackChecksum);
-                            cmd.Parameters.AddWithValue("@last_write", route.TrackLastWrite);
+                            cmd.Parameters.AddWithValue("folder", "track");
+                            cmd.Parameters.AddWithValue("chcksum", route.TrackChecksum);
+                            cmd.Parameters.AddWithValue("last_write", route.TrackLastWrite);
                             break;
                         case 3:
-                            cmd.Parameters.AddWithValue("@folder", "scenery");
-                            cmd.Parameters.AddWithValue("@chcksum", route.SceneryChecksum);
-                            cmd.Parameters.AddWithValue("@last_write", route.SceneryLastWrite);
+                            cmd.Parameters.AddWithValue("folder", "scenery");
+                            cmd.Parameters.AddWithValue("chcksum", route.SceneryChecksum);
+                            cmd.Parameters.AddWithValue("last_write", route.SceneryLastWrite);
                             break;
                         case 4:
-                            cmd.Parameters.AddWithValue("@folder", "AP");
-                            cmd.Parameters.AddWithValue("@chcksum", route.APChecksum);
-                            cmd.Parameters.AddWithValue("@last_write", route.APLastWrite);
+                            cmd.Parameters.AddWithValue("folder", "AP");
+                            cmd.Parameters.AddWithValue("chcksum", route.APChecksum);
+                            cmd.Parameters.AddWithValue("last_write", route.APLastWrite);
                             break;
                         case 5:
-                            cmd.Parameters.AddWithValue("@folder", "routeProperties");
-                            cmd.Parameters.AddWithValue("@chcksum", route.RoutePropertiesChecksum);
-                            cmd.Parameters.AddWithValue("@last_write", route.RoutePropertiesLastWrite);
+                            cmd.Parameters.AddWithValue("folder", "routeProperties");
+                            cmd.Parameters.AddWithValue("chcksum", route.RoutePropertiesChecksum);
+                            cmd.Parameters.AddWithValue("last_write", route.RoutePropertiesLastWrite);
                             break;
                         case 6:
-                            cmd.Parameters.AddWithValue("@folder", "scenarios");
-                            cmd.Parameters.AddWithValue("@chcksum", route.ScenariosChecksum);
-                            cmd.Parameters.AddWithValue("@last_write", route.ScenariosLastWrite);
+                            cmd.Parameters.AddWithValue("folder", "scenarios");
+                            cmd.Parameters.AddWithValue("chcksum", route.ScenariosChecksum);
+                            cmd.Parameters.AddWithValue("last_write", route.ScenariosLastWrite);
                             break;
                     }
                     cmd.ExecuteNonQuery();
@@ -219,16 +255,16 @@ namespace RailworksDownloader
                     {
                         if (string.IsNullOrWhiteSpace(route.Dependencies.ElementAt(i)))
                             continue;
-                        cmd.Parameters.AddWithValue("@path", route.Dependencies.ElementAt(i));
-                        cmd.Parameters.AddWithValue("@isScenario", false);
+                        cmd.Parameters.AddWithValue("path", route.Dependencies.ElementAt(i));
+                        cmd.Parameters.AddWithValue("isScenario", false);
                         cmd.ExecuteNonQuery();
                     }
                     else
                     {
                         if (string.IsNullOrWhiteSpace(route.ScenarioDeps.ElementAt(i - depsCount)))
                             continue;
-                        cmd.Parameters.AddWithValue("@path", route.ScenarioDeps.ElementAt(i - depsCount));
-                        cmd.Parameters.AddWithValue("@isScenario", true);
+                        cmd.Parameters.AddWithValue("path", route.ScenarioDeps.ElementAt(i - depsCount));
+                        cmd.Parameters.AddWithValue("isScenario", true);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -310,15 +346,21 @@ namespace RailworksDownloader
             return loadedRoute;
         }
 
-        internal void SaveInstalledPackage(Package package)
+        internal void SavePackage(Package package, bool cached = false)
         {
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.DeletePkgFilesWhere, MemoryConn))
+            using (SQLiteCommand cmd = new SQLiteCommand(string.Format(SQLqueries.DeletePkgFiles, cached ? SQLqueries.RemoteFiles : SQLqueries.LocalFiles), MemoryConn))
             {
                 cmd.Parameters.AddWithValue("id", package.PackageId);
                 cmd.ExecuteNonQuery();
             }
 
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.InsertPkg, MemoryConn))
+            using (SQLiteCommand cmd = new SQLiteCommand(string.Format(SQLqueries.DeletePkgDeps, cached ? SQLqueries.RemoteDeps : SQLqueries.LocalDeps), MemoryConn))
+            {
+                cmd.Parameters.AddWithValue("id", package.PackageId);
+                cmd.ExecuteNonQuery();
+            }
+
+            using (SQLiteCommand cmd = new SQLiteCommand(string.Format(cached ? SQLqueries.InsertRemotePkg : SQLqueries.InsertPkg, cached ? SQLqueries.RemotePackages : SQLqueries.LocalPackages), MemoryConn))
             {
                 cmd.Parameters.AddWithValue("id", package.PackageId);
                 cmd.Parameters.AddWithValue("file_name", package.FileName);
@@ -331,10 +373,15 @@ namespace RailworksDownloader
                 cmd.Parameters.AddWithValue("datetime", package.Datetime);
                 cmd.Parameters.AddWithValue("description", package.Description);
                 cmd.Parameters.AddWithValue("target_path", package.TargetPath);
+                if (cached)
+                {
+                    cmd.Parameters.AddWithValue("paid", package.IsPaid);
+                    cmd.Parameters.AddWithValue("steamappid", package.SteamAppID);
+                }
                 cmd.ExecuteNonQuery();
             }
 
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.InsertPkgFiles, MemoryConn))
+            using (SQLiteCommand cmd = new SQLiteCommand(string.Format(SQLqueries.InsertPkgFiles, cached ? SQLqueries.RemoteFiles : SQLqueries.LocalFiles), MemoryConn))
             {
                 cmd.Parameters.AddWithValue("package_id", package.PackageId);
                 foreach (string file in package.FilesContained)
@@ -343,59 +390,104 @@ namespace RailworksDownloader
                     cmd.ExecuteNonQuery();
                 }
             }
+
+            using (SQLiteCommand cmd = new SQLiteCommand(string.Format(SQLqueries.InsertPkgDeps, cached ? SQLqueries.RemoteDeps : SQLqueries.LocalDeps), MemoryConn))
+            {
+                cmd.Parameters.AddWithValue("package_id", package.PackageId);
+                foreach (int pkgDepId in package.Dependencies)
+                {
+                    cmd.Parameters.AddWithValue("dependency_package_id", pkgDepId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
 
         internal void RemoveInstalledPackage(int pkgId)
         {
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.DeletePkgFilesWhere, MemoryConn))
+            using (SQLiteCommand cmd = new SQLiteCommand(string.Format(SQLqueries.DeletePkgFiles, SQLqueries.LocalDeps), MemoryConn))
             {
                 cmd.Parameters.AddWithValue("id", pkgId);
                 cmd.ExecuteNonQuery();
             }
 
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.DeletePkgWhere, MemoryConn))
+            using (SQLiteCommand cmd = new SQLiteCommand(string.Format(SQLqueries.DeletePkgDeps, SQLqueries.LocalDeps), MemoryConn))
+            {
+                cmd.Parameters.AddWithValue("id", pkgId);
+                cmd.ExecuteNonQuery();
+            }
+
+            using (SQLiteCommand cmd = new SQLiteCommand(string.Format(SQLqueries.DeletePkg, SQLqueries.LocalPackages), MemoryConn))
             {
                 cmd.Parameters.AddWithValue("id", pkgId);
                 cmd.ExecuteNonQuery();
             }
         }
 
-        internal List<Package> LoadInstalledPackages()
+        internal List<Package> LoadPackages(bool cached = false)
         {
             List<Package> loadedPackages = new List<Package>();
 
-            using (SQLiteCommand command = new SQLiteCommand(SQLqueries.SelectAllPkgs, MemoryConn))
+            using (SQLiteCommand pkgCommand = new SQLiteCommand(string.Format(SQLqueries.SelectAllPkgs, cached ? SQLqueries.RemotePackages : SQLqueries.LocalPackages), MemoryConn))
             {
-                SQLiteDataReader reader = command.ExecuteReader();
-                using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.SelectFilesWhere, MemoryConn))
+                using (SQLiteDataReader pkgReader = pkgCommand.ExecuteReader())
                 {
-                    while (reader.Read())
+                    using (SQLiteCommand filesCommand = new SQLiteCommand(string.Format(SQLqueries.SelectPkgFilesWhere, cached ? SQLqueries.RemoteFiles : SQLqueries.LocalFiles), MemoryConn))
                     {
-                        Package loadedPackage = new Package(
-                            Convert.ToInt32(reader["id"]),
-                            Convert.ToString(reader["display_name"]),
-                            Convert.ToInt32(reader["category"]),
-                            Convert.ToInt32(reader["era"]),
-                            Convert.ToInt32(reader["country"]),
-                            Convert.ToInt32(reader["owner"]),
-                            Convert.ToString(reader["datetime"]),
-                            Convert.ToString(reader["target_path"]),
-                            new List<string>(),
-                            Convert.ToString(reader["file_name"]),
-                            Convert.ToString(reader["description"]),
-                            Convert.ToInt32(reader["version"])
-                        );
-
-                        cmd.Parameters.AddWithValue("@package_id", loadedPackage.PackageId);
-                        using (SQLiteDataReader r = cmd.ExecuteReader())
+                        using (SQLiteCommand dependenciesCommand = new SQLiteCommand(string.Format(SQLqueries.SelectPkgDepsWhere, cached ? SQLqueries.RemoteDeps : SQLqueries.LocalDeps), MemoryConn))
                         {
-                            while (r.Read())
+                            while (pkgReader.Read())
                             {
-                                loadedPackage.FilesContained.Add(NormalizePath(Convert.ToString(r["file_name"])));
+                                Package loadedPackage = cached ? new Package(
+                                    Convert.ToInt32(pkgReader["id"]),
+                                    Convert.ToString(pkgReader["display_name"]),
+                                    Convert.ToInt32(pkgReader["category"]),
+                                    Convert.ToInt32(pkgReader["era"]),
+                                    Convert.ToInt32(pkgReader["country"]),
+                                    Convert.ToInt32(pkgReader["owner"]),
+                                    Convert.ToString(pkgReader["datetime"]),
+                                    Convert.ToString(pkgReader["target_path"]),
+                                    new List<string>(),
+                                    Convert.ToString(pkgReader["file_name"]),
+                                    Convert.ToString(pkgReader["description"]),
+                                    Convert.ToInt32(pkgReader["version"]),
+                                    Convert.ToBoolean(pkgReader["paid"]),
+                                    Convert.ToInt32(pkgReader["steamappid"])
+                                ) : new Package(
+                                    Convert.ToInt32(pkgReader["id"]),
+                                    Convert.ToString(pkgReader["display_name"]),
+                                    Convert.ToInt32(pkgReader["category"]),
+                                    Convert.ToInt32(pkgReader["era"]),
+                                    Convert.ToInt32(pkgReader["country"]),
+                                    Convert.ToInt32(pkgReader["owner"]),
+                                    Convert.ToString(pkgReader["datetime"]),
+                                    Convert.ToString(pkgReader["target_path"]),
+                                    new List<string>(),
+                                    Convert.ToString(pkgReader["file_name"]),
+                                    Convert.ToString(pkgReader["description"]),
+                                    Convert.ToInt32(pkgReader["version"])
+                                );
+
+                                filesCommand.Parameters.AddWithValue("package_id", loadedPackage.PackageId);
+                                using (SQLiteDataReader filesReader = filesCommand.ExecuteReader())
+                                {
+                                    while (filesReader.Read())
+                                    {
+                                        loadedPackage.FilesContained.Add(NormalizePath(Convert.ToString(filesReader["file_name"])));
+                                    }
+                                }
+
+                                dependenciesCommand.Parameters.AddWithValue("package_id", loadedPackage.PackageId);
+                                using (SQLiteDataReader dependenciesReader = dependenciesCommand.ExecuteReader())
+                                {
+                                    while (dependenciesReader.Read())
+                                    {
+                                        loadedPackage.Dependencies.Add(Convert.ToInt32(dependenciesReader["dependency_package_id"]));
+                                    }
+                                }
+
+                                loadedPackages.Add(loadedPackage);
                             }
                         }
-
-                        loadedPackages.Add(loadedPackage);
                     }
                 }
             }
@@ -434,7 +526,7 @@ namespace RailworksDownloader
 
             using (SQLiteCommand cmd = new SQLiteCommand(SQLqueries.SelectInstalledFilesWhere, MemoryConn))
             {
-                cmd.Parameters.AddWithValue("@package_id", id);
+                cmd.Parameters.AddWithValue("package_id", id);
                 SQLiteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {

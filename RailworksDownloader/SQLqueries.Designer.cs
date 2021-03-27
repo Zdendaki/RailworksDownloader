@@ -88,20 +88,29 @@ namespace RailworksDownloader {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný DELETE FROM file_list WHERE package_id = @id;.
+        ///   Vyhledá lokalizovaný řetězec podobný DELETE FROM {0} WHERE id = @id;.
         /// </summary>
-        internal static string DeletePkgFilesWhere {
+        internal static string DeletePkg {
             get {
-                return ResourceManager.GetString("DeletePkgFilesWhere", resourceCulture);
+                return ResourceManager.GetString("DeletePkg", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný DELETE FROM package_list WHERE id = @id;.
+        ///   Vyhledá lokalizovaný řetězec podobný DELETE FROM {0} WHERE package_id = @id;.
         /// </summary>
-        internal static string DeletePkgWhere {
+        internal static string DeletePkgDeps {
             get {
-                return ResourceManager.GetString("DeletePkgWhere", resourceCulture);
+                return ResourceManager.GetString("DeletePkgDeps", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný DELETE FROM {0} WHERE package_id = @id;.
+        /// </summary>
+        internal static string DeletePkgFiles {
+            get {
+                return ResourceManager.GetString("DeletePkgFiles", resourceCulture);
             }
         }
         
@@ -133,7 +142,7 @@ namespace RailworksDownloader {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný INSERT INTO package_list (
+        ///   Vyhledá lokalizovaný řetězec podobný INSERT INTO {0} (
         ///    id,
         ///    file_name,
         ///    display_name,
@@ -162,7 +171,8 @@ namespace RailworksDownloader {
         ///display_name = @display_name,
         ///category = @category,
         ///era = @era,
-        ///country = @countr [zbytek řetězce byl zkrácen];.
+        ///country = @country,
+        ///versi [zbytek řetězce byl zkrácen];.
         /// </summary>
         internal static string InsertPkg {
             get {
@@ -171,11 +181,60 @@ namespace RailworksDownloader {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný INSERT INTO file_list (package_id, file_name) VALUES (@package_id,@file_name);.
+        ///   Vyhledá lokalizovaný řetězec podobný INSERT INTO {0} (package_id, dependency_package_id) VALUES (@package_id, @dependency_package_id);.
+        /// </summary>
+        internal static string InsertPkgDeps {
+            get {
+                return ResourceManager.GetString("InsertPkgDeps", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný INSERT INTO {0} (package_id, file_name) VALUES (@package_id,@file_name);.
         /// </summary>
         internal static string InsertPkgFiles {
             get {
                 return ResourceManager.GetString("InsertPkgFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný INSERT INTO {0} (
+        ///    id,
+        ///    file_name,
+        ///    display_name,
+        ///    category,
+        ///    era,
+        ///    country,
+        ///    version,
+        ///    owner,
+        ///    datetime,
+        ///    description,
+        ///    target_path,
+        ///    paid,
+        ///    steamappid
+        ///) VALUES (
+        ///    @id,
+        ///    @file_name,
+        ///    @display_name,
+        ///    @category,
+        ///    @era,
+        ///    @country,
+        ///    @version,
+        ///    @owner,
+        ///    @datetime,
+        ///    @description,
+        ///    @target_path,
+        ///    @paid,
+        ///    @steamappid
+        ///) ON CONFLICT(id) DO UPDATE SET 
+        ///file_name = @file_name,
+        ///display_name = @display_name,
+        ///cate [zbytek řetězce byl zkrácen];.
+        /// </summary>
+        internal static string InsertRemotePkg {
+            get {
+                return ResourceManager.GetString("InsertRemotePkg", resourceCulture);
             }
         }
         
@@ -185,6 +244,60 @@ namespace RailworksDownloader {
         internal static string ListTableRows {
             get {
                 return ResourceManager.GetString("ListTableRows", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný dependency_list.
+        /// </summary>
+        internal static string LocalDeps {
+            get {
+                return ResourceManager.GetString("LocalDeps", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný file_list.
+        /// </summary>
+        internal static string LocalFiles {
+            get {
+                return ResourceManager.GetString("LocalFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný package_list.
+        /// </summary>
+        internal static string LocalPackages {
+            get {
+                return ResourceManager.GetString("LocalPackages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný remote_dependency_list.
+        /// </summary>
+        internal static string RemoteDeps {
+            get {
+                return ResourceManager.GetString("RemoteDeps", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný remote_file_list.
+        /// </summary>
+        internal static string RemoteFiles {
+            get {
+                return ResourceManager.GetString("RemoteFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný remote_package_list.
+        /// </summary>
+        internal static string RemotePackages {
+            get {
+                return ResourceManager.GetString("RemotePackages", resourceCulture);
             }
         }
         
@@ -207,20 +320,11 @@ namespace RailworksDownloader {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný SELECT * FROM package_list;.
+        ///   Vyhledá lokalizovaný řetězec podobný SELECT * FROM {0};.
         /// </summary>
         internal static string SelectAllPkgs {
             get {
                 return ResourceManager.GetString("SelectAllPkgs", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný SELECT * FROM file_list WHERE package_id = @package_id;.
-        /// </summary>
-        internal static string SelectFilesWhere {
-            get {
-                return ResourceManager.GetString("SelectFilesWhere", resourceCulture);
             }
         }
         
@@ -230,6 +334,24 @@ namespace RailworksDownloader {
         internal static string SelectInstalledFilesWhere {
             get {
                 return ResourceManager.GetString("SelectInstalledFilesWhere", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný SELECT * FROM {0} WHERE package_id = @package_id;.
+        /// </summary>
+        internal static string SelectPkgDepsWhere {
+            get {
+                return ResourceManager.GetString("SelectPkgDepsWhere", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný SELECT * FROM {0} WHERE package_id = @package_id;.
+        /// </summary>
+        internal static string SelectPkgFilesWhere {
+            get {
+                return ResourceManager.GetString("SelectPkgFilesWhere", resourceCulture);
             }
         }
     }

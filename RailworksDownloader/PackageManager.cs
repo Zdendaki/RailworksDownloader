@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RailworksDownloader
@@ -104,8 +105,7 @@ namespace RailworksDownloader
 
         public List<int> Dependencies { get; set; }
 
-        [JsonConstructor]
-        public Package(int package_id, string display_name, int category, int era, int country, int owner, string date_time, string target_path, List<string> deps_contained, string file_name = "", string description = "", int version = 1)
+        public Package(int package_id, string display_name, int category, int era, int country, int owner, string date_time, string target_path, List<string> deps_contained, string file_name = "", string description = "", int version = 1, bool isPaid = false, int steamappid = -1, List<int> dependencies = null)
         {
             PackageId = package_id;
             FileName = file_name;
@@ -118,10 +118,10 @@ namespace RailworksDownloader
             Datetime = Convert.ToDateTime(date_time);
             Description = description;
             TargetPath = target_path;
-            IsPaid = false;
-            SteamAppID = -1;
+            IsPaid = isPaid;
+            SteamAppID = steamappid;
             FilesContained = deps_contained;
-            Dependencies = new List<int>();
+            Dependencies = dependencies ?? new List<int>();
         }
 
         public Package(QueryContent packageJson)
@@ -141,10 +141,11 @@ namespace RailworksDownloader
             SteamAppID = packageJson.steamappid ?? 0;
             FilesContained = new List<string>();
             if (packageJson.files != null)
-                FilesContained = packageJson.files.Select(x => Utils.NormalizePath(x)).ToList();
-            Dependencies = new List<int>();
+                FilesContained = packageJson.files.Select(x => Utils.NormalizePath(x)).Distinct().ToList();
             if (packageJson.dependencies != null)
                 Dependencies = packageJson.dependencies.ToList();
+            else
+                Dependencies = new List<int>();
         }
     }
 
@@ -154,15 +155,19 @@ namespace RailworksDownloader
 
         public List<Package> CachedPackages { get; set; } = new List<Package>();
 
-        public HashSet<string> MissingDeps { get; set; }
-
         internal SqLiteAdapter SqLiteAdapter { get; set; }
 
-        public HashSet<string> ServerDeps { get; set; } = new HashSet<string>();
+        public HashSet<string> DownloadableDeps { get; set; } = new HashSet<string>();
+        public Dictionary<string, int> DownloadableDepsPackages { get; set; } = new Dictionary<string, int>();
 
-        public HashSet<string> ServerPaidDeps { get; set; } = new HashSet<string>();
+        public HashSet<string> DownloadablePaidDeps { get; set; } = new HashSet<string>();
+        public Dictionary<string, int> DownloadablePaidDepsPackages { get; set; } = new Dictionary<string, int>();
+
+        public EventWaitHandle CacheInit = new EventWaitHandle(false, EventResetMode.ManualReset);
 
         internal HashSet<int> PkgsToDownload { get; set; } = new HashSet<int>();
+
+        private Dictionary<int, int> ServerVersions { get; set; } = new Dictionary<int, int>();
 
         private Uri ApiUrl { get; set; }
 
@@ -176,11 +181,16 @@ namespace RailworksDownloader
         {
             ApiUrl = apiUrl;
             MainWindow = mw;
+            WebWrapper = new WebWrapper(ApiUrl);
 
             SqLiteAdapter = new SqLiteAdapter(Path.Combine(RWPath, "main.dls"), true);
-            InstalledPackages = SqLiteAdapter.LoadInstalledPackages();
-            CachedPackages = CachedPackages.Union(InstalledPackages).ToList();
-            WebWrapper = new WebWrapper(ApiUrl);
+            InstalledPackages = SqLiteAdapter.LoadPackages();
+            Task.Run(async () =>
+            {
+                await VerifyCache();
+                //CachedPackages = CachedPackages.Union(InstalledPackages).ToList();
+                CacheInit.Set();
+            });
         }
 
         public async Task GetDependencies(HashSet<int> dependecies, HashSet<int> returnDependencies)
@@ -208,84 +218,75 @@ namespace RailworksDownloader
             }
         }
 
-        public List<int> FindFile(string file_name, bool withDeps = true)
+        public async Task VerifyCache()
         {
-            Package package = InstalledPackages.FirstOrDefault(x => x.FilesContained.Contains(file_name));
-
-            if (package != default)
-                return new List<int>() { package.PackageId };
-
+            List<Package> localCache = SqLiteAdapter.LoadPackages(true);
+            ServerVersions = new Dictionary<int, int>();
+            localCache.ForEach(x => ServerVersions[x.PackageId] = x.Version);
+            Tuple<IEnumerable<Package>, HashSet<int>> tRemoteCache = await WebWrapper.ValidateCache(ServerVersions);
+            IEnumerable<Package> remoteCache = tRemoteCache.Item1;
+            HashSet<int> remoteVersions = tRemoteCache.Item2;
             lock (CachedPackages)
-                package = CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(file_name));
-
-            if (package != default)
-                return new List<int>() { package.PackageId };
-
-            /*if (!ServerDeps.Contains(file_name) && !ServerPaidDeps.Contains(file_name))
-                return new List<int>();
-
-            Package onlinePackage = null;
-            Task.Run(async () => {
-                onlinePackage = await WebWrapper.SearchForFile(file_name);
-            }).Wait();
-
-            if (onlinePackage != null && onlinePackage.PackageId > 0)
             {
-                lock (CachedPackages)
+                CachedPackages = remoteCache.ToList();
+                localCache.ForEach(x =>
                 {
-                    if (!CachedPackages.Any(x => x.PackageId == onlinePackage.PackageId))
-                        CachedPackages.Add(onlinePackage);
-                }
-
-                HashSet<int> dependencyPkgIds = new HashSet<int>();
-                if (withDeps)
+                    if (!remoteVersions.Contains(x.PackageId))
+                    {
+                        CachedPackages.Add(x);
+                    }
+                    else
+                    {
+                        ServerVersions[x.PackageId] = CachedPackages.First(y => y.PackageId == x.PackageId).Version;
+                    }
+                });
+            }
+            if (remoteVersions.Count > 0)
+            {
+                new Task(() =>
                 {
-                    Task.Run(async () => {
-                            await GetDependencies(new HashSet<int>() { onlinePackage.PackageId }, dependencyPkgIds);
+                    foreach (Package pkg in CachedPackages)
+                    {
+                        SqLiteAdapter.SavePackage(pkg, true);
+                    }
+                    SqLiteAdapter.FlushToFile(true);
+                }).Start();
+            }
+            CachedPackages.ForEach(x =>
+            {
+                if (x.IsPaid)
+                {
+                    x.FilesContained.ForEach(y =>
+                    {
+                        DownloadablePaidDepsPackages[y] = x.PackageId;
+                        DownloadablePaidDeps.Add(y);
                     });
                 }
-
-                return new List<int>() { onlinePackage.PackageId }.Union(dependencyPkgIds).ToList();
-            }*/
-            return new List<int>();
+                else
+                {
+                    x.FilesContained.ForEach(y =>
+                    {
+                        DownloadableDepsPackages[y] = x.PackageId;
+                        DownloadableDeps.Add(y);
+                    });
+                }
+            });
         }
 
-        public async Task ResolveConflicts(HashSet<string> allInstalledDeps, MainWindow mw)
+        public async Task ResolveConflicts(MainWindow mw)
         {
-            HashSet<string> conflictDeps = allInstalledDeps.Intersect(ServerDeps).Except(InstalledPackages.SelectMany(x => x.FilesContained)).ToHashSet();
+            HashSet<string> conflictDeps = mw.RW.AllInstalledDeps.Intersect(DownloadableDeps).Except(InstalledPackages.SelectMany(x => x.FilesContained)).ToHashSet();
 
-            IEnumerable<Package> conflictPkgs = await WebWrapper.GetDownloadableFromMissing(ServerDeps.Intersect(conflictDeps));
-            foreach (Package pkg in conflictPkgs)
-                if (!CachedPackages.Any(x => x.PackageId == pkg.PackageId))
-                    lock (CachedPackages)
-                        CachedPackages.Add(pkg);
+            HashSet<int> conflictPackages = new HashSet<int>();
 
-            HashSet<int> conflictPackages = conflictPkgs.Select(x => x.PackageId).ToHashSet();
-
-            /*int maxThreads = Math.Min(Environment.ProcessorCount, conflictDeps.Count);
-            //FIXME: velký špatný
-            Parallel.For(0, maxThreads, workerId => //FIXME: bottleneck
+            while (conflictDeps.Count > 0)
             {
-                int max = conflictDeps.Count * (workerId + 1) / maxThreads;
-                for (int i = conflictDeps.Count * workerId / maxThreads; i < max; i++)
-                {
-                    List<int> packages = FindFile(conflictDeps.ElementAt(i), false);
+                Package pkg = CachedPackages.First(x => x.FilesContained.Contains(conflictDeps.First()));
+                conflictPackages.Add(pkg.PackageId);
+                conflictDeps.ExceptWith(pkg.FilesContained);
+            }
 
-                    Trace.Assert(packages.Count > 0, string.Format(Localization.Strings.FindFileFail, conflictDeps.ElementAt(i)));
-
-                    if (packages.Count > 0)
-                    {
-                        int id = packages.First();
-                        lock (conflictPackages)
-                        {
-                            if (conflictPackages.Contains(id))
-                                continue;
-
-                            conflictPackages.Add(id);
-                        }
-                    }
-                }
-            });*/
+            //HashSet<int> conflictPackages = conflictPkgs.Select(x => x.PackageId).ToHashSet();
 
             bool rewriteAll = false;
             bool keepAll = false;
@@ -336,66 +337,6 @@ namespace RailworksDownloader
             }
         }
 
-        public async Task<Dictionary<string, int>> GetDownloadableDependencies(IEnumerable<string> allMissingDeps, HashSet<string> allInstalledDeps, MainWindow mw)
-        {
-            InstalledPackages = SqLiteAdapter.LoadInstalledPackages();
-            ServerDeps = await WebWrapper.QueryArray("listFiles");
-
-            if (ServerDeps == null)
-                return new Dictionary<string, int>();
-
-            Dictionary<string, int> result = new Dictionary<string, int>();
-            IEnumerable<Package> availablePkgs = await WebWrapper.GetDownloadableFromMissing(ServerDeps.Intersect(allMissingDeps));
-            foreach (Package pkg in availablePkgs)
-            {
-                if (!CachedPackages.Any(x => x.PackageId == pkg.PackageId))
-                {
-                    lock (PkgsToDownload)
-                        PkgsToDownload.Add(pkg.PackageId);
-
-                    lock (CachedPackages)
-                        CachedPackages.Add(pkg);
-
-                    foreach (string dep in pkg.FilesContained)
-                    {
-                        result[dep] = pkg.PackageId;
-                    }
-                }
-            }
-
-            await ResolveConflicts(allInstalledDeps, mw);
-
-            CheckUpdates();
-
-            //DownloadableDeps = ServerDeps.Intersect(allMissingDeps).ToHashSet();
-            return result;
-        }
-
-        public async Task<Dictionary<string, int>> GetPaidDependencies(IEnumerable<string> allMissingDeps)
-        {
-            ServerPaidDeps = await WebWrapper.QueryArray("listPaid");
-            if (ServerPaidDeps == null)
-                return new Dictionary<string, int>();
-
-            Dictionary<string, int> result = new Dictionary<string, int>();
-            IEnumerable<Package> availablePaidPkgs = await WebWrapper.GetDownloadableFromMissing(ServerPaidDeps.Intersect(allMissingDeps));
-            foreach (Package pkg in availablePaidPkgs)
-            {
-                if (!CachedPackages.Any(x => x.PackageId == pkg.PackageId))
-                {
-                    pkg.FilesContained = pkg.FilesContained.Select(x => Utils.NormalizePath(x)).ToList();
-                    CachedPackages.Add(pkg);
-
-                    foreach (string dep in pkg.FilesContained)
-                    {
-                        result[dep] = pkg.PackageId;
-                    }
-                }
-            }
-
-            return result;
-        }
-
         public void DownloadDependencies()
         {
             Task.Run(async () =>
@@ -410,25 +351,6 @@ namespace RailworksDownloader
                     });
                     return;
                 }
-
-                /*int maxThreads = Math.Min(Environment.ProcessorCount, DownloadableDeps.Count);
-                Parallel.For(0, maxThreads, workerId =>
-                {
-                    int max = DownloadableDeps.Count * (workerId + 1) / maxThreads;
-                    for (int i = DownloadableDeps.Count * workerId / maxThreads; i < max; i++)
-                    {
-                        string dependency = DownloadableDeps.ElementAt(i);
-                        List<int> pkgId = FindFile(dependency);
-
-                        if (pkgId.Count >= 0)
-                        {
-                            lock (PkgsToDownload)
-                            {
-                                PkgsToDownload.UnionWith(pkgId);
-                            }
-                        }
-                    }
-                });*/
 
                 if (PkgsToDownload.Count > 0)
                 {
@@ -470,14 +392,10 @@ namespace RailworksDownloader
             Task.Run(async () =>
             {
                 Dictionary<int, int> pkgsToUpdate = new Dictionary<int, int>();
-                List<int> packagesId = InstalledPackages.Select(x => x.PackageId).ToList();
-                Dictionary<int, int> serverVersions = await WebWrapper.GetVersions(packagesId);
-                if (serverVersions.Count == 0)
-                    return;
 
                 foreach (Package package in InstalledPackages)
                 {
-                    if (serverVersions.ContainsKey(package.PackageId) && package.Version < serverVersions[package.PackageId])
+                    if (package.Version < ServerVersions[package.PackageId])
                     {
                         Task<ContentDialogResult> t = null;
                         MainWindow.Dispatcher.Invoke(() =>
@@ -493,7 +411,7 @@ namespace RailworksDownloader
                         ContentDialogResult result = await t;
                         if (result == ContentDialogResult.Primary)
                         {
-                            pkgsToUpdate[package.PackageId] = serverVersions[package.PackageId];
+                            pkgsToUpdate[package.PackageId] = ServerVersions[package.PackageId];
                         }
                     }
                 }

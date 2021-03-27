@@ -1,10 +1,12 @@
-﻿using Microsoft.Win32;
+﻿using ICSharpCode.SharpZipLib.Zip;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Xml;
@@ -41,6 +43,8 @@ namespace RailworksDownloader
         private readonly object APDepsLock = new object();
         private int Saving = 0;
 
+        public EventWaitHandle getAllInstalledDepsEvent = new EventWaitHandle(false, EventResetMode.ManualReset);
+
         public delegate void ProgressUpdatedEventHandler(int percent);
         public event ProgressUpdatedEventHandler ProgressUpdated;
 
@@ -49,6 +53,23 @@ namespace RailworksDownloader
 
         public delegate void CompleteEventHandler();
         public event CompleteEventHandler CrawlingComplete;
+
+        public HashSet<string> AllRequiredDeps { get; set; } = new HashSet<string>();
+
+
+        private HashSet<string> _allInstalledDeps;
+
+        public HashSet<string> AllInstalledDeps
+        {
+            get => _allInstalledDeps;
+            set
+            {
+                _allInstalledDeps = value;
+                AllMissingDeps = AllRequiredDeps.Except(_allInstalledDeps);
+            }
+        }
+
+        public IEnumerable<string> AllMissingDeps { get; set; } = new string[0];
 
         public Railworks(string path = null)
         {
@@ -172,7 +193,7 @@ namespace RailworksDownloader
                     {
                         try
                         {
-                            using (ZipArchive archive = ZipFile.OpenRead(file))
+                            using (ZipArchive archive = System.IO.Compression.ZipFile.OpenRead(file))
                             {
                                 foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("RouteProperties")))
                                 {
@@ -280,7 +301,7 @@ namespace RailworksDownloader
                     {
                         try
                         {
-                            ZipArchive zipFile = ZipFile.OpenRead(file);
+                            ZipArchive zipFile = System.IO.Compression.ZipFile.OpenRead(file);
 
                             lock (APDepsLock)
                                 APDependencies.UnionWith(from x in zipFile.Entries where (x.FullName.Contains(".xml") || x.FullName.Contains(".bin")) select NormalizePath(GetRelativePath(AssetsPath, Path.Combine(directory, x.FullName))));
@@ -294,6 +315,42 @@ namespace RailworksDownloader
                 }
                 return CheckForFileInAP(Directory.GetParent(directory).FullName, fileToFind);
             }
+        }
+
+        public void GetInstalledDeps()
+        {
+            AllInstalledDeps = new HashSet<string>();
+            string[] files = Directory.GetFiles(AssetsPath, "*.*", SearchOption.AllDirectories);
+            foreach (string file in files)
+            {
+                string ext = Path.GetExtension(file).ToLower();
+                if (ext == ".bin" || ext == ".xml")
+                {
+                    AllInstalledDeps.Add(NormalizePath(GetRelativePath(AssetsPath, file)));
+                }
+                else if (ext == ".ap")
+                {
+                    try
+                    {
+                        using (ICSharpCode.SharpZipLib.Zip.ZipFile zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(file))
+                        {
+                            foreach (ZipEntry entry in zip)
+                            {
+                                string iExt = Path.GetExtension(entry.Name).ToLower();
+                                if (iExt == ".xml" || iExt == ".bin")
+                                {
+                                    AllInstalledDeps.Add(NormalizePath(GetRelativePath(AssetsPath, Path.Combine(Path.GetDirectoryName(file), entry.Name))));
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        Debug.Assert(false, string.Format(Localization.Strings.ReadingZipFail, file));
+                    }
+                }
+            }
+            getAllInstalledDepsEvent.Set();
         }
 
         public async Task<HashSet<string>> GetInstalledDeps(HashSet<string> globalDeps)

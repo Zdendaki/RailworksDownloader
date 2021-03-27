@@ -183,6 +183,9 @@
   <data name="CriticalError" xml:space="preserve">
     <value>Critical error!</value>
   </data>
+  <data name="DepsDetailsWindowTitle" xml:space="preserve">
+    <value>Files used from package {0} in route {1}:</value>
+  </data>
   <data name="DepStateAvail" xml:space="preserve">
     <value>Available</value>
   </data>

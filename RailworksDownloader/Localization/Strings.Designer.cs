@@ -259,6 +259,15 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Files used from package {0} in route {1}:.
+        /// </summary>
+        public static string DepsDetailsWindowTitle {
+            get {
+                return ResourceManager.GetString("DepsDetailsWindowTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný Available.
         /// </summary>
         public static string DepStateAvail {

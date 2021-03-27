@@ -184,6 +184,9 @@
   <data name="CriticalError" xml:space="preserve">
     <value>Kritischer Fehler!</value>
   </data>
+  <data name="DepsDetailsWindowTitle" xml:space="preserve">
+    <value>Files used from package {0} in route {1}:</value>
+  </data>
   <data name="DepStateAvail" xml:space="preserve">
     <value>Erreichbar</value>
   </data>
@@ -251,7 +254,7 @@
     <value>Fehler beim Lesen der gzip-Datei {0}!</value>
   </data>
   <data name="InstalFail" xml:space="preserve">
-    <value>Při pokusu o nainstalování balíčku nastala neočekávaná chyba.</value>
+    <value>An error occured when trying to install package.</value>
   </data>
   <data name="Installing" xml:space="preserve">
     <value>Die Installation ist im Gange...</value>
@@ -328,20 +331,21 @@ Möchten Sie es aktualisieren?</value>
     <value>Nein</value>
   </data>
   <data name="NonCached" xml:space="preserve">
-    <value>Pokus o stažení nenačteného balíčku!</value>
+    <value>Attempted to access non cached package!</value>
   </data>
   <data name="Ok" xml:space="preserve">
     <value>Ja wohl!</value>
     <comment>Es musst hier bleiben!!!!</comment>
   </data>
   <data name="OperationsRunning" xml:space="preserve">
-    <value>Na pozadí stále probíhají některé činnosti.\nOpravdu chcete skončit?</value>
+    <value>Some operations are still running.
+Do you really want to close the app?</value>
   </data>
   <data name="OverAll" xml:space="preserve">
-    <value>Přepsat vše!</value>
+    <value>Overwrite all!</value>
   </data>
   <data name="OverLocal" xml:space="preserve">
-    <value>Přepsat!</value>
+    <value>Overwrite local!</value>
   </data>
   <data name="PackManInstall" xml:space="preserve">
     <value>Pakets installieren</value>
@@ -350,28 +354,31 @@ Möchten Sie es aktualisieren?</value>
     <value>Packets deinstallieren</value>
   </data>
   <data name="PackManTitle" xml:space="preserve">
-    <value>Správce balíčků</value>
+    <value>Package manager</value>
   </data>
   <data name="PaidPackageFail" xml:space="preserve">
-    <value>Vybraný balíček je placené DLC! Placené balíčky nelze stahovat touto aplikací!</value>
+    <value>This is paid package. Paid packages cannot be downloaded through this app.</value>
   </data>
   <data name="ParseRoutePropFail" xml:space="preserve">
-    <value>Při parsování následujícího souboru nastala neočekávaná výjimka:\n{0}\nObvykle to znamená že daný soubor je poškozený. Prosím nahlašte tuto chybu spolu s poškozeným souborem pro další analýzu.</value>
+    <value>An unexpected error occured during parsing following file:
+{0}
+Usually it means the file is corrupted. Please report this error message including the corrupted file.</value>
   </data>
   <data name="ParseRoutePropFailTitle" xml:space="preserve">
-    <value>Chyba při parsování RouteProperties</value>
+    <value>Error parsing RouteProperties</value>
   </data>
   <data name="PrepareTitle" xml:space="preserve">
-    <value>Příprava stahování!</value>
+    <value>Preparing download!</value>
   </data>
   <data name="ProgressFail" xml:space="preserve">
-    <value>Jejda! Aktuální postup je větší než velikost všech souborů! {0}:{1}\nTrať: {1}</value>
+    <value>Fatal! Progress is bigger than size of all files! {0}:{1}
+Route: {1}</value>
   </data>
   <data name="ReadingZipFail" xml:space="preserve">
-    <value>Chyba při čtení gzip souboru {0}!</value>
+    <value>Error reading zip file {0}!</value>
   </data>
   <data name="RoutesLoadFail" xml:space="preserve">
-    <value>Chyba při načítání seznamu tratí!</value>
+    <value>Loading routes failed!</value>
   </data>
   <data name="Save" xml:space="preserve">
     <value>Speichern</value>
@@ -380,58 +387,58 @@ Möchten Sie es aktualisieren?</value>
     <value>Speicherung</value>
   </data>
   <data name="SelectRWDlgAuto" xml:space="preserve">
-    <value>Pokusit se nalézt složku s RailWorks automaticky</value>
+    <value>Try finding Railworks location automatically</value>
   </data>
   <data name="SelectRWDlgBrowse" xml:space="preserve">
-    <value>Procházet</value>
+    <value>Browse</value>
   </data>
   <data name="SelectRWDlgDesc" xml:space="preserve">
-    <value>Prosím vyberte složku s RailWorks (Train Simulator).</value>
+    <value>Please select your RailWorks (Train Simulator) installation folder.</value>
   </data>
   <data name="SelectRWDlgTitle" xml:space="preserve">
-    <value>Vybrat složku s RailWorks</value>
+    <value>Select RailWorks folder</value>
   </data>
   <data name="SelectRWPathTitle" xml:space="preserve">
-    <value>Vybrat složku s RailWorks</value>
+    <value>Select RailWorks installation path</value>
   </data>
   <data name="SerzCommonFail" xml:space="preserve">
-    <value>Chyab při čtení bin souboru {0}!</value>
+    <value>Error when parsing bin file {0}!</value>
   </data>
   <data name="SerzFlushNStringFail" xml:space="preserve">
-    <value>SERZ-Innenfehler! Pokus o výpis nepřečteného stringu s id {0}, krok {1} v souboru {2}!</value>
+    <value>SERZ-Innenfehler! Attempted to flush unreaded string id {0}, step {1} in file {2}!</value>
   </data>
   <data name="SerzNLoadStringFail" xml:space="preserve">
-    <value>SERZ-Innenfehler! Zápis nenačteného stringu s id {0} na pozici {1}, krok {2} v souboru {3}!</value>
+    <value>SERZ-Innenfehler! Adding non loaded string id {0} at position {1}, step {2} in file {3}!</value>
   </data>
   <data name="SerzParseExTagFail" xml:space="preserve">
-    <value>SERZ-Innenfehler! Chyba při čtení již načteného tagu na pozici {0}, krok {1} v souboru {2}!</value>
+    <value>SERZ-Innenfehler! Unable to parse existing tag on position {0}, step {1} in file {2}!</value>
   </data>
   <data name="SerzUnkFormatFail" xml:space="preserve">
-    <value>SERZ-Innenfehler! Neznámý formát matice {0} na pozici {1}, krok {2} v souboru {3}!</value>
+    <value>SERZ-Innenfehler! Unknown format {0} in mattrice on position {1}, step {2} in file {3}!</value>
   </data>
   <data name="SerzUnkTagFormFail" xml:space="preserve">
-    <value>SERZ-Innenfehler! Neznámý formát tagu {0} na pozici {1}, krok {2}, v souboru {3}!</value>
+    <value>SERZ-Innenfehler! Unknown tag format {0} at position {1}, step {2}, file {3}!</value>
   </data>
   <data name="SerzUnkTypeFail" xml:space="preserve">
-    <value>SERZ-Innenfehler! Neznámý datový typ {0} na pozici {1}, krok {2} v souboru {3}!</value>
+    <value>SERZ-Innenfehler! Unknown data type {0} at position {1}, step {2} in file {3}!</value>
   </data>
   <data name="SteamInitFail" xml:space="preserve">
-    <value>Inicializace SteamManageru selhala!</value>
+    <value>Initialision of SteamManager failed!</value>
   </data>
   <data name="UnknownError" xml:space="preserve">
     <value>Unbekannte Fehler</value>
   </data>
   <data name="UpdaterAdminDesc" xml:space="preserve">
-    <value>Pro aktualizaci Railworks DLS musíte potvrdit práva správce.</value>
+    <value>You need to allow administrator privileges to update Railworks Download Station.</value>
   </data>
   <data name="UpdaterAdminTitle" xml:space="preserve">
     <value>UAC erfordert!</value>
   </data>
   <data name="UpdaterPanic" xml:space="preserve">
-    <value>Kritická chyba při aktualizaci!</value>
+    <value>Updater panic!</value>
   </data>
   <data name="UpdateTitle" xml:space="preserve">
-    <value>Aktualizace balíčku {0}/{1}</value>
+    <value>Updating packages {0}/{1}</value>
   </data>
   <data name="Warning" xml:space="preserve">
     <value>Warnung</value>

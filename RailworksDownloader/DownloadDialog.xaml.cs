@@ -88,7 +88,7 @@ namespace RailworksDownloader
 
                         sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
                         installedPackages[installedPackages.FindIndex(x => x.PackageId == pkgId)] = p;
-                        sqLiteAdapter.SaveInstalledPackage(p);
+                        sqLiteAdapter.SavePackage(p);
                         new Task(() =>
                         {
                             sqLiteAdapter.FlushToFile(true);
@@ -204,7 +204,7 @@ namespace RailworksDownloader
 
                     sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
                     installedPackages.Add(p);
-                    sqLiteAdapter.SaveInstalledPackage(p);
+                    sqLiteAdapter.SavePackage(p);
                     sqLiteAdapter.FlushToFile(true);
                     download.Remove(pkgId);
                     Dispatcher.Invoke(() => CancelButton = true);

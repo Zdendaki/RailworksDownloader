@@ -126,11 +126,14 @@
   <data name="DeleteInstalledFilesWhere" xml:space="preserve">
     <value>DELETE FROM installed_files WHERE file_name = @file_name;</value>
   </data>
-  <data name="DeletePkgFilesWhere" xml:space="preserve">
-    <value>DELETE FROM file_list WHERE package_id = @id;</value>
+  <data name="DeletePkg" xml:space="preserve">
+    <value>DELETE FROM {0} WHERE id = @id;</value>
   </data>
-  <data name="DeletePkgWhere" xml:space="preserve">
-    <value>DELETE FROM package_list WHERE id = @id;</value>
+  <data name="DeletePkgDeps" xml:space="preserve">
+    <value>DELETE FROM {0} WHERE package_id = @id;</value>
+  </data>
+  <data name="DeletePkgFiles" xml:space="preserve">
+    <value>DELETE FROM {0} WHERE package_id = @id;</value>
   </data>
   <data name="InsertChckSum" xml:space="preserve">
     <value>INSERT INTO checksums (folder, chcksum, last_write) VALUES (@folder,@chcksum,@last_write) ON CONFLICT(folder) DO UPDATE SET folder = @folder, chcksum = @chcksum, last_write = @last_write;</value>
@@ -142,7 +145,7 @@
     <value>INSERT INTO installed_files (package_id, file_name) VALUES (@package_id,@file_name);</value>
   </data>
   <data name="InsertPkg" xml:space="preserve">
-    <value>INSERT INTO package_list (
+    <value>INSERT INTO {0} (
     id,
     file_name,
     display_name,
@@ -176,13 +179,77 @@ version = @version,
 owner = @owner,
 datetime = @datetime,
 description = @description,
-version = @version;</value>
+target_path = @target_path</value>
+  </data>
+  <data name="InsertPkgDeps" xml:space="preserve">
+    <value>INSERT INTO {0} (package_id, dependency_package_id) VALUES (@package_id, @dependency_package_id);</value>
   </data>
   <data name="InsertPkgFiles" xml:space="preserve">
-    <value>INSERT INTO file_list (package_id, file_name) VALUES (@package_id,@file_name);</value>
+    <value>INSERT INTO {0} (package_id, file_name) VALUES (@package_id,@file_name);</value>
+  </data>
+  <data name="InsertRemotePkg" xml:space="preserve">
+    <value>INSERT INTO {0} (
+    id,
+    file_name,
+    display_name,
+    category,
+    era,
+    country,
+    version,
+    owner,
+    datetime,
+    description,
+    target_path,
+    paid,
+    steamappid
+) VALUES (
+    @id,
+    @file_name,
+    @display_name,
+    @category,
+    @era,
+    @country,
+    @version,
+    @owner,
+    @datetime,
+    @description,
+    @target_path,
+    @paid,
+    @steamappid
+) ON CONFLICT(id) DO UPDATE SET 
+file_name = @file_name,
+display_name = @display_name,
+category = @category,
+era = @era,
+country = @country,
+version = @version,
+owner = @owner,
+datetime = @datetime,
+description = @description,
+target_path = @target_path,
+paid = @paid,
+steamappid = @steamappid</value>
   </data>
   <data name="ListTableRows" xml:space="preserve">
     <value>PRAGMA table_info({0});</value>
+  </data>
+  <data name="LocalDeps" xml:space="preserve">
+    <value>dependency_list</value>
+  </data>
+  <data name="LocalFiles" xml:space="preserve">
+    <value>file_list</value>
+  </data>
+  <data name="LocalPackages" xml:space="preserve">
+    <value>package_list</value>
+  </data>
+  <data name="RemoteDeps" xml:space="preserve">
+    <value>remote_dependency_list</value>
+  </data>
+  <data name="RemoteFiles" xml:space="preserve">
+    <value>remote_file_list</value>
+  </data>
+  <data name="RemotePackages" xml:space="preserve">
+    <value>remote_package_list</value>
   </data>
   <data name="SelectAllChckSums" xml:space="preserve">
     <value>SELECT * FROM checksums;</value>
@@ -191,12 +258,15 @@ version = @version;</value>
     <value>SELECT * FROM dependencies;</value>
   </data>
   <data name="SelectAllPkgs" xml:space="preserve">
-    <value>SELECT * FROM package_list;</value>
-  </data>
-  <data name="SelectFilesWhere" xml:space="preserve">
-    <value>SELECT * FROM file_list WHERE package_id = @package_id;</value>
+    <value>SELECT * FROM {0};</value>
   </data>
   <data name="SelectInstalledFilesWhere" xml:space="preserve">
     <value>SELECT * FROM installed_files WHERE package_id = @package_id;</value>
+  </data>
+  <data name="SelectPkgDepsWhere" xml:space="preserve">
+    <value>SELECT * FROM {0} WHERE package_id = @package_id;</value>
+  </data>
+  <data name="SelectPkgFilesWhere" xml:space="preserve">
+    <value>SELECT * FROM {0} WHERE package_id = @package_id;</value>
   </data>
 </root>
