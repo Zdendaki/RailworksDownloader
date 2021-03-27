@@ -115,6 +115,7 @@ namespace RailworksDownloader
 
         internal delegate void OnDownloadProgressChangedEventHandler(float progress);
         internal event OnDownloadProgressChangedEventHandler OnDownloadProgressChanged;
+        public static bool CancelDownload { get; set; } = false;
 
         public WebWrapper(Uri apiUrl)
         {
@@ -128,6 +129,7 @@ namespace RailworksDownloader
 
         public async Task<ObjectResult<object>> DownloadPackage(int packageId, string token)
         {
+            CancelDownload = false;
             Uri url = new Uri(ApiUrl + $"download?token={token}&package_id={packageId}");
 
             OnDownloadProgressChanged?.Invoke(0);
@@ -136,10 +138,15 @@ namespace RailworksDownloader
             webClient.DownloadProgressChanged += (sender, e) =>
             {
                 OnDownloadProgressChanged?.Invoke(e.ProgressPercentage);
+                if (CancelDownload)
+                    webClient.CancelAsync();
             };
 
             string tempFname = Path.GetTempFileName();
             await webClient.DownloadFileTaskAsync(url, tempFname);
+
+            if (CancelDownload)
+                return null;
 
             if (ZipTools.IsCompressedData(tempFname))
             {

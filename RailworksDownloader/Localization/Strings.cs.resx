@@ -210,6 +210,9 @@
   <data name="DownloadError" xml:space="preserve">
     <value>Nastala neočekávaná chyba při stahování</value>
   </data>
+  <data name="Downloading" xml:space="preserve">
+    <value>Stahování</value>
+  </data>
   <data name="DownloadingUpdate" xml:space="preserve">
     <value>Stahování aktualizace aplikace...</value>
   </data>

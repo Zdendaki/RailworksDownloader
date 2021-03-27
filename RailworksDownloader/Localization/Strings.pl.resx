@@ -210,6 +210,9 @@
   <data name="DownloadError" xml:space="preserve">
     <value>Wystąpil nieznany bląd przy pobieraniu</value>
   </data>
+  <data name="Downloading" xml:space="preserve">
+    <value>Pobieranie</value>
+  </data>
   <data name="DownloadingUpdate" xml:space="preserve">
     <value>Trwa pobieranie aktualizacji aplikacje...</value>
   </data>

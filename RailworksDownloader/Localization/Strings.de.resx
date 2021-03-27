@@ -211,6 +211,9 @@
   <data name="DownloadError" xml:space="preserve">
     <value>Unerwarteter Fehler beim Herunterladen</value>
   </data>
+  <data name="Downloading" xml:space="preserve">
+    <value>Downloading</value>
+  </data>
   <data name="DownloadingUpdate" xml:space="preserve">
     <value>Client-Update herunterladen...</value>
   </data>

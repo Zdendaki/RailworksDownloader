@@ -56,18 +56,7 @@ namespace RailworksDownloader
 
         public HashSet<string> AllRequiredDeps { get; set; } = new HashSet<string>();
 
-
-        private HashSet<string> _allInstalledDeps;
-
-        public HashSet<string> AllInstalledDeps
-        {
-            get => _allInstalledDeps;
-            set
-            {
-                _allInstalledDeps = value;
-                AllMissingDeps = AllRequiredDeps.Except(_allInstalledDeps);
-            }
-        }
+        public HashSet<string> AllInstalledDeps { get; set; } = new HashSet<string>();
 
         public IEnumerable<string> AllMissingDeps { get; set; } = new string[0];
 

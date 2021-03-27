@@ -242,6 +242,10 @@ namespace RailworksDownloader
                         ServerVersions[x.PackageId] = CachedPackages.First(y => y.PackageId == x.PackageId).Version;
                     }
                 });
+                foreach (Package pkg in remoteCache)
+                {
+                    ServerVersions[pkg.PackageId] = pkg.Version;
+                }
             }
             if (remoteVersions.Count > 0)
             {
@@ -275,9 +279,9 @@ namespace RailworksDownloader
             });
         }
 
-        public async Task ResolveConflicts(MainWindow mw)
+        public async Task ResolveConflicts()
         {
-            HashSet<string> conflictDeps = mw.RW.AllInstalledDeps.Intersect(DownloadableDeps).Except(InstalledPackages.SelectMany(x => x.FilesContained)).ToHashSet();
+            HashSet<string> conflictDeps = MainWindow.RW.AllInstalledDeps.Intersect(DownloadableDeps).Except(InstalledPackages.SelectMany(x => x.FilesContained)).ToHashSet();
 
             HashSet<int> conflictPackages = new HashSet<int>();
 
@@ -306,7 +310,7 @@ namespace RailworksDownloader
                 if (!rewriteAll && !keepAll)
                 {
                     Task<ContentDialogResult> t = null;
-                    mw.Dispatcher.Invoke(() =>
+                    MainWindow.Dispatcher.Invoke(() =>
                     {
                         MainWindow.ContentDialog = new ConflictPackageDialog(p.DisplayName);
                         t = MainWindow.ContentDialog.ShowAsync();
@@ -339,11 +343,25 @@ namespace RailworksDownloader
             }
         }
 
+        public void GetPackagesToDownload(IEnumerable<string> allMissing)
+        {
+            IEnumerable<string> depsToDownload = allMissing.Intersect(DownloadableDeps);
+            while (depsToDownload.Count() > 0)
+            {
+                Package pkg = CachedPackages.First(x => x.PackageId == DownloadableDepsPackages[depsToDownload.First()]);
+                PkgsToDownload.Add(pkg.PackageId);
+                depsToDownload = depsToDownload.Except(pkg.FilesContained);
+            }
+        }
+
         public void DownloadDependencies()
         {
             Task.Run(async () =>
             {
-                if (!await Utils.CheckLogin(DownloadDependencies, MainWindow, ApiUrl) || App.IsDownloading)
+                if (App.IsDownloading)
+                    return;
+
+                if (!await Utils.CheckLogin(DownloadDependencies, MainWindow, ApiUrl))
                 {
                     App.Window.Dispatcher.Invoke(() =>
                     {
@@ -378,14 +396,19 @@ namespace RailworksDownloader
 
                             MainWindow.ErrorDialog.ShowAsync();
                         });
-
-                        MainWindow.Dispatcher.Invoke(() =>
-                        {
-                            MainWindow.ScanRailworks.IsEnabled = true;
-                            MainWindow.SelectRailworksLocation.IsEnabled = true;
-                        });
                     }).Start();
+                    MainWindow.Dispatcher.Invoke(() =>
+                    {
+                        MainWindow.DownloadMissing.IsEnabled = false;
+                    });
                 }
+
+                MainWindow.Dispatcher.Invoke(() =>
+                {
+                    MainWindow.ScanRailworks.IsEnabled = true;
+                    MainWindow.SelectRailworksLocation.IsEnabled = true;
+                    MainWindow.DownloadMissing.IsEnabled = true;
+                });
             });
         }
 

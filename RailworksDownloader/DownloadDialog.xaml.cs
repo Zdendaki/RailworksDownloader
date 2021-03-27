@@ -49,6 +49,9 @@ namespace RailworksDownloader
                     wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
                     ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
+                    if (WebWrapper.CancelDownload)
+                        return;
+
                     if (Utils.IsSuccessStatusCode(dl_result.code))
                     {
                         Dispatcher.Invoke(() => CancelButton = false);
@@ -168,6 +171,9 @@ namespace RailworksDownloader
                 int pkgId = p.PackageId;
                 wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
                 ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
+
+                if (WebWrapper.CancelDownload)
+                    return;
 
                 if (Utils.IsSuccessStatusCode(dl_result.code))
                 {
@@ -297,6 +303,7 @@ namespace RailworksDownloader
         {
             if (CancelButton)
             {
+                WebWrapper.CancelDownload = true;
                 App.Window.Dispatcher.Invoke(() =>
                 {
                     App.Window.ScanRailworks.IsEnabled = true;
