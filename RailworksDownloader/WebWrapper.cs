@@ -145,9 +145,6 @@ namespace RailworksDownloader
             string tempFname = Path.GetTempFileName();
             await webClient.DownloadFileTaskAsync(url, tempFname);
 
-            if (CancelDownload)
-                return null;
-
             if (ZipTools.IsCompressedData(tempFname))
             {
                 return new ObjectResult<object>(200, "Package succesfully downloaded!", tempFname);

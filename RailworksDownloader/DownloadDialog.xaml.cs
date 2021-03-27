@@ -47,80 +47,83 @@ namespace RailworksDownloader
                 {
                     int pkgId = pair.Key;
                     wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
-                    ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
+                    try {
+                        ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
-                    if (WebWrapper.CancelDownload)
-                        return;
+                        if (WebWrapper.CancelDownload)
+                            return;
 
-                    if (Utils.IsSuccessStatusCode(dl_result.code))
-                    {
-                        Dispatcher.Invoke(() => CancelButton = false);
-
-                        //cleanup before installig new version
-                        List<string> removedFiles = Utils.RemoveFiles(sqLiteAdapter.LoadPackageFiles(pkgId));
-                        sqLiteAdapter.RemovePackageFiles(removedFiles);
-
-                        List<string> installedFiles = new List<string>();
-                        List<string> failedFiles = new List<string>();
-                        using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
+                        if (Utils.IsSuccessStatusCode(dl_result.code))
                         {
-                            foreach (ZipArchiveEntry e in a.Entries)
+                            Dispatcher.Invoke(() => CancelButton = false);
+
+                            //cleanup before installig new version
+                            List<string> removedFiles = Utils.RemoveFiles(sqLiteAdapter.LoadPackageFiles(pkgId));
+                            sqLiteAdapter.RemovePackageFiles(removedFiles);
+
+                            List<string> installedFiles = new List<string>();
+                            List<string> failedFiles = new List<string>();
+                            using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
                             {
-                                if (e.Name == string.Empty) //is directory
-                                    continue;
-
-                                string rel_assets_path = Utils.NormalizePath(Path.Combine(installedPackages.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName));
-                                string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
-
-                                try
+                                foreach (ZipArchiveEntry e in a.Entries)
                                 {
-                                    if (!Directory.Exists(path))
-                                        Directory.CreateDirectory(path);
+                                    if (e.Name == string.Empty) //is directory
+                                        continue;
 
-                                    e.ExtractToFile(Path.Combine(path, e.Name), true);
-                                    installedFiles.Add(rel_assets_path);
-                                }
-                                catch
-                                {
-                                    failedFiles.Add(e.FullName);
+                                    string rel_assets_path = Utils.NormalizePath(Path.Combine(installedPackages.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName));
+                                    string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
+
+                                    try
+                                    {
+                                        if (!Directory.Exists(path))
+                                            Directory.CreateDirectory(path);
+
+                                        e.ExtractToFile(Path.Combine(path, e.Name), true);
+                                        installedFiles.Add(rel_assets_path);
+                                    }
+                                    catch
+                                    {
+                                        failedFiles.Add(e.FullName);
+                                    }
                                 }
                             }
+
+                            Trace.Assert(failedFiles.Count == 0, Localization.Strings.FailedCopyFiles, string.Join("\n", failedFiles));
+
+                            sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
+                            installedPackages[installedPackages.FindIndex(x => x.PackageId == pkgId)] = p;
+                            sqLiteAdapter.SavePackage(p);
+                            new Task(() =>
+                            {
+                                sqLiteAdapter.FlushToFile(true);
+                            }).Start();
+
+                            Dispatcher.Invoke(() => CancelButton = true);
+                        }
+                        else
+                        {
+                            new Task(() =>
+                            {
+
+                                App.Window.Dispatcher.Invoke(() =>
+                                {
+                                    MainWindow.ErrorDialog = new ContentDialog()
+                                    {
+                                        Title = Localization.Strings.DownloadError,
+                                        Content = dl_result.message,
+                                        SecondaryButtonText = Localization.Strings.Ok,
+                                        Owner = App.Window
+                                    };
+
+                                    MainWindow.ErrorDialog.ShowAsync();
+                                });
+
+                            }).Start();
                         }
 
-                        Trace.Assert(failedFiles.Count == 0, Localization.Strings.FailedCopyFiles, string.Join("\n", failedFiles));
-
-                        sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
-                        installedPackages[installedPackages.FindIndex(x => x.PackageId == pkgId)] = p;
-                        sqLiteAdapter.SavePackage(p);
-                        new Task(() =>
-                        {
-                            sqLiteAdapter.FlushToFile(true);
-                        }).Start();
-
-                        Dispatcher.Invoke(() => CancelButton = true);
+                        File.Delete((string)dl_result.content);
                     }
-                    else
-                    {
-                        new Task(() =>
-                        {
-
-                            App.Window.Dispatcher.Invoke(() =>
-                            {
-                                MainWindow.ErrorDialog = new ContentDialog()
-                                {
-                                    Title = Localization.Strings.DownloadError,
-                                    Content = dl_result.message,
-                                    SecondaryButtonText = Localization.Strings.Ok,
-                                    Owner = App.Window
-                                };
-
-                                MainWindow.ErrorDialog.ShowAsync();
-                            });
-
-                        }).Start();
-                    }
-
-                    File.Delete((string)dl_result.content);
+                    catch { }
                 });
             }
 
@@ -170,73 +173,74 @@ namespace RailworksDownloader
 
                 int pkgId = p.PackageId;
                 wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
-                ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
-                if (WebWrapper.CancelDownload)
-                    return;
+                try {
+                    ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
-                if (Utils.IsSuccessStatusCode(dl_result.code))
-                {
-                    Dispatcher.Invoke(() => CancelButton = false);
-
-                    List<string> installedFiles = new List<string>();
-                    List<string> failedFiles = new List<string>();
-                    using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
+                    if (Utils.IsSuccessStatusCode(dl_result.code))
                     {
-                        foreach (ZipArchiveEntry e in a.Entries)
+                        Dispatcher.Invoke(() => CancelButton = false);
+
+                        List<string> installedFiles = new List<string>();
+                        List<string> failedFiles = new List<string>();
+                        using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
                         {
-                            if (e.Name == string.Empty)
-                                continue;
-
-                            string rel_assets_path = Path.Combine(cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName);
-                            string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
-
-                            try
+                            foreach (ZipArchiveEntry e in a.Entries)
                             {
-                                if (!Directory.Exists(path))
-                                    Directory.CreateDirectory(path);
+                                if (e.Name == string.Empty)
+                                    continue;
 
-                                e.ExtractToFile(Path.Combine(path, e.Name), true);
-                                installedFiles.Add(rel_assets_path);
-                            }
-                            catch
-                            {
-                                failedFiles.Add(e.FullName);
+                                string rel_assets_path = Path.Combine(cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName);
+                                string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
+
+                                try
+                                {
+                                    if (!Directory.Exists(path))
+                                        Directory.CreateDirectory(path);
+
+                                    e.ExtractToFile(Path.Combine(path, e.Name), true);
+                                    installedFiles.Add(rel_assets_path);
+                                }
+                                catch
+                                {
+                                    failedFiles.Add(e.FullName);
+                                }
                             }
                         }
+
+                        Trace.Assert(failedFiles.Count == 0, Localization.Strings.FailedCopyFiles, string.Join("\n", failedFiles));
+
+                        sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
+                        installedPackages.Add(p);
+                        sqLiteAdapter.SavePackage(p);
+                        sqLiteAdapter.FlushToFile(true);
+                        download.Remove(pkgId);
+                        Dispatcher.Invoke(() => CancelButton = true);
+                    }
+                    else
+                    {
+                        new Task(() =>
+                        {
+
+                            App.Window.Dispatcher.Invoke(() =>
+                            {
+                                MainWindow.ErrorDialog = new ContentDialog()
+                                {
+                                    Title = Localization.Strings.DownloadError,
+                                    Content = dl_result.message,
+                                    SecondaryButtonText = Localization.Strings.Ok,
+                                    Owner = App.Window
+                                };
+
+                                MainWindow.ErrorDialog.ShowAsync();
+                            });
+
+                        }).Start();
                     }
 
-                    Trace.Assert(failedFiles.Count == 0, Localization.Strings.FailedCopyFiles, string.Join("\n", failedFiles));
-
-                    sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
-                    installedPackages.Add(p);
-                    sqLiteAdapter.SavePackage(p);
-                    sqLiteAdapter.FlushToFile(true);
-                    download.Remove(pkgId);
-                    Dispatcher.Invoke(() => CancelButton = true);
-                }
-                else
-                {
-                    new Task(() =>
-                    {
-
-                        App.Window.Dispatcher.Invoke(() =>
-                        {
-                            MainWindow.ErrorDialog = new ContentDialog()
-                            {
-                                Title = Localization.Strings.DownloadError,
-                                Content = dl_result.message,
-                                SecondaryButtonText = Localization.Strings.Ok,
-                                Owner = App.Window
-                            };
-
-                            MainWindow.ErrorDialog.ShowAsync();
-                        });
-
-                    }).Start();
-                }
-
-                File.Delete((string)dl_result.content);
+                    File.Delete((string)dl_result.content);
+                } 
+                catch { }
             }
 
             App.Window.Dispatcher.Invoke(() => Hide());
