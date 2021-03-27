@@ -177,6 +177,8 @@ namespace RailworksDownloader
 
         private bool MSMQRunning { get; set; } = false;
 
+        public bool StopMSMQ { get; set; } = false;
+
         public PackageManager(Uri apiUrl, MainWindow mw, string RWPath)
         {
             ApiUrl = apiUrl;
@@ -446,7 +448,7 @@ namespace RailworksDownloader
                 watcher.Changed += OnChanged;
                 watcher.EnableRaisingEvents = true;
 
-                while (true) ;
+                while (!StopMSMQ) ;
             }
         }
 

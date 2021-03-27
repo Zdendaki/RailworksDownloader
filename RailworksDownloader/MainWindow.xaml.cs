@@ -188,6 +188,7 @@ namespace RailworksDownloader
         internal void RW_CrawlingComplete()
         {
             crawlingComplete = true;
+            PM.StopMSMQ = true;
 
             Dispatcher.Invoke(() =>
             {
@@ -274,6 +275,7 @@ namespace RailworksDownloader
                     if (PM.DownloadableDepsPackages.Count + PM.PkgsToDownload.Count > 0) //TODO: get actuall downloadable missing
                         DownloadMissing.IsEnabled = true;
 
+                    PM.StopMSMQ = false;
                     ScanRailworks.IsEnabled = true;
                     ScanRailworks.Content = Localization.Strings.MainRescan;
                 });
@@ -390,6 +392,7 @@ namespace RailworksDownloader
                 TotalProgress.Value = 0;
             });
             loadingComplete = false;
+            RW.getAllInstalledDepsEvent.Reset();
             if (!crawlingComplete)
             {
                 crawlingComplete = false;
@@ -405,7 +408,10 @@ namespace RailworksDownloader
                 {
                     RW.GetInstalledDeps();
                 }).Start();
-                RW_CrawlingComplete();
+                new Task(() =>
+                {
+                    RW_CrawlingComplete();
+                }).Start();
             }
         }
 
