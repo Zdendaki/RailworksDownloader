@@ -162,6 +162,21 @@
   <data name="CheckingDLC" xml:space="preserve">
     <value>Suchen nach den installierten DLC</value>
   </data>
+  <data name="ColorHintBlue" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="ColorHintGreen" xml:space="preserve">
+    <value>Complete</value>
+  </data>
+  <data name="ColorHintPurple" xml:space="preserve">
+    <value>Missing scenario</value>
+  </data>
+  <data name="ColorHintRed" xml:space="preserve">
+    <value>Missing</value>
+  </data>
+  <data name="ColorHintYellow" xml:space="preserve">
+    <value>Paid</value>
+  </data>
   <data name="ConflictFileDesc1" xml:space="preserve">
     <value>Folgende Pakete sind bereits heruntergeladen, aber nicht durch diese Aplikation:</value>
     <comment>Následující balíčky jsou již staženy, ale ne prostřednictvím této aplikace:</comment>
@@ -379,6 +394,9 @@ Route: {1}</value>
   </data>
   <data name="ReadingZipFail" xml:space="preserve">
     <value>Error reading zip file {0}!</value>
+  </data>
+  <data name="RoutesCountLabel" xml:space="preserve">
+    <value>Anzahl der Routen: {0}</value>
   </data>
   <data name="RoutesLoadFail" xml:space="preserve">
     <value>Loading routes failed!</value>

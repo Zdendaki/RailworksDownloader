@@ -363,6 +363,8 @@ namespace RailworksDownloader
                 Title = $"Railworks DLS client v{App.Version} - " + RW.RWPath;
 
                 LoadRoutes();
+
+                RoutesCount.Content = string.Format(Localization.Strings.RoutesCountLabel, RW.Routes.Count);
             }
         }
 

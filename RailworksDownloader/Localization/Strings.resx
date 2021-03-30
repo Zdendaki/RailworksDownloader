@@ -162,6 +162,21 @@
   <data name="CheckingDLC" xml:space="preserve">
     <value>Checking installed DLCs</value>
   </data>
+  <data name="ColorHintBlue" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="ColorHintGreen" xml:space="preserve">
+    <value>Complete</value>
+  </data>
+  <data name="ColorHintPurple" xml:space="preserve">
+    <value>Missing in scenario</value>
+  </data>
+  <data name="ColorHintRed" xml:space="preserve">
+    <value>Missing</value>
+  </data>
+  <data name="ColorHintYellow" xml:space="preserve">
+    <value>Paid</value>
+  </data>
   <data name="ConflictFileDesc1" xml:space="preserve">
     <value>Following package seems to be controlled by DLS but not installed through this app:</value>
   </data>
@@ -377,6 +392,9 @@ Route: {1}</value>
   </data>
   <data name="ReadingZipFail" xml:space="preserve">
     <value>Error reading zip file {0}!</value>
+  </data>
+  <data name="RoutesCountLabel" xml:space="preserve">
+    <value>Total routes: {0}</value>
   </data>
   <data name="RoutesLoadFail" xml:space="preserve">
     <value>Loading routes failed!</value>

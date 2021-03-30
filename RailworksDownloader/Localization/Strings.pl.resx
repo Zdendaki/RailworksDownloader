@@ -162,6 +162,21 @@
   <data name="CheckingDLC" xml:space="preserve">
     <value>Szukanie zainstalowanych DLC</value>
   </data>
+  <data name="ColorHintBlue" xml:space="preserve">
+    <value>Nieznany</value>
+  </data>
+  <data name="ColorHintGreen" xml:space="preserve">
+    <value>Kompletny</value>
+  </data>
+  <data name="ColorHintPurple" xml:space="preserve">
+    <value>Brakujący w scenariuszu</value>
+  </data>
+  <data name="ColorHintRed" xml:space="preserve">
+    <value>Brakujący</value>
+  </data>
+  <data name="ColorHintYellow" xml:space="preserve">
+    <value>Płatny</value>
+  </data>
   <data name="ConflictFileDesc1" xml:space="preserve">
     <value>Ten dodatek jest już zainstalowany, jednak nie przez tą aplikację:</value>
   </data>
@@ -377,6 +392,9 @@ Mapa: {1}</value>
   </data>
   <data name="ReadingZipFail" xml:space="preserve">
     <value>Wystąpił błąd przy wczytywaniu pliku gzip {0}!</value>
+  </data>
+  <data name="RoutesCountLabel" xml:space="preserve">
+    <value>Liczba map: {0}</value>
   </data>
   <data name="RoutesLoadFail" xml:space="preserve">
     <value>Wystąpił błąd przy wczytywaniu listy zainstalowanych map!</value>

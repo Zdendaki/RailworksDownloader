@@ -162,6 +162,21 @@
   <data name="CheckingDLC" xml:space="preserve">
     <value>Hledání nainstalovaných DLC</value>
   </data>
+  <data name="ColorHintBlue" xml:space="preserve">
+    <value>Neznámý</value>
+  </data>
+  <data name="ColorHintGreen" xml:space="preserve">
+    <value>Kompletní</value>
+  </data>
+  <data name="ColorHintPurple" xml:space="preserve">
+    <value>Chybějící ve scénáři</value>
+  </data>
+  <data name="ColorHintRed" xml:space="preserve">
+    <value>Chybějící</value>
+  </data>
+  <data name="ColorHintYellow" xml:space="preserve">
+    <value>Placený</value>
+  </data>
   <data name="ConflictFileDesc1" xml:space="preserve">
     <value>Následující balíčky jsou již staženy, ale ne prostřednictvím této aplikace:</value>
   </data>
@@ -377,6 +392,9 @@ Trať: {1}</value>
   </data>
   <data name="ReadingZipFail" xml:space="preserve">
     <value>Chyba při čtení gzip souboru {0}!</value>
+  </data>
+  <data name="RoutesCountLabel" xml:space="preserve">
+    <value>Map celkem: {0}</value>
   </data>
   <data name="RoutesLoadFail" xml:space="preserve">
     <value>Chyba při načítání seznamu tratí!</value>

@@ -69,7 +69,7 @@ namespace RailworksDownloader
                                 if (e.Name == string.Empty) //is directory
                                     continue;
 
-                                string rel_assets_path = Utils.NormalizePath(Path.Combine(installedPackages.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName));
+                                string rel_assets_path = Path.Combine(p.TargetPath, e.FullName);
                                 string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
 
                                 try
@@ -188,7 +188,7 @@ namespace RailworksDownloader
                                 if (e.Name == string.Empty)
                                     continue;
 
-                                string rel_assets_path = Path.Combine(cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName);
+                                string rel_assets_path = Path.Combine(p.TargetPath, e.FullName);
                                 string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
 
                                 try

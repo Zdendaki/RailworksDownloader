@@ -142,7 +142,7 @@
     <value>INSERT INTO dependencies (path, isScenario) VALUES (@path,@isScenario);</value>
   </data>
   <data name="InsertInstalledFiles" xml:space="preserve">
-    <value>INSERT INTO installed_files (package_id, file_name) VALUES (@package_id,@file_name);</value>
+    <value>INSERT INTO installed_files (package_id, file_name) VALUES (@package_id,@file_name) ON CONFLICT(id) DO UPDATE SET id = id;</value>
   </data>
   <data name="InsertPkg" xml:space="preserve">
     <value>INSERT INTO {0} (
