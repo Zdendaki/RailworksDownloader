@@ -351,6 +351,9 @@ Möchten Sie es aktualisieren?</value>
   <data name="NonCached" xml:space="preserve">
     <value>Attempted to access non cached package!</value>
   </data>
+  <data name="NoRouteName" xml:space="preserve">
+    <value>Strecke {0} hat keinen eingegebenen Namen, stattdessen wird der Hash verwendet!</value>
+  </data>
   <data name="Ok" xml:space="preserve">
     <value>Ja wohl!</value>
     <comment>Es musst hier bleiben!!!!</comment>

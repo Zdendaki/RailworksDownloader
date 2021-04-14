@@ -350,6 +350,9 @@ Do you want to update it?</value>
   <data name="NonCached" xml:space="preserve">
     <value>Attempted to access non cached package!</value>
   </data>
+  <data name="NoRouteName" xml:space="preserve">
+    <value>Route {0} has no name entered, using its hash instead!</value>
+  </data>
   <data name="Ok" xml:space="preserve">
     <value>OK</value>
   </data>

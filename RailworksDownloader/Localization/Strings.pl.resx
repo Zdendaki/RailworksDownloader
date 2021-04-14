@@ -350,6 +350,9 @@ Czy chcesz go zaktualizować?</value>
   <data name="NonCached" xml:space="preserve">
     <value>Próba wczytania niebuforowanej paczki!</value>
   </data>
+  <data name="NoRouteName" xml:space="preserve">
+    <value>Mapa {0} nie ma wypelnioną żadną nazwe, używam zamiast tego hash!</value>
+  </data>
   <data name="Ok" xml:space="preserve">
     <value>Niech będzie!</value>
   </data>

@@ -21,7 +21,7 @@ namespace RailworksDownloader
     public partial class MainWindow : Window
     {
 #if DEBUG
-        public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/tests/api/");
+        public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/api/");
 #else
         public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/api/");
 #endif

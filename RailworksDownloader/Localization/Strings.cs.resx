@@ -350,6 +350,9 @@ Chcete ho aktualizovat?</value>
   <data name="NonCached" xml:space="preserve">
     <value>Pokus o přístup k nenačtenému balíčku!</value>
   </data>
+  <data name="NoRouteName" xml:space="preserve">
+    <value>Trať {0} neobsahuje žádný název, použije se hash!</value>
+  </data>
   <data name="Ok" xml:space="preserve">
     <value>Budiž!</value>
   </data>

@@ -96,7 +96,7 @@ namespace RailworksDownloader
             return null;
         }
 
-        private string ParseRouteProperties(Stream istream, string file)
+        private string ParseRouteProperties(Stream istream, string file, string routeHash)
         {
             if (istream.Length > 4)
             {
@@ -108,7 +108,7 @@ namespace RailworksDownloader
                 if (Utils.CheckIsSerz(stream))
                 {
                     SerzReader sr = new SerzReader(stream, file, SerzReader.MODES.routeName);
-                    return sr.RouteName;
+                    return sr.RouteName ?? routeHash;
                 }
                 else
                 {
@@ -117,7 +117,7 @@ namespace RailworksDownloader
                         XmlDocument doc = new XmlDocument();
                         doc.Load(XmlReader.Create(RemoveInvalidXmlChars(stream), new XmlReaderSettings() { CheckCharacters = false }));
 
-                        return ParseDisplayNameNode(doc.DocumentElement.SelectSingleNode("DisplayName"));
+                        return ParseDisplayNameNode(doc.DocumentElement.SelectSingleNode("DisplayName")) ?? routeHash;
                     }
                     catch (Exception)
                     {
@@ -125,14 +125,14 @@ namespace RailworksDownloader
                     }
                 }
             }
-            return default;
+            return routeHash;
         }
 
-        private string ParseRouteProperties(string fpath)
+        private string ParseRouteProperties(string fpath, string routeHash)
         {
             using (Stream fs = File.OpenRead(fpath))
             {
-                return ParseRouteProperties(fs, fpath);
+                return ParseRouteProperties(fs, fpath, routeHash);
             }
         }
 
@@ -159,7 +159,7 @@ namespace RailworksDownloader
         }
 
         /// <summary>
-        /// Get list of routes
+        /// Gets list of routes
         /// </summary>
         /// <param name="path">Routes path</param>
         /// <returns></returns>
@@ -171,10 +171,17 @@ namespace RailworksDownloader
             foreach (string dir in Directory.GetDirectories(path))
             {
                 string rp_path = Utils.FindFile(dir, "RouteProperties.*");
+                string routeHash = Path.GetFileName(dir);
 
                 if (File.Exists(rp_path))
                 {
-                    list.Add(new RouteInfo(ParseRouteProperties(rp_path).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
+                    list.Add(
+                        new RouteInfo(
+                            ParseRouteProperties(rp_path, routeHash).Trim(),
+                            routeHash,
+                            dir + Path.DirectorySeparatorChar
+                        )
+                    );
                 }
                 else
                 {
@@ -186,7 +193,17 @@ namespace RailworksDownloader
                             {
                                 foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("RouteProperties")))
                                 {
-                                    list.Add(new RouteInfo(ParseRouteProperties(entry.Open(), Path.Combine(file, entry.FullName)).Trim(), Path.GetFileName(dir), dir + Path.DirectorySeparatorChar));
+                                    list.Add(
+                                        new RouteInfo(
+                                            ParseRouteProperties(
+                                                entry.Open(),
+                                                Path.Combine(file, entry.FullName),
+                                                routeHash
+                                            ).Trim(),
+                                            Path.GetFileName(dir),
+                                            dir + Path.DirectorySeparatorChar
+                                        )
+                                    );
                                     break;
                                 }
                             }

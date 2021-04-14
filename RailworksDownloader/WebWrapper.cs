@@ -151,6 +151,7 @@ namespace RailworksDownloader
             }
             else
             {
+                //FIXME: non zip file is not necessarily a JSON! 
                 ObjectResult<object> obj = JsonConvert.DeserializeObject<ObjectResult<object>>(File.ReadAllText(tempFname));
                 if (obj != null)
                 {
@@ -175,6 +176,8 @@ namespace RailworksDownloader
                     return new Package(responseContent.content);
             }
 
+            //TODO: try catch on connection timeout, check content itself rather than status code
+
             return null;
         }
 
@@ -186,6 +189,8 @@ namespace RailworksDownloader
             HttpResponseMessage response = await Client.PostAsync(ApiUrl + "login", encodedContent);
             if (response.IsSuccessStatusCode)
                 return JsonConvert.DeserializeObject<ObjectResult<LoginContent>>(await response.Content.ReadAsStringAsync());
+
+            //TODO: try catch on connection timeout, check content itself rather than status code
 
             return null;
         }
@@ -213,6 +218,8 @@ namespace RailworksDownloader
                 }
             }
 
+            //TODO: try catch on connection timeout, check content itself rather than status code
+
             return new Tuple<IEnumerable<Package>, HashSet<int>>(new Package[0], new HashSet<int>());
         }
 
@@ -234,6 +241,9 @@ namespace RailworksDownloader
                 }
             }
 
+            //TODO: try catch on connection timeout, check content itself rather than status code
+            //ERROR: connection interruption causes "crash" of whole app
+
             return new Package[0];
         }
 
@@ -245,6 +255,8 @@ namespace RailworksDownloader
             HttpResponseMessage response = await new HttpClient(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate }).PostAsync(apiUrl + "getAppVersion", encodedContent);
             if (response.IsSuccessStatusCode)
                 return JsonConvert.DeserializeObject<ObjectResult<AppVersionContent>>(await response.Content.ReadAsStringAsync());
+
+            //TODO: try catch on connection timeout, check content itself rather than status code
 
             return null;
         }
