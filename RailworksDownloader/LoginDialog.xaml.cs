@@ -11,14 +11,14 @@ namespace RailworksDownloader
     /// </summary>
     public partial class LoginDialog : ContentDialog
     {
-        private Action CallBack { get; set; }
+        private Action Callback { get; set; }
         private Uri ApiUrl { get; set; }
 
         public LoginDialog(Uri apiUrl, Action callback)
         {
             InitializeComponent();
             ApiUrl = apiUrl;
-            CallBack = callback;
+            Callback = callback;
             ShowAsync();
         }
 
@@ -44,7 +44,7 @@ namespace RailworksDownloader
                         Settings.Default.Password = Utils.PasswordEncryptor.Encrypt(pass, login.Trim());
                         Settings.Default.Save();
                         App.Token = result.content.token;
-                        CallBack();
+                        Callback();
                     }
                     else
                     {
@@ -64,6 +64,12 @@ namespace RailworksDownloader
                     }
                 }).Wait();
             }
+        }
+
+        private void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        {
+            if (string.IsNullOrWhiteSpace(App.Token) && !MainWindow.ReportedDLC && Callback.Method.Name == "ReportDLC")
+                Callback();
         }
     }
 }

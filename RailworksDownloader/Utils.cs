@@ -205,7 +205,7 @@ namespace RailworksDownloader
                 App.Token = loginContent.token;
             }
 
-            if (!mw.ReportedDLC)
+            if (!MainWindow.ReportedDLC)
                 mw.ReportDLC();
 
             return true;

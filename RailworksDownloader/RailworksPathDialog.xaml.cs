@@ -44,7 +44,7 @@ namespace RailworksDownloader
             }
         }
 
-        private void DefaultButton_Click(object sender, RoutedEventArgs e)
+        private void AutoButton_Click(object sender, RoutedEventArgs e)
         {
             UserPath.Text = App.SteamManager.RWPath;
         }

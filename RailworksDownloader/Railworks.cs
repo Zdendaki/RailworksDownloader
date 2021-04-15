@@ -108,6 +108,7 @@ namespace RailworksDownloader
                 if (Utils.CheckIsSerz(stream))
                 {
                     SerzReader sr = new SerzReader(stream, file, SerzReader.MODES.routeName);
+                    Trace.Assert(sr.RouteName != null, Localization.Strings.NoRouteName);
                     return sr.RouteName ?? routeHash;
                 }
                 else
@@ -117,7 +118,9 @@ namespace RailworksDownloader
                         XmlDocument doc = new XmlDocument();
                         doc.Load(XmlReader.Create(RemoveInvalidXmlChars(stream), new XmlReaderSettings() { CheckCharacters = false }));
 
-                        return ParseDisplayNameNode(doc.DocumentElement.SelectSingleNode("DisplayName")) ?? routeHash;
+                        string routeName = ParseDisplayNameNode(doc.DocumentElement.SelectSingleNode("DisplayName"));
+                        Trace.Assert(routeName != null, Localization.Strings.NoRouteName);
+                        return routeName ?? routeHash;
                     }
                     catch (Exception)
                     {
@@ -125,6 +128,7 @@ namespace RailworksDownloader
                     }
                 }
             }
+            Trace.Assert(false, Localization.Strings.NoRouteName);
             return routeHash;
         }
 

@@ -162,6 +162,12 @@
   <data name="CheckingDLC" xml:space="preserve">
     <value>Checking installed DLCs</value>
   </data>
+  <data name="ClientUpdateError" xml:space="preserve">
+    <value>Error installing client update! Please consider downloading newest version manually!</value>
+  </data>
+  <data name="ClientUpdateErrorTitle" xml:space="preserve">
+    <value>Client failed to actualizate</value>
+  </data>
   <data name="ColorHintBlue" xml:space="preserve">
     <value>Unknown</value>
   </data>
@@ -169,7 +175,7 @@
     <value>Complete</value>
   </data>
   <data name="ColorHintPurple" xml:space="preserve">
-    <value>Missing in scenario</value>
+    <value>Downloadable</value>
   </data>
   <data name="ColorHintRed" xml:space="preserve">
     <value>Missing</value>
@@ -230,6 +236,9 @@
   </data>
   <data name="DownloadingUpdate" xml:space="preserve">
     <value>Downloading update of application...</value>
+  </data>
+  <data name="DownloadInterruptError" xml:space="preserve">
+    <value>Download interrupted!</value>
   </data>
   <data name="DownloadTitle" xml:space="preserve">
     <value>Downloading packages {0}/{1}</value>
@@ -396,6 +405,12 @@ Route: {1}</value>
   <data name="ReadingZipFail" xml:space="preserve">
     <value>Error reading zip file {0}!</value>
   </data>
+  <data name="Route" xml:space="preserve">
+    <value>Route</value>
+  </data>
+  <data name="RouteName" xml:space="preserve">
+    <value>Route name</value>
+  </data>
   <data name="RoutesCountLabel" xml:space="preserve">
     <value>Total routes: {0}</value>
   </data>
@@ -407,6 +422,9 @@ Route: {1}</value>
   </data>
   <data name="Saving" xml:space="preserve">
     <value>Saving</value>
+  </data>
+  <data name="Scenario" xml:space="preserve">
+    <value>Scenarios</value>
   </data>
   <data name="SelectRWDlgAuto" xml:space="preserve">
     <value>Try finding Railworks location automatically</value>
@@ -422,6 +440,15 @@ Route: {1}</value>
   </data>
   <data name="SelectRWPathTitle" xml:space="preserve">
     <value>Select RailWorks installation path</value>
+  </data>
+  <data name="ServerEmptyResponse" xml:space="preserve">
+    <value>Server returned empty response!</value>
+  </data>
+  <data name="ServerInvalidResponse" xml:space="preserve">
+    <value>Server returned invalid response!</value>
+  </data>
+  <data name="ServerUnreachable" xml:space="preserve">
+    <value>Failed to connect to server!</value>
   </data>
   <data name="SerzCommonFail" xml:space="preserve">
     <value>Error when parsing bin file {0}!</value>
@@ -450,6 +477,9 @@ Route: {1}</value>
   <data name="UnknownError" xml:space="preserve">
     <value>Unknown error</value>
   </data>
+  <data name="UnknownFiles" xml:space="preserve">
+    <value>Files not contained in any known package</value>
+  </data>
   <data name="UpdaterAdminDesc" xml:space="preserve">
     <value>You need to allow administrator privileges to update Railworks Download Station.</value>
   </data>
@@ -461,6 +491,9 @@ Route: {1}</value>
   </data>
   <data name="UpdateTitle" xml:space="preserve">
     <value>Updating packages {0}/{1}</value>
+  </data>
+  <data name="VerifyCacheFailed" xml:space="preserve">
+    <value>Refreshing cache failed!</value>
   </data>
   <data name="Warning" xml:space="preserve">
     <value>Warning</value>

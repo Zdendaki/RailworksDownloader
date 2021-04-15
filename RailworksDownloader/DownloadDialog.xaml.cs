@@ -46,7 +46,8 @@ namespace RailworksDownloader
                 int pkgId = pair.Key;
                 wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
 
-                try {
+                try
+                {
                     ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
                     if (WebWrapper.CancelDownload)
@@ -122,7 +123,7 @@ namespace RailworksDownloader
 
                     File.Delete((string)dl_result.content);
                 }
-                catch {break;}
+                catch { break; }
             }
 
             App.Window.Dispatcher.Invoke(() => Hide());
@@ -172,7 +173,8 @@ namespace RailworksDownloader
                 int pkgId = p.PackageId;
                 wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
 
-                try {
+                try
+                {
                     ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
                     if (Utils.IsSuccessStatusCode(dl_result.code))
@@ -237,8 +239,8 @@ namespace RailworksDownloader
                     }
 
                     File.Delete((string)dl_result.content);
-                } 
-                catch {break;}
+                }
+                catch { break; }
             }
 
             App.Window.Dispatcher.Invoke(() => Hide());

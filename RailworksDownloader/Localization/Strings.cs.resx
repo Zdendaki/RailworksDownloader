@@ -162,6 +162,12 @@
   <data name="CheckingDLC" xml:space="preserve">
     <value>Hledání nainstalovaných DLC</value>
   </data>
+  <data name="ClientUpdateError" xml:space="preserve">
+    <value>Error installing client update! Please consider downloading newest version manually!</value>
+  </data>
+  <data name="ClientUpdateErrorTitle" xml:space="preserve">
+    <value>Chyba při aktualizaci klienta</value>
+  </data>
   <data name="ColorHintBlue" xml:space="preserve">
     <value>Neznámý</value>
   </data>
@@ -169,7 +175,7 @@
     <value>Kompletní</value>
   </data>
   <data name="ColorHintPurple" xml:space="preserve">
-    <value>Chybějící ve scénáři</value>
+    <value>Stažitelný</value>
   </data>
   <data name="ColorHintRed" xml:space="preserve">
     <value>Chybějící</value>
@@ -230,6 +236,9 @@
   </data>
   <data name="DownloadingUpdate" xml:space="preserve">
     <value>Stahování aktualizace aplikace...</value>
+  </data>
+  <data name="DownloadInterruptError" xml:space="preserve">
+    <value>Stahování přerušeno!</value>
   </data>
   <data name="DownloadTitle" xml:space="preserve">
     <value>Stahování balíčku {0}/{1}</value>
@@ -396,6 +405,12 @@ Trať: {1}</value>
   <data name="ReadingZipFail" xml:space="preserve">
     <value>Chyba při čtení gzip souboru {0}!</value>
   </data>
+  <data name="Route" xml:space="preserve">
+    <value>Trať</value>
+  </data>
+  <data name="RouteName" xml:space="preserve">
+    <value>Název tratě</value>
+  </data>
   <data name="RoutesCountLabel" xml:space="preserve">
     <value>Map celkem: {0}</value>
   </data>
@@ -407,6 +422,9 @@ Trať: {1}</value>
   </data>
   <data name="Saving" xml:space="preserve">
     <value>Ukládání</value>
+  </data>
+  <data name="Scenario" xml:space="preserve">
+    <value>Scénáře</value>
   </data>
   <data name="SelectRWDlgAuto" xml:space="preserve">
     <value>Pokusit se nalézt složku s RailWorks automaticky</value>
@@ -422,6 +440,15 @@ Trať: {1}</value>
   </data>
   <data name="SelectRWPathTitle" xml:space="preserve">
     <value>Vybrat složku s RailWorks</value>
+  </data>
+  <data name="ServerEmptyResponse" xml:space="preserve">
+    <value>Server vrátil prázdnou odpověď!</value>
+  </data>
+  <data name="ServerInvalidResponse" xml:space="preserve">
+    <value>Server vrátil neplatnou odpověď!</value>
+  </data>
+  <data name="ServerUnreachable" xml:space="preserve">
+    <value>Nepovedlo se navázat spojení se serverem!</value>
   </data>
   <data name="SerzCommonFail" xml:space="preserve">
     <value>Chyba při čtení bin souboru {0}!</value>
@@ -450,6 +477,9 @@ Trať: {1}</value>
   <data name="UnknownError" xml:space="preserve">
     <value>Neznámá chyba</value>
   </data>
+  <data name="UnknownFiles" xml:space="preserve">
+    <value>Soubory neobsažené v žádném ze známých balíčků</value>
+  </data>
   <data name="UpdaterAdminDesc" xml:space="preserve">
     <value>Pro aktualizaci Railworks DLS musíte potvrdit práva správce.</value>
   </data>
@@ -461,6 +491,9 @@ Trať: {1}</value>
   </data>
   <data name="UpdateTitle" xml:space="preserve">
     <value>Aktualizace balíčku {0}/{1}</value>
+  </data>
+  <data name="VerifyCacheFailed" xml:space="preserve">
+    <value>Neznámá chyba při aktualizaci cache!</value>
   </data>
   <data name="Warning" xml:space="preserve">
     <value>Varování</value>

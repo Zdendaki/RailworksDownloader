@@ -196,6 +196,24 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Error installing client update! Please consider downloading newest version manually!.
+        /// </summary>
+        public static string ClientUpdateError {
+            get {
+                return ResourceManager.GetString("ClientUpdateError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Client failed to actualizate.
+        /// </summary>
+        public static string ClientUpdateErrorTitle {
+            get {
+                return ResourceManager.GetString("ClientUpdateErrorTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný Unknown.
         /// </summary>
         public static string ColorHintBlue {
@@ -214,7 +232,7 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný Missing in scenario.
+        ///   Vyhledá lokalizovaný řetězec podobný Downloadable.
         /// </summary>
         public static string ColorHintPurple {
             get {
@@ -399,6 +417,15 @@ namespace RailworksDownloader.Localization {
         public static string DownloadingUpdate {
             get {
                 return ResourceManager.GetString("DownloadingUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Download interrupted!.
+        /// </summary>
+        public static string DownloadInterruptError {
+            get {
+                return ResourceManager.GetString("DownloadInterruptError", resourceCulture);
             }
         }
         
@@ -886,6 +913,24 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Route.
+        /// </summary>
+        public static string Route {
+            get {
+                return ResourceManager.GetString("Route", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Route name.
+        /// </summary>
+        public static string RouteName {
+            get {
+                return ResourceManager.GetString("RouteName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný Total routes: {0}.
         /// </summary>
         public static string RoutesCountLabel {
@@ -918,6 +963,15 @@ namespace RailworksDownloader.Localization {
         public static string Saving {
             get {
                 return ResourceManager.GetString("Saving", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Scenarios.
+        /// </summary>
+        public static string Scenario {
+            get {
+                return ResourceManager.GetString("Scenario", resourceCulture);
             }
         }
         
@@ -963,6 +1017,33 @@ namespace RailworksDownloader.Localization {
         public static string SelectRWPathTitle {
             get {
                 return ResourceManager.GetString("SelectRWPathTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Server returned empty response!.
+        /// </summary>
+        public static string ServerEmptyResponse {
+            get {
+                return ResourceManager.GetString("ServerEmptyResponse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Server returned invalid response!.
+        /// </summary>
+        public static string ServerInvalidResponse {
+            get {
+                return ResourceManager.GetString("ServerInvalidResponse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Failed to connect to server!.
+        /// </summary>
+        public static string ServerUnreachable {
+            get {
+                return ResourceManager.GetString("ServerUnreachable", resourceCulture);
             }
         }
         
@@ -1048,6 +1129,15 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Files not contained in any known package.
+        /// </summary>
+        public static string UnknownFiles {
+            get {
+                return ResourceManager.GetString("UnknownFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný You need to allow administrator privileges to update Railworks Download Station..
         /// </summary>
         public static string UpdaterAdminDesc {
@@ -1080,6 +1170,15 @@ namespace RailworksDownloader.Localization {
         public static string UpdateTitle {
             get {
                 return ResourceManager.GetString("UpdateTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Refreshing cache failed!.
+        /// </summary>
+        public static string VerifyCacheFailed {
+            get {
+                return ResourceManager.GetString("VerifyCacheFailed", resourceCulture);
             }
         }
         

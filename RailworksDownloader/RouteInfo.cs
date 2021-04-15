@@ -32,7 +32,7 @@ namespace RailworksDownloader
             }
         }
 
-        public Brush ProgressBackground => GetBrush();
+        public Color[] ProgressBackground => GetBrush();
 
         public RouteCrawler Crawler { get; set; }
 
@@ -46,7 +46,7 @@ namespace RailworksDownloader
 
         public void Redraw()
         {
-            OnPropertyChanged<Brush>("ProgressBackground");
+            OnPropertyChanged<Color[]>("ProgressBackground");
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -61,18 +61,40 @@ namespace RailworksDownloader
             Progress = progress;
         }
 
-        public Brush GetBrush()
+        public Color[] GetBrush()
         {
-            if (ParsedDependencies.Unknown || ParsedDependencies.Items.Count == 0)
-                return MainWindow.Blue;
-            else if (ParsedDependencies.Missing > 0 && ParsedDependencies.Downloadable < ParsedDependencies.Missing)
-                return MainWindow.Red;
-            else if (ParsedDependencies.ScenariosCount > 0 && ParsedDependencies.DownloadableScenario < ParsedDependencies.MissingScenario)
-                return MainWindow.Purple;
-            else if (ParsedDependencies.Downloadable + ParsedDependencies.DownloadableScenario > 0)
-                return MainWindow.Yellow;
-            else
-                return MainWindow.Green;
+            Color rColor = MainWindow.Blue;
+            Color sColor = MainWindow.Blue;
+
+            if (ParsedDependencies.Missing > 0)
+            {
+                if (ParsedDependencies.Downloadable > 0)
+                    rColor = MainWindow.Purple;
+                else if (ParsedDependencies.Buyable > 0)
+                    rColor = MainWindow.Yellow;
+                else
+                    rColor = MainWindow.Red;
+            }
+            else if (ParsedDependencies.RouteCount > 0)
+            {
+                rColor = MainWindow.Green;
+            }
+
+            if (ParsedDependencies.MissingScenario > 0)
+            {
+                if (ParsedDependencies.DownloadableScenario > 0)
+                    sColor = MainWindow.Purple;
+                else if (ParsedDependencies.BuyableScenario > 0)
+                    sColor = MainWindow.Yellow;
+                else
+                    sColor = MainWindow.Red;
+            }
+            else if (ParsedDependencies.ScenariosCount > 0)
+            {
+                sColor = MainWindow.Green;
+            }
+
+            return new Color[] { rColor, sColor };
         }
     }
 }

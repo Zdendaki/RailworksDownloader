@@ -53,6 +53,7 @@
     value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
+
     mimetype: application/x-microsoft.net.object.bytearray.base64
     value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
@@ -161,6 +162,12 @@
   <data name="CheckingDLC" xml:space="preserve">
     <value>Suche installierte DLCs</value>
   </data>
+  <data name="ClientUpdateError" xml:space="preserve">
+    <value>Fehler beim Installieren des Updates aufgetreten! Bitte die neueste Version der Anwendung manuell herunterladen!</value>
+  </data>
+  <data name="ClientUpdateErrorTitle" xml:space="preserve">
+    <value>Fehler beim Installieren des Updates</value>
+  </data>
   <data name="ColorHintBlue" xml:space="preserve">
     <value>Unbekannt</value>
   </data>
@@ -168,7 +175,7 @@
     <value>Abgeschlossen</value>
   </data>
   <data name="ColorHintPurple" xml:space="preserve">
-    <value>Fehlt im Szenario</value>
+    <value>Herunterladbar</value>
   </data>
   <data name="ColorHintRed" xml:space="preserve">
     <value>Fehlt</value>
@@ -230,6 +237,9 @@
   </data>
   <data name="DownloadingUpdate" xml:space="preserve">
     <value>Client-Update herunterladen...</value>
+  </data>
+  <data name="DownloadInterruptError" xml:space="preserve">
+    <value>Download unterbrochen!</value>
   </data>
   <data name="DownloadTitle" xml:space="preserve">
     <value>Herunterladen der Pakete {0}/{1}</value>
@@ -355,7 +365,6 @@ Möchten Sie es aktualisieren?</value>
   </data>
   <data name="Ok" xml:space="preserve">
     <value>Jawohl!</value>
-    <comment>Es musst hier bleiben!!!!</comment>
     <comment>Jawohl, Chef!</comment>
   </data>
   <data name="OperationsRunning" xml:space="preserve">
@@ -398,6 +407,12 @@ Route: {1}</value>
   <data name="ReadingZipFail" xml:space="preserve">
     <value>Fehler beim Lesen der zip-Datei {0}!</value>
   </data>
+  <data name="Route" xml:space="preserve">
+    <value>Strecke</value>
+  </data>
+  <data name="RouteName" xml:space="preserve">
+    <value>Streckenname</value>
+  </data>
   <data name="RoutesCountLabel" xml:space="preserve">
     <value>Anzahl der Strecken: {0}</value>
   </data>
@@ -409,6 +424,9 @@ Route: {1}</value>
   </data>
   <data name="Saving" xml:space="preserve">
     <value>Speichern...</value>
+  </data>
+  <data name="Scenario" xml:space="preserve">
+    <value>Szenarios</value>
   </data>
   <data name="SelectRWDlgAuto" xml:space="preserve">
     <value>Railworks-Hauptordner automatische finden</value>
@@ -424,6 +442,15 @@ Route: {1}</value>
   </data>
   <data name="SelectRWPathTitle" xml:space="preserve">
     <value>Wähle RailWorks-Installationspfad aus</value>
+  </data>
+  <data name="ServerEmptyResponse" xml:space="preserve">
+    <value>Der Server hat eine leere Antwort gegeben!</value>
+  </data>
+  <data name="ServerInvalidResponse" xml:space="preserve">
+    <value>Der Server hat eine ungültige Antwort gegeben!</value>
+  </data>
+  <data name="ServerUnreachable" xml:space="preserve">
+    <value>Verbindung zum Server fehlgeschlagen!</value>
   </data>
   <data name="SerzCommonFail" xml:space="preserve">
     <value>Fehler beim Parsen der bin-Datei {0}!</value>
@@ -452,6 +479,9 @@ Route: {1}</value>
   <data name="UnknownError" xml:space="preserve">
     <value>Unbekannter Fehler</value>
   </data>
+  <data name="UnknownFiles" xml:space="preserve">
+    <value>Dateien nicht in bekannten Paketen enthalten</value>
+  </data>
   <data name="UpdaterAdminDesc" xml:space="preserve">
     <value>Für das Updaten der RailWorks Download Station sind Administratorenrechte erforderlich.</value>
   </data>
@@ -463,6 +493,9 @@ Route: {1}</value>
   </data>
   <data name="UpdateTitle" xml:space="preserve">
     <value>Pakete {0}/{1} werden geupdatet</value>
+  </data>
+  <data name="VerifyCacheFailed" xml:space="preserve">
+    <value>Aktualisieren des Caches fehlgeschlagen!</value>
   </data>
   <data name="Warning" xml:space="preserve">
     <value>Warnung</value>

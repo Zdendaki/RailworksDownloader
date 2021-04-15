@@ -51,17 +51,24 @@ namespace RailworksDownloader
                 OnDownloadProgressChanged?.Invoke(e.ProgressPercentage);
             };
 
-            string tempFname = Path.GetTempFileName();
-            await webClient.DownloadFileTaskAsync(UpdateUrl, tempFname);
-            OnDownloaded?.Invoke();
+            try
+            {
+                string tempFname = Path.GetTempFileName();
+                await webClient.DownloadFileTaskAsync(UpdateUrl, tempFname);
+                OnDownloaded?.Invoke();
 
-            Thread.Sleep(3000);
+                Thread.Sleep(3000);
 
-            string oldFilename = Assembly.GetExecutingAssembly().Location;
+                string oldFilename = Assembly.GetExecutingAssembly().Location;
 
-            string ps = Resources.UpdateScript.Replace("##01", tempFname).Replace("##02", oldFilename);
-            ExecuteCommand(ps);
-            Environment.Exit(0);
+                string ps = Resources.UpdateScript.Replace("##01", tempFname).Replace("##02", oldFilename);
+                ExecuteCommand(ps);
+                Environment.Exit(0);
+            }
+            catch
+            {
+                MessageBox.Show(Localization.Strings.UpdaterAdminDesc, Localization.Strings.ClientUpdateError, MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            }
         }
 
         private void ExecuteCommand(string command)

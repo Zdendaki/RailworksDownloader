@@ -40,7 +40,7 @@ namespace RailworksDownloader
 
             Dependencies = Dependencies.OrderBy(x => x.State).ThenBy(x => x.Name).ToList();
             ScenarioDeps = ScenarioDeps.OrderBy(x => x.State).ThenBy(x => x.Name).ToList();
-            Packages = Packages.OrderBy(x => x.State).ThenBy(x => x.Name).ToList();
+            Packages = Packages.OrderByDescending(x => x.State).ThenBy(x => x.Name).ToList();
             ScenarioPkgs = ScenarioPkgs.OrderBy(x => x.State).ThenBy(x => x.Name).ToList();
 
             DependenciesList.ItemsSource = Dependencies;
@@ -79,6 +79,8 @@ namespace RailworksDownloader
 
         private void IterateDependenices(IEnumerable<Dependency> items, List<Dependency> depList, List<DependencyPackage> pkgList, HashSet<string> parsedFiles, PackageManager pm)
         {
+            items = items.OrderByDescending(x => x.State);
+            //Package cachedPackage = null;
             foreach (Dependency dep in items)
             {
                 if (dep.State == DependencyState.Unknown)
@@ -98,21 +100,22 @@ namespace RailworksDownloader
                         Trace.Assert(pkg != null, Localization.Strings.NonCached);
                         pkgList.Add(new DependencyPackage(pkg.DisplayName, dep.State, pkg.PackageId));
                         parsedFiles.UnionWith(pkg.FilesContained);
-                    }
 
-                    /*foreach (Package pkg in pm.CachedPackages.Where(x => ids.Contains(x.PackageId)))
-                    {
-                        if (!pkgList.Any(x => x.Name == pkg.DisplayName))
+                        /*if (dep.PkgID != cachedPackage?.PackageId)
+                            cachedPackage = pm.CachedPackages.FirstOrDefault(x => x.PackageId == dep.PkgID);
+                        Trace.Assert(cachedPackage != null, Localization.Strings.NonCached);
+
+                        if (!pkgList.Any(x => x.ID == dep.PkgID))
+                            pkgList.Add(new DependencyPackage(cachedPackage.DisplayName, dep.State, cachedPackage.PackageId));
+                        else
                         {
-                            pkgList.Add(new DependencyPackage(pkg.DisplayName, dep.State));
+                            DependencyPackage pkg = pkgList.First(x => x.ID == dep.PkgID);
+                            if (dep.State > pkg.State)
+                                pkg.State = dep.State;
                         }
 
-                    }*/
-                    /*Package pkg = pm.CachedPackages.FirstOrDefault(x => x.FilesContained.Any(y => y == dep.Name));
-
-                    if (pkg == default)
-                        continue;*/
-
+                        parsedFiles.UnionWith(items.TakeWhile(x => x.State == dep.State).Select(x => x.Name));*/
+                    }
                 }
             }
         }

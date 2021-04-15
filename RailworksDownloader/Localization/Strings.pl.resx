@@ -162,6 +162,12 @@
   <data name="CheckingDLC" xml:space="preserve">
     <value>Szukanie zainstalowanych DLC</value>
   </data>
+  <data name="ClientUpdateError" xml:space="preserve">
+    <value>Wystąpił błąd przy instalacji aktualizacji klienta. Prosze pobrać nową wersje ręcznie!</value>
+  </data>
+  <data name="ClientUpdateErrorTitle" xml:space="preserve">
+    <value>Klient nie mógł się zaktualizować</value>
+  </data>
   <data name="ColorHintBlue" xml:space="preserve">
     <value>Nieznany</value>
   </data>
@@ -169,7 +175,7 @@
     <value>Kompletny</value>
   </data>
   <data name="ColorHintPurple" xml:space="preserve">
-    <value>Brakujący w scenariuszu</value>
+    <value>Do pobrania</value>
   </data>
   <data name="ColorHintRed" xml:space="preserve">
     <value>Brakujący</value>
@@ -230,6 +236,9 @@
   </data>
   <data name="DownloadingUpdate" xml:space="preserve">
     <value>Trwa pobieranie aktualizacji aplikacje...</value>
+  </data>
+  <data name="DownloadInterruptError" xml:space="preserve">
+    <value>Pobieranie przerwane!</value>
   </data>
   <data name="DownloadTitle" xml:space="preserve">
     <value>Pobieranie dodatku {0}/{1}</value>
@@ -396,6 +405,12 @@ Mapa: {1}</value>
   <data name="ReadingZipFail" xml:space="preserve">
     <value>Wystąpił błąd przy wczytywaniu pliku gzip {0}!</value>
   </data>
+  <data name="Route" xml:space="preserve">
+    <value>Mapa</value>
+  </data>
+  <data name="RouteName" xml:space="preserve">
+    <value>Nazwa mapy</value>
+  </data>
   <data name="RoutesCountLabel" xml:space="preserve">
     <value>Liczba map: {0}</value>
   </data>
@@ -407,6 +422,9 @@ Mapa: {1}</value>
   </data>
   <data name="Saving" xml:space="preserve">
     <value>Trwa zapisywanie</value>
+  </data>
+  <data name="Scenario" xml:space="preserve">
+    <value>Scenariusze</value>
   </data>
   <data name="SelectRWDlgAuto" xml:space="preserve">
     <value>Spróbuj znaleźć folder RailWorks automatycznie.</value>
@@ -422,6 +440,15 @@ Mapa: {1}</value>
   </data>
   <data name="SelectRWPathTitle" xml:space="preserve">
     <value>Ścieżka instalacji RailWorks</value>
+  </data>
+  <data name="ServerEmptyResponse" xml:space="preserve">
+    <value>Serwer wrócił pusty wynik!</value>
+  </data>
+  <data name="ServerInvalidResponse" xml:space="preserve">
+    <value>Serwer wrócił zły wynik!</value>
+  </data>
+  <data name="ServerUnreachable" xml:space="preserve">
+    <value>Nie udało się nawiązać polączenie z serwerem!</value>
   </data>
   <data name="SerzCommonFail" xml:space="preserve">
     <value>Wystąpił błąd przy czytaniu pliku .bin {0}!</value>
@@ -450,6 +477,9 @@ Mapa: {1}</value>
   <data name="UnknownError" xml:space="preserve">
     <value>Nieznany błąd</value>
   </data>
+  <data name="UnknownFiles" xml:space="preserve">
+    <value>Pliki nie znależione w żadnej z znanych pacziek</value>
+  </data>
   <data name="UpdaterAdminDesc" xml:space="preserve">
     <value>Potrzebujesz uprawnienia administratora aby zaktualizować Railworks DLS.</value>
   </data>
@@ -461,6 +491,9 @@ Mapa: {1}</value>
   </data>
   <data name="UpdateTitle" xml:space="preserve">
     <value>Aktualizacja dodatku {0}/{1}</value>
+  </data>
+  <data name="VerifyCacheFailed" xml:space="preserve">
+    <value>Wystąpił nieznany błąd przy odswieżaniu plików cache.</value>
   </data>
   <data name="Warning" xml:space="preserve">
     <value>Ostrzeżenie</value>

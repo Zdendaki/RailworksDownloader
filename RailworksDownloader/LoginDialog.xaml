@@ -1,4 +1,4 @@
-﻿<ui:ContentDialog  
+﻿<ui:ContentDialog
     x:Class="RailworksDownloader.LoginDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -6,9 +6,10 @@
     xmlns:loc="clr-namespace:RailworksDownloader.Localization"
     Title="{x:Static loc:Strings.LoginTitle}"
     PrimaryButtonText="{x:Static loc:Strings.LoginPrimary}"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
     SecondaryButtonText="{x:Static loc:Strings.LoginSecondary}"
     SecondaryButtonClick="ContentDialog_SecondaryButtonClick">
-    
+
     <Grid Height="Auto" MinWidth="450">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />

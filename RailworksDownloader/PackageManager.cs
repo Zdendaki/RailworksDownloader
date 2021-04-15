@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using RailworksDownloader.Properties;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -189,7 +190,14 @@ namespace RailworksDownloader
             InstalledPackages = SqLiteAdapter.LoadPackages();
             Task.Run(async () =>
             {
-                await VerifyCache();
+                try
+                {
+                    await VerifyCache();
+                }
+                catch (Exception)
+                {
+                    Trace.Assert(false, Localization.Strings.VerifyCacheFailed);
+                }
                 //CachedPackages = CachedPackages.Union(InstalledPackages).ToList();
                 CacheInit.Set();
             });
@@ -372,6 +380,8 @@ namespace RailworksDownloader
                     return;
                 }
 
+                PkgsToDownload.RemoveWhere(x => CachedPackages.First(y => y.PackageId == x).IsPaid);
+
                 if (PkgsToDownload.Count > 0)
                 {
                     App.IsDownloading = true;
@@ -420,6 +430,9 @@ namespace RailworksDownloader
 
                 foreach (Package package in InstalledPackages)
                 {
+                    if (package.IsPaid)
+                        continue;
+
                     if (package.Version < ServerVersions[package.PackageId])
                     {
                         Task<ContentDialogResult> t = null;
@@ -459,7 +472,7 @@ namespace RailworksDownloader
                 MSMQRunning = true;
                 await ReceiveMSMQ();
                 MSMQRunning = false;
-            }).Start(); ;
+            }).Start();
             using (FileSystemWatcher watcher = new FileSystemWatcher())
             {
                 watcher.Path = Path.GetTempPath();

@@ -6,10 +6,10 @@ namespace RailworksDownloader
     public enum DependencyState
     {
         Available,
-        Unknown,
         Unavailable,
-        Paid,
-        Downloaded
+        Unknown,
+        Downloaded,
+        Paid
     }
 
     public class Dependency
@@ -75,6 +75,10 @@ namespace RailworksDownloader
         public int Downloadable => Items.Count(x => x.State == DependencyState.Available && x.IsRoute);
 
         public int DownloadableScenario => Items.Count(x => x.State == DependencyState.Available && x.IsScenario);
+
+        public int Buyable => Items.Count(x => x.State == DependencyState.Paid && x.IsRoute);
+
+        public int BuyableScenario => Items.Count(x => x.State == DependencyState.Paid && x.IsScenario);
 
         public bool Unknown => Items.Any(x => x.State == DependencyState.Unknown);
 

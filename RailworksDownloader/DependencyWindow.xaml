@@ -30,7 +30,7 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Grid>
+                                <Grid ToolTip="{Binding ID}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="3*" />
                                         <ColumnDefinition Width="*" />
@@ -50,8 +50,8 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        
-                        <Label Content="Unknown files" Margin="10,10,0,2" FontWeight="Bold" FontSize="16" Grid.Row="0" />
+
+                        <Label Content="{x:Static loc:Strings.UnknownFiles}" Margin="10,10,0,2" FontWeight="Bold" FontSize="16" Grid.Row="0" />
                         <ListView x:Name="DependenciesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Row="1">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem">
@@ -98,7 +98,7 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Grid>
+                                <Grid ToolTip="{Binding ID}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="3*" />
                                         <ColumnDefinition Width="*" />
@@ -118,8 +118,8 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        
-                        <Label Content="Unknown files" Margin="10,10,0,2" FontWeight="Bold" FontSize="16" Grid.Row="0" />
+
+                        <Label Content="{x:Static loc:Strings.UnknownFiles}" Margin="10,10,0,2" FontWeight="Bold" FontSize="16" Grid.Row="0" />
                         <ListView x:Name="ScenarioDepsList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Row="1">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem">

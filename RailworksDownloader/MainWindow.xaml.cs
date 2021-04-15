@@ -26,11 +26,12 @@ namespace RailworksDownloader
         public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/api/");
 #endif
 
-        internal static Brush Blue = new SolidColorBrush(Color.FromArgb(255, 0, 151, 230));
-        internal static Brush Green = new SolidColorBrush(Color.FromArgb(255, 76, 209, 55));
-        internal static Brush Yellow = new SolidColorBrush(Color.FromArgb(255, 251, 197, 49));
-        internal static Brush Red = new SolidColorBrush(Color.FromArgb(255, 232, 65, 24));
-        internal static Brush Purple = new SolidColorBrush(Color.FromArgb(255, 190, 46, 221));
+        public static Color Blue { get; } = Color.FromArgb(255, 0, 151, 230); //new SolidColorBrush(Color.FromArgb(255, 0, 151, 230));
+        public static Color Green { get; } = Color.FromArgb(255, 76, 209, 55); //new SolidColorBrush(Color.FromArgb(255, 76, 209, 55));
+        public static Color Yellow { get; } = Color.FromArgb(255, 251, 197, 49); //new SolidColorBrush(Color.FromArgb(255, 251, 197, 49))
+        public static Color Red { get; } = Color.FromArgb(255, 232, 65, 24); //new SolidColorBrush(Color.FromArgb(255, 232, 65, 24))
+        public static Color Purple { get; } = Color.FromArgb(255, 190, 46, 221); //new SolidColorBrush(Color.FromArgb(255, 190, 46, 221))
+        public static Color Gray { get; } = Color.FromArgb(255, 113, 128, 147); //new SolidColorBrush(Color.FromArgb(255, 113, 128, 147))
 
         internal static DownloadDialog DownloadDialog = new DownloadDialog();
         internal static ContentDialog ContentDialog = new ContentDialog();
@@ -39,7 +40,7 @@ namespace RailworksDownloader
         private readonly EventWaitHandle dlcReportFinishedHandler = new EventWaitHandle(false, EventResetMode.ManualReset);
         private bool Saving = false;
         private bool CheckingDLC = false;
-        public bool ReportedDLC = false;
+        public static bool ReportedDLC = false;
         internal Railworks RW;
         private PackageManager PM;
         private bool crawlingComplete = false;
@@ -51,6 +52,8 @@ namespace RailworksDownloader
             try
             {
                 InitializeComponent();
+
+                DataContext = this;
 
                 Title = $"Railworks DLS client v{App.Version}";
 
@@ -88,36 +91,36 @@ namespace RailworksDownloader
                     else
                     {
 #endif
-                        if (string.IsNullOrWhiteSpace(RW.RWPath))
+                    if (string.IsNullOrWhiteSpace(RW.RWPath))
+                    {
+                        RailworksPathDialog rpd = new RailworksPathDialog();
+                        rpd.ShowAsync();
+                    }
+
+                    if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                    {
+                        Settings.Default.RailworksLocation = RW.RWPath;
+                        Settings.Default.Save();
+                    }
+
+                    PathChanged();
+
+                    Settings.Default.PropertyChanged += PropertyChanged;
+
+                    DownloadDialog.Owner = this;
+
+                    RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
+                    key.SetValue("URL Protocol", "");
+                    //key.SetValue("DefaultIcon", "");
+                    key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
+
+                    if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
+                    {
+                        Task.Run(async () =>
                         {
-                            RailworksPathDialog rpd = new RailworksPathDialog();
-                            rpd.ShowAsync();
-                        }
-
-                        if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
-                        {
-                            Settings.Default.RailworksLocation = RW.RWPath;
-                            Settings.Default.Save();
-                        }
-
-                        PathChanged();
-
-                        Settings.Default.PropertyChanged += PropertyChanged;
-
-                        DownloadDialog.Owner = this;
-
-                        RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
-                        key.SetValue("URL Protocol", "");
-                        //key.SetValue("DefaultIcon", "");
-                        key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
-
-                        if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
-                        {
-                            Task.Run(async () =>
-                            {
-                                await Utils.CheckLogin(ReportDLC, this, ApiUrl);
-                            });
-                        }
+                            await Utils.CheckLogin(ReportDLC, this, ApiUrl);
+                        });
+                    }
 #if !DEBUG
                     }
 #endif
@@ -136,6 +139,15 @@ namespace RailworksDownloader
 
         public void ReportDLC()
         {
+            if (string.IsNullOrWhiteSpace(App.Token))
+            {
+                PM.CacheInit.WaitOne();
+                if (string.IsNullOrWhiteSpace(App.Token))
+                    dlcReportFinishedHandler.Set();
+                return;
+            }
+
+            dlcReportFinishedHandler.Reset();
             Task.Run(async () =>
             {
                 RW_CheckingDLC(false);
@@ -206,7 +218,7 @@ namespace RailworksDownloader
                     RW.AllRequiredDeps.UnionWith(RW.Routes[i].AllDependencies);
                 }
 
-                RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); }); // BUG: NullReferenceException
+                RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); });
 
                 RW.getAllInstalledDepsEvent.WaitOne();
                 RW.AllMissingDeps = RW.AllRequiredDeps.Except(RW.AllInstalledDeps);

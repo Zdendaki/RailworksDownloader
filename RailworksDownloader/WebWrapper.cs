@@ -1,11 +1,12 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static RailworksDownloader.Utils;
 
@@ -143,23 +144,31 @@ namespace RailworksDownloader
             };
 
             string tempFname = Path.GetTempFileName();
-            await webClient.DownloadFileTaskAsync(url, tempFname);
 
-            if (ZipTools.IsCompressedData(tempFname))
+            try
             {
-                return new ObjectResult<object>(200, "Package succesfully downloaded!", tempFname);
-            }
-            else
-            {
-                //FIXME: non zip file is not necessarily a JSON! 
-                ObjectResult<object> obj = JsonConvert.DeserializeObject<ObjectResult<object>>(File.ReadAllText(tempFname));
-                if (obj != null)
+                await webClient.DownloadFileTaskAsync(url, tempFname);
+
+                if (ZipTools.IsCompressedData(tempFname))
                 {
-                    obj.code = 404;
-                    obj.content = tempFname;
+                    return new ObjectResult<object>(200, "Package succesfully downloaded!", tempFname);
                 }
-                return obj;
+                else
+                {
+                    return JsonConvert.DeserializeObject<ObjectResult<object>>(File.ReadAllText(tempFname)) ?? new ObjectResult<object>(500, Localization.Strings.ServerEmptyResponse, tempFname);
+                }
             }
+            catch (Exception e)
+            {
+                if (e is HttpRequestException)
+                    return new ObjectResult<object>(500, Localization.Strings.ServerUnreachable);
+                else if (e is JsonException)
+                    return new ObjectResult<object>(500, Localization.Strings.ServerInvalidResponse);
+                else if (e is OperationAbortedException || e is ThreadAbortException || e is ThreadInterruptedException)
+                    return new ObjectResult<object>(500, Localization.Strings.DownloadInterruptError);
+            }
+
+            return new ObjectResult<object>(500, Localization.Strings.UnknownError, tempFname);
         }
 
         public async Task<Package> GetPackage(int packageId)
@@ -167,16 +176,18 @@ namespace RailworksDownloader
             Dictionary<string, string> content = new Dictionary<string, string> { { "id", packageId.ToString() } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
-            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
-            if (response.IsSuccessStatusCode)
+            try
             {
-                ObjectResult<QueryContent> responseContent = JsonConvert.DeserializeObject<ObjectResult<QueryContent>>(await response.Content.ReadAsStringAsync());
+                HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
+                if (response.IsSuccessStatusCode)
+                {
+                    ObjectResult<QueryContent> responseContent = JsonConvert.DeserializeObject<ObjectResult<QueryContent>>(await response.Content.ReadAsStringAsync());
 
-                if (Utils.IsSuccessStatusCode(responseContent.code))
-                    return new Package(responseContent.content);
+                    if (Utils.IsSuccessStatusCode(responseContent.code))
+                        return new Package(responseContent.content);
+                }
             }
-
-            //TODO: try catch on connection timeout, check content itself rather than status code
+            catch { }
 
             return null;
         }
@@ -186,13 +197,23 @@ namespace RailworksDownloader
             Dictionary<string, string> content = new Dictionary<string, string> { { "email", email }, { "password", password } };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
-            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "login", encodedContent);
-            if (response.IsSuccessStatusCode)
-                return JsonConvert.DeserializeObject<ObjectResult<LoginContent>>(await response.Content.ReadAsStringAsync());
+            try
+            {
+                HttpResponseMessage response = await Client.PostAsync(ApiUrl + "login", encodedContent);
+                if (response.IsSuccessStatusCode)
+                {
+                    return JsonConvert.DeserializeObject<ObjectResult<LoginContent>>(await response.Content.ReadAsStringAsync()) ?? new ObjectResult<LoginContent>(500, Localization.Strings.ServerEmptyResponse);
+                }
+            }
+            catch (Exception e)
+            {
+                if (e is HttpRequestException)
+                    return new ObjectResult<LoginContent>(500, Localization.Strings.ServerUnreachable);
+                else if (e is JsonException)
+                    return new ObjectResult<LoginContent>(500, Localization.Strings.ServerInvalidResponse);
+            }
 
-            //TODO: try catch on connection timeout, check content itself rather than status code
-
-            return null;
+            return new ObjectResult<LoginContent>(500, Localization.Strings.UnknownError);
         }
 
         public async Task<Tuple<IEnumerable<Package>, HashSet<int>>> ValidateCache(Dictionary<int, int> localVersions)
@@ -201,24 +222,26 @@ namespace RailworksDownloader
                 {new StringContent(JsonConvert.SerializeObject(localVersions)), "validateCache"}
             };
 
-            HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", content);
-            if (response.IsSuccessStatusCode)
+            try
             {
-                ArrayResult<QueryContent> jsonObject = JsonConvert.DeserializeObject<ArrayResult<QueryContent>>(await response.Content.ReadAsStringAsync());
-                if (Utils.IsSuccessStatusCode(jsonObject.code))
+                HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", content);
+                if (response.IsSuccessStatusCode)
                 {
-                    List<Package> pkgs = new List<Package>();
-                    HashSet<int> remoteVersions = new HashSet<int>();
-                    foreach (QueryContent qc in jsonObject.content)
+                    ArrayResult<QueryContent> jsonObject = JsonConvert.DeserializeObject<ArrayResult<QueryContent>>(await response.Content.ReadAsStringAsync());
+                    if (Utils.IsSuccessStatusCode(jsonObject.code))
                     {
-                        pkgs.Add(new Package(qc));
-                        remoteVersions.Add(qc.id);
+                        List<Package> pkgs = new List<Package>();
+                        HashSet<int> remoteVersions = new HashSet<int>();
+                        foreach (QueryContent qc in jsonObject.content)
+                        {
+                            pkgs.Add(new Package(qc));
+                            remoteVersions.Add(qc.id);
+                        }
+                        return new Tuple<IEnumerable<Package>, HashSet<int>>(pkgs, remoteVersions);
                     }
-                    return new Tuple<IEnumerable<Package>, HashSet<int>>(pkgs, remoteVersions);
                 }
             }
-
-            //TODO: try catch on connection timeout, check content itself rather than status code
+            catch { }
 
             return new Tuple<IEnumerable<Package>, HashSet<int>>(new Package[0], new HashSet<int>());
         }
@@ -226,23 +249,25 @@ namespace RailworksDownloader
         public static async Task<IEnumerable<Package>> ReportDLC(List<SteamManager.DLC> dlcList, string token, Uri apiUrl)
         {
             StringContent encodedContent = new StringContent(JsonConvert.SerializeObject(new ReportDLCcontent(token, dlcList)), Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await Client.PostAsync(apiUrl + "reportDLC", encodedContent);
-            if (response.IsSuccessStatusCode)
+
+            try
             {
-                ArrayResult<QueryContent> jsonObject = JsonConvert.DeserializeObject<ArrayResult<QueryContent>>(await response.Content.ReadAsStringAsync());
-                if (Utils.IsSuccessStatusCode(jsonObject.code))
+                HttpResponseMessage response = await Client.PostAsync(apiUrl + "reportDLC", encodedContent);
+                if (response.IsSuccessStatusCode)
                 {
-                    List<Package> pkgs = new List<Package>();
-                    foreach (QueryContent qc in jsonObject.content)
+                    ArrayResult<QueryContent> jsonObject = JsonConvert.DeserializeObject<ArrayResult<QueryContent>>(await response.Content.ReadAsStringAsync());
+                    if (Utils.IsSuccessStatusCode(jsonObject.code))
                     {
-                        pkgs.Add(new Package(qc));
+                        List<Package> pkgs = new List<Package>();
+                        foreach (QueryContent qc in jsonObject.content)
+                        {
+                            pkgs.Add(new Package(qc));
+                        }
+                        return pkgs;
                     }
-                    return pkgs;
                 }
             }
-
-            //TODO: try catch on connection timeout, check content itself rather than status code
-            //ERROR: connection interruption causes "crash" of whole app
+            catch { }
 
             return new Package[0];
         }
@@ -252,11 +277,13 @@ namespace RailworksDownloader
             Dictionary<string, string> content = new Dictionary<string, string> { };
             FormUrlEncodedContent encodedContent = new FormUrlEncodedContent(content);
 
-            HttpResponseMessage response = await new HttpClient(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate }).PostAsync(apiUrl + "getAppVersion", encodedContent);
-            if (response.IsSuccessStatusCode)
-                return JsonConvert.DeserializeObject<ObjectResult<AppVersionContent>>(await response.Content.ReadAsStringAsync());
-
-            //TODO: try catch on connection timeout, check content itself rather than status code
+            try
+            {
+                HttpResponseMessage response = await new HttpClient(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate }).PostAsync(apiUrl + "getAppVersion", encodedContent);
+                if (response.IsSuccessStatusCode)
+                    return JsonConvert.DeserializeObject<ObjectResult<AppVersionContent>>(await response.Content.ReadAsStringAsync());
+            }
+            catch { }
 
             return null;
         }

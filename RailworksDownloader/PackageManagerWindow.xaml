@@ -15,7 +15,7 @@
             <Button x:Name="InstallPackage" IsEnabled="False" Content="{x:Static loc:Strings.PackManInstall}" HorizontalAlignment="Right" Margin="10" VerticalAlignment="Top" Click="InstallPackage_Click" />
         </StackPanel>
         
-        <ListView x:Name="PackagesList" Margin="0,50,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="PackagesList_SelectionChanged">
+        <ListView x:Name="PackagesList" Margin="0,50,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="PackagesList_SelectionChanged" MouseDoubleClick="PackagesList_MouseDoubleClick">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
