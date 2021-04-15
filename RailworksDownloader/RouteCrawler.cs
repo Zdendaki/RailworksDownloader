@@ -1,4 +1,5 @@
 ﻿using ICSharpCode.SharpZipLib.Zip;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -118,7 +119,10 @@ namespace RailworksDownloader
                     catch (Exception e)
                     {
                         if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                        {
+                            SentrySdk.CaptureException(e);
                             Trace.Assert(false, string.Format(Localization.Strings.CrawlingRouteFail, RoutePath), e.ToString());
+                        }
                     }
 
                     // If crawling skipped because cache or inaccuracy, adds to 100 %
@@ -260,8 +264,9 @@ namespace RailworksDownloader
             {
                 doc.Load(XmlReader.Create(RemoveInvalidXmlChars(stream), new XmlReaderSettings() { CheckCharacters = false }));
             }
-            catch
+            catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 return;
             }
 
@@ -450,7 +455,10 @@ namespace RailworksDownloader
             catch (Exception e)
             {
                 if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                {
+                    SentrySdk.CaptureException(e);
                     Trace.Assert(false, string.Format(Localization.Strings.GzipEntryFail, file.Name), e.ToString());
+                }
             }
         }
 
@@ -507,7 +515,10 @@ namespace RailworksDownloader
                     catch (Exception e)
                     {
                         if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                        {
+                            SentrySdk.CaptureException(e);
                             Trace.Assert(false, string.Format(Localization.Strings.GzipReadFail, file), e.ToString());
+                        }
                     }
                 });
             }
@@ -606,8 +617,9 @@ namespace RailworksDownloader
                             }
                         }
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        SentrySdk.CaptureException(e);
                         Trace.Assert(false, string.Format(Localization.Strings.CountSizeFail, file));
                     }
                 }

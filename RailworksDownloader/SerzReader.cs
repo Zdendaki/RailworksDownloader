@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sentry;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -269,7 +270,10 @@ namespace RailworksDownloader
                 catch (Exception e)
                 {
                     if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                    {
+                        SentrySdk.CaptureException(e);
                         Trace.Assert(false, string.Format(Localization.Strings.SerzCommonFail, DebugFname), e.ToString());
+                    }
                 }
             }
         }
@@ -758,8 +762,9 @@ namespace RailworksDownloader
                         }
                 }
             }
-            catch
+            catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Debug.Assert(false, string.Format(Localization.Strings.SerzParseExTagFail, br.BaseStream.Position, DebugStep, DebugFname));
             }
 

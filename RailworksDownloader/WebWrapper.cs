@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -160,6 +161,7 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 if (e is HttpRequestException)
                     return new ObjectResult<object>(500, Localization.Strings.ServerUnreachable);
                 else if (e is JsonException)
@@ -207,6 +209,7 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 if (e is HttpRequestException)
                     return new ObjectResult<LoginContent>(500, Localization.Strings.ServerUnreachable);
                 else if (e is JsonException)

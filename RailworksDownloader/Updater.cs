@@ -1,4 +1,5 @@
 ﻿using RailworksDownloader.Properties;
+using Sentry;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -65,8 +66,9 @@ namespace RailworksDownloader
                 ExecuteCommand(ps);
                 Environment.Exit(0);
             }
-            catch
+            catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 MessageBox.Show(Localization.Strings.UpdaterAdminDesc, Localization.Strings.ClientUpdateError, MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
         }

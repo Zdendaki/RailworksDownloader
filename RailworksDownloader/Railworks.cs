@@ -1,5 +1,6 @@
 ﻿using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.Win32;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -122,8 +123,9 @@ namespace RailworksDownloader
                         Trace.Assert(routeName != null, Localization.Strings.NoRouteName);
                         return routeName ?? routeHash;
                     }
-                    catch (Exception)
+                    catch (Exception e)
                     {
+                        SentrySdk.CaptureException(e);
                         MessageBox.Show(string.Format(Localization.Strings.ParseRoutePropFail, file), Localization.Strings.ParseRoutePropFailTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
                 }
@@ -212,8 +214,9 @@ namespace RailworksDownloader
                                 }
                             }
                         }
-                        catch
+                        catch (Exception e)
                         {
+                            SentrySdk.CaptureException(e);
                             Trace.Assert(false, string.Format(Localization.Strings.ReadingZipFail, file));
                         }
                     }
@@ -316,7 +319,10 @@ namespace RailworksDownloader
                             lock (APDepsLock)
                                 APDependencies.UnionWith(from x in zipFile.Entries where (x.FullName.Contains(".xml") || x.FullName.Contains(".bin")) select NormalizePath(GetRelativePath(AssetsPath, Path.Combine(directory, x.FullName))));
                         }
-                        catch { }
+                        catch (Exception e)
+                        {
+                            SentrySdk.CaptureException(e);
+                        }
                     }
                     if (APDependencies.Contains(fileToFind) || APDependencies.Contains(NormalizePath(fileToFind, "xml")))
                     {
@@ -354,8 +360,9 @@ namespace RailworksDownloader
                             }
                         }
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        SentrySdk.CaptureException(e);
                         Debug.Assert(false, string.Format(Localization.Strings.ReadingZipFail, file));
                     }
                 }

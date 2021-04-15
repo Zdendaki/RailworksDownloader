@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using ModernWpf.Controls;
 using RailworksDownloader.Properties;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -63,8 +64,9 @@ namespace RailworksDownloader
                 {
                     App.SteamManager = new SteamManager();
                 }
-                catch
+                catch (Exception e)
                 {
+                    SentrySdk.CaptureException(e);
                     Debug.Assert(false, Localization.Strings.SteamInitFail);
                 }
 
@@ -127,13 +129,17 @@ namespace RailworksDownloader
                 }
                 catch (Exception e)
                 {
+                    SentrySdk.CaptureException(e);
                     Trace.Assert(false, Localization.Strings.UpdaterPanic, e.ToString());
                 }
             }
             catch (Exception e)
             {
                 if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                {
+                    SentrySdk.CaptureException(e);
                     Trace.Assert(false, e.ToString());
+                }
             }
         }
 
@@ -294,7 +300,10 @@ namespace RailworksDownloader
             catch (Exception e)
             {
                 if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                {
+                    SentrySdk.CaptureException(e);
                     Trace.Assert(false, e.ToString());
+                }
             }
 
             new Task(async () =>
@@ -393,6 +402,7 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 Trace.Assert(false, Localization.Strings.RoutesLoadFail, e.ToString());
             }
         }
@@ -460,7 +470,10 @@ namespace RailworksDownloader
                 catch (Exception e)
                 {
                     if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
+                    {
+                        SentrySdk.CaptureException(e);
                         Trace.Assert(false, e.ToString());
+                    }
                 }
             });
         }

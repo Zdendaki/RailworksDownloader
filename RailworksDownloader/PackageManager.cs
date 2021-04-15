@@ -1,6 +1,7 @@
 ﻿using ModernWpf.Controls;
 using Newtonsoft.Json;
 using RailworksDownloader.Properties;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -194,8 +195,9 @@ namespace RailworksDownloader
                 {
                     await VerifyCache();
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    SentrySdk.CaptureException(e);
                     Trace.Assert(false, Localization.Strings.VerifyCacheFailed);
                 }
                 //CachedPackages = CachedPackages.Union(InstalledPackages).ToList();

@@ -1,4 +1,5 @@
 ﻿using ModernWpf.Controls;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -81,8 +82,9 @@ namespace RailworksDownloader
                                     e.ExtractToFile(Path.Combine(path, e.Name), true);
                                     installedFiles.Add(rel_assets_path);
                                 }
-                                catch
+                                catch (Exception ex)
                                 {
+                                    SentrySdk.CaptureException(ex);
                                     failedFiles.Add(e.FullName);
                                 }
                             }
@@ -123,7 +125,10 @@ namespace RailworksDownloader
 
                     File.Delete((string)dl_result.content);
                 }
-                catch { break; }
+                catch (Exception e) {
+                    SentrySdk.CaptureException(e);
+                    break;
+                }
             }
 
             App.Window.Dispatcher.Invoke(() => Hide());
@@ -201,8 +206,9 @@ namespace RailworksDownloader
                                     e.ExtractToFile(Path.Combine(path, e.Name), true);
                                     installedFiles.Add(rel_assets_path);
                                 }
-                                catch
+                                catch (Exception ex)
                                 {
+                                    SentrySdk.CaptureException(ex);
                                     failedFiles.Add(e.FullName);
                                 }
                             }
@@ -240,7 +246,11 @@ namespace RailworksDownloader
 
                     File.Delete((string)dl_result.content);
                 }
-                catch { break; }
+                catch (Exception e)
+                {
+                    SentrySdk.CaptureException(e);
+                    break;
+                }
             }
 
             App.Window.Dispatcher.Invoke(() => Hide());

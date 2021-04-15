@@ -47,7 +47,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>none</DebugType>
+    <DebugType>embedded</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -55,6 +55,7 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>true</Prefer32Bit>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>RailworksDownloader.App</StartupObject>
@@ -282,6 +283,9 @@
     </PackageReference>
     <PackageReference Include="Resource.Embedder">
       <Version>2.1.1</Version>
+    </PackageReference>
+    <PackageReference Include="Sentry">
+      <Version>3.3.1</Version>
     </PackageReference>
     <PackageReference Include="SharpZipLib">
       <Version>1.3.1</Version>
