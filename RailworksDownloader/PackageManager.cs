@@ -430,7 +430,7 @@ namespace RailworksDownloader
 
                 foreach (Package package in InstalledPackages)
                 {
-                    if (package.IsPaid)
+                    if (package.IsPaid || !ServerVersions.ContainsKey(package.PackageId))
                         continue;
 
                     if (package.Version < ServerVersions[package.PackageId])
