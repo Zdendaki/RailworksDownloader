@@ -97,9 +97,9 @@ namespace RailworksDownloader
             return null;
         }
 
-        private string ParseRouteProperties(Stream istream, string file, string routeHash)
+        private string ParseRouteProperties(Stream istream, string file, string routeHash, long? entryLength = null)
         {
-            if (istream.Length > 4)
+            if ((entryLength ?? istream.Length) > 4L)
             {
                 MemoryStream stream = new MemoryStream();
                 istream.CopyTo(stream);
@@ -214,7 +214,8 @@ namespace RailworksDownloader
                                             ParseRouteProperties(
                                                 entry.Open(),
                                                 Path.Combine(file, entry.FullName),
-                                                routeHash
+                                                routeHash,
+                                                entry.Length
                                             ).Trim(),
                                             Path.GetFileName(dir),
                                             dir + Path.DirectorySeparatorChar
