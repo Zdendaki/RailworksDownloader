@@ -1084,7 +1084,16 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný Unknown format {0} in mattrice on position {1}, step {2} in file {3}!.
+        ///   Vyhledá lokalizovaný řetězec podobný Unable to parse new tag on position {0}, step {1} in file {2}!.
+        /// </summary>
+        public static string SerzParseNewTagFail {
+            get {
+                return ResourceManager.GetString("SerzParseNewTagFail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Unknown format {0} on position {1}, step {2} in file {3}!.
         /// </summary>
         public static string SerzUnkFormatFail {
             get {

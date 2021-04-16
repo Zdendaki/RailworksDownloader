@@ -166,6 +166,36 @@ namespace RailworksDownloader
                     return new ObjectResult<object>(500, Localization.Strings.ServerUnreachable);
                 else if (e is JsonException)
                     return new ObjectResult<object>(500, Localization.Strings.ServerInvalidResponse);
+                else if (e is WebException)
+                {
+                    WebException we = (WebException)e;
+                    if (we.Response != null)
+                    {
+                        HttpWebResponse webResponse = (HttpWebResponse)we.Response;
+                        string responseContent = new StreamReader(webResponse.GetResponseStream()).ReadToEnd();
+                        dynamic responseJson = JsonConvert.DeserializeObject(responseContent);
+                        if (responseJson != null)
+                        {
+                            string responseMessage = responseJson.message;
+                            int responseCode = responseJson.code;
+                            return new ObjectResult<object>(responseCode, responseMessage, tempFname);
+                        }
+                        /*switch ((int)webResponse.StatusCode)
+                        {
+                            case 403:
+                            case 404:
+                            case 498:
+                            case 400:
+                            case 405:
+                            case 500:
+                                break;
+                        }*/
+                        return new ObjectResult<object>((int)webResponse.StatusCode, Localization.Strings.DownloadError, tempFname);
+                    } else if (we.Status == WebExceptionStatus.RequestCanceled)
+                        return new ObjectResult<object>(-1, Localization.Strings.DownloadInterruptError);
+
+                    return new ObjectResult<object>(500, we.Message, tempFname);
+                }
                 else if (e is OperationAbortedException || e is ThreadAbortException || e is ThreadInterruptedException)
                     return new ObjectResult<object>(500, Localization.Strings.DownloadInterruptError);
             }

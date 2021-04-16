@@ -462,8 +462,11 @@ Trať: {1}</value>
   <data name="SerzParseExTagFail" xml:space="preserve">
     <value>Vnitřní chyba SERZ! Chyba při čtení již načteného tagu na pozici {0}, krok {1} v souboru {2}!</value>
   </data>
+  <data name="SerzParseNewTagFail" xml:space="preserve">
+    <value>Vnitřní chyba SERZ! Chyba při čtení ještě nenačteného tagu na pozici {0}, krok {1} v souboru {2}!</value>
+  </data>
   <data name="SerzUnkFormatFail" xml:space="preserve">
-    <value>Vnitřní chyba SERZ! Neznámý formát matice {0} na pozici {1}, krok {2} v souboru {3}!</value>
+    <value>Vnitřní chyba SERZ! Neznámý formát {0} na pozici {1}, krok {2} v souboru {3}!</value>
   </data>
   <data name="SerzUnkTagFormFail" xml:space="preserve">
     <value>Vnitřní chyba SERZ! Neznámý formát tagu {0} na pozici {1}, krok {2}, v souboru {3}!</value>

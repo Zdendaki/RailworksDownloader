@@ -462,8 +462,11 @@ Mapa: {1}</value>
   <data name="SerzParseExTagFail" xml:space="preserve">
     <value>Błąd wewnętrzny SERZ! Wystąpił błąd przy czytaniu już wczytanego tagu, pozycja {0}, krok {1} w pliku {2}!</value>
   </data>
+  <data name="SerzParseNewTagFail" xml:space="preserve">
+    <value>Błąd wewnętrzny SERZ! Wystąpił błąd przy czytaniu niewczytanego jeszcze tagu, pozycja {0}, krok {1} w pliku {2}!</value>
+  </data>
   <data name="SerzUnkFormatFail" xml:space="preserve">
-    <value>Błąd wewnętrzny SERZ! Nieznany format matrycy {0}, pozycja {1}, krok {2} w pliku {3}!</value>
+    <value>Błąd wewnętrzny SERZ! Nieznany format {0}, pozycja {1}, krok {2} w pliku {3}!</value>
   </data>
   <data name="SerzUnkTagFormFail" xml:space="preserve">
     <value>Błąd wewnętrzny SERZ! Nieznany format tagu {0}, pozycja {1}, krok {2} w pliku {3}!</value>

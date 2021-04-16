@@ -462,8 +462,11 @@ Route: {1}</value>
   <data name="SerzParseExTagFail" xml:space="preserve">
     <value>Unable to parse existing tag on position {0}, step {1} in file {2}!</value>
   </data>
+  <data name="SerzParseNewTagFail" xml:space="preserve">
+    <value>Unable to parse new tag on position {0}, step {1} in file {2}!</value>
+  </data>
   <data name="SerzUnkFormatFail" xml:space="preserve">
-    <value>Unknown format {0} in mattrice on position {1}, step {2} in file {3}!</value>
+    <value>Unknown format {0} on position {1}, step {2} in file {3}!</value>
   </data>
   <data name="SerzUnkTagFormFail" xml:space="preserve">
     <value>Unknown tag format {0} at position {1}, step {2}, file {3}!</value>

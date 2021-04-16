@@ -125,12 +125,22 @@ namespace RailworksDownloader
                     }
                     catch (Exception e)
                     {
-                        SentrySdk.CaptureException(e);
+                        SentrySdk.WithScope(scope =>
+                        {
+                            scope.AddAttachment(stream.ToArray(), file);
+                            SentrySdk.CaptureException(e);
+                        });
                         MessageBox.Show(string.Format(Localization.Strings.ParseRoutePropFail, file), Localization.Strings.ParseRoutePropFailTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
                 }
+
+                SentrySdk.WithScope(scope =>
+                {
+                    scope.AddAttachment(stream.ToArray(), file);
+                    SentrySdk.CaptureMessage($"{file} has no route name!", SentryLevel.Warning);
+                });
             }
-            Trace.Assert(false, Localization.Strings.NoRouteName);
+            Debug.Assert(false, Localization.Strings.NoRouteName);
             return routeHash;
         }
 

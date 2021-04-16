@@ -464,8 +464,11 @@ Route: {1}</value>
   <data name="SerzParseExTagFail" xml:space="preserve">
     <value>SERZ-Innenfehler! Fehler beim Parsen des vorhandenen Tags {0}, Schritt {1} in Datei {2}!</value>
   </data>
+  <data name="SerzParseNewTagFail" xml:space="preserve">
+    <value>SERZ-Innenfehler! Fehler beim Parsen des neues Tags {0}, Schritt {1} in Datei {2}!</value>
+  </data>
   <data name="SerzUnkFormatFail" xml:space="preserve">
-    <value>SERZ-Innenfehler! Unbekanntes Format {0} in Matrix an Stelle {1}, Schritt {2} in Datei {3}!</value>
+    <value>SERZ-Innenfehler! Unbekanntes Format {0} an Stelle {1}, Schritt {2} in Datei {3}!</value>
   </data>
   <data name="SerzUnkTagFormFail" xml:space="preserve">
     <value>SERZ-Innenfehler! Unbekanntes Tag-Format {0} an Stelle {1}, Schritt {2}, in Datei {3}!</value>

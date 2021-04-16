@@ -104,23 +104,30 @@ namespace RailworksDownloader
                     }
                     else
                     {
-                        new Task(() =>
+                        if (dl_result.code > 0)
                         {
-
-                            App.Window.Dispatcher.Invoke(() =>
+                            if (dl_result.code == 498)
                             {
-                                MainWindow.ErrorDialog = new ContentDialog()
+                                App.Token = null;
+                            }
+                            new Task(() =>
+                            {
+                                App.Window.Dispatcher.Invoke(() =>
                                 {
-                                    Title = Localization.Strings.DownloadError,
-                                    Content = dl_result.message,
-                                    SecondaryButtonText = Localization.Strings.Ok,
-                                    Owner = App.Window
-                                };
+                                    MainWindow.ErrorDialog = new ContentDialog()
+                                    {
+                                        Title = Localization.Strings.DownloadError,
+                                        Content = dl_result.message,
+                                        SecondaryButtonText = Localization.Strings.Ok,
+                                        Owner = App.Window
+                                    };
 
-                                MainWindow.ErrorDialog.ShowAsync();
-                            });
+                                    MainWindow.ErrorDialog.ShowAsync();
+                                });
 
-                        }).Start();
+                            }).Start();
+                        }
+                        break;
                     }
 
                     File.Delete((string)dl_result.content);
@@ -225,23 +232,30 @@ namespace RailworksDownloader
                     }
                     else
                     {
-                        new Task(() =>
+                        if (dl_result.code > 0)
                         {
-
-                            App.Window.Dispatcher.Invoke(() =>
+                            if (dl_result.code == 498)
                             {
-                                MainWindow.ErrorDialog = new ContentDialog()
+                                App.Token = null;
+                            }
+                            new Task(() =>
+                            {
+                                App.Window.Dispatcher.Invoke(() =>
                                 {
-                                    Title = Localization.Strings.DownloadError,
-                                    Content = dl_result.message,
-                                    SecondaryButtonText = Localization.Strings.Ok,
-                                    Owner = App.Window
-                                };
+                                    MainWindow.ErrorDialog = new ContentDialog()
+                                    {
+                                        Title = Localization.Strings.DownloadError,
+                                        Content = dl_result.message,
+                                        SecondaryButtonText = Localization.Strings.Ok,
+                                        Owner = App.Window
+                                    };
 
-                                MainWindow.ErrorDialog.ShowAsync();
-                            });
+                                    MainWindow.ErrorDialog.ShowAsync();
+                                });
 
-                        }).Start();
+                            }).Start();
+                        }
+                        break;
                     }
 
                     File.Delete((string)dl_result.content);

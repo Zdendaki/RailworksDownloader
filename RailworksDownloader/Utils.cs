@@ -180,9 +180,9 @@ namespace RailworksDownloader
             return new MemoryStream(StreamToByteArray(istream).Where(b => XmlConvert.IsXmlChar(Convert.ToChar(b))).ToArray());
         }
 
-        public static async Task<bool> CheckLogin(Action callback, MainWindow mw, Uri ApiUrl)
+        public static async Task<bool> CheckLogin(Action callback, MainWindow mw, Uri ApiUrl, bool invalidateToken = false)
         {
-            if (App.Token == default)
+            if (App.Token == default || invalidateToken)
             {
                 if (string.IsNullOrWhiteSpace(Settings.Default.Username) || string.IsNullOrWhiteSpace(Settings.Default.Password))
                 {
