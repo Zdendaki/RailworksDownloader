@@ -224,7 +224,7 @@ namespace RailworksDownloader
         /// <returns></returns>
         private void ParseBlueprint(Stream istream, string debugFname, bool isScenario = false)
         {
-            Stream stream = new MemoryStream();
+            MemoryStream stream = new MemoryStream();
             istream.CopyTo(stream);
             istream.Close();
             stream.Seek(0, SeekOrigin.Begin);

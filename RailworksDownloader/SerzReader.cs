@@ -193,7 +193,8 @@ namespace RailworksDownloader
 
         private bool AwaitDisplayName { get; set; } = false;
 
-        private Stream InputStream { get; set; }
+        private MemoryStream InputStream { get; set; }
+
         private FileStream OutputStream { get; set; }
 
         private readonly string[] Strings = new string[0xFFFF];
@@ -204,15 +205,7 @@ namespace RailworksDownloader
 
         private readonly List<SerzDependency> Dependencies = new List<SerzDependency>();
 
-        public SerzReader(string inputFile, MODES serzMode = MODES.wholeFile)
-        {
-            InputStream = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
-            DebugFname = inputFile;
-            SERZ_MODE = serzMode;
-            Deserialize();
-        }
-
-        public SerzReader(Stream fileStream, string debugFname, MODES serzMode = MODES.wholeFile)
+        public SerzReader(MemoryStream fileStream, string debugFname, MODES serzMode = MODES.wholeFile)
         {
             InputStream = fileStream;
             DebugFname = debugFname;
@@ -764,7 +757,12 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
-                SentrySdk.CaptureException(e);
+                SentrySdk.WithScope(scope =>
+                {
+                    scope.AddAttachment(InputStream.ToArray(), DebugFname);
+                    SentrySdk.CaptureException(e);
+                });
+
                 Debug.Assert(false, string.Format(Localization.Strings.SerzParseExTagFail, br.BaseStream.Position, DebugStep, DebugFname));
             }
 

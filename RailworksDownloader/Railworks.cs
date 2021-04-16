@@ -101,7 +101,7 @@ namespace RailworksDownloader
         {
             if (istream.Length > 4)
             {
-                Stream stream = new MemoryStream();
+                MemoryStream stream = new MemoryStream();
                 istream.CopyTo(stream);
                 istream.Close();
                 stream.Seek(0, SeekOrigin.Begin);
