@@ -474,6 +474,9 @@ Mapa: {1}</value>
   <data name="SerzUnkTypeFail" xml:space="preserve">
     <value>Błąd wewnętrzny SERZ! Nieznany typ danych {0}, pozycja {1}, krok {2} w pliku {3}!</value>
   </data>
+  <data name="SerzWrongByteCount" xml:space="preserve">
+    <value>Nieprawidłowa liczba bajtów ({0}) na literę, pozycja {1}, krok {2}, w pliku {3}!</value>
+  </data>
   <data name="SteamInitFail" xml:space="preserve">
     <value>Nie udało się zainicjalizować SteamManager!</value>
   </data>

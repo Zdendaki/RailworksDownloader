@@ -474,6 +474,9 @@ Trať: {1}</value>
   <data name="SerzUnkTypeFail" xml:space="preserve">
     <value>Vnitřní chyba SERZ! Neznámý datový typ {0} na pozici {1}, krok {2} v souboru {3}!</value>
   </data>
+  <data name="SerzWrongByteCount" xml:space="preserve">
+    <value>Vnitřní chyba SERZ! Nepodporovaný počet bytů ({0}) na znak na pozici {1}, krok {2}, v souboru {3}!</value>
+  </data>
   <data name="SteamInitFail" xml:space="preserve">
     <value>Inicializace SteamManageru selhala!</value>
   </data>

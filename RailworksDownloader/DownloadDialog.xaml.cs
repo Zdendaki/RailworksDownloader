@@ -132,7 +132,8 @@ namespace RailworksDownloader
 
                     File.Delete((string)dl_result.content);
                 }
-                catch (Exception e) {
+                catch (Exception e)
+                {
                     SentrySdk.CaptureException(e);
                     break;
                 }

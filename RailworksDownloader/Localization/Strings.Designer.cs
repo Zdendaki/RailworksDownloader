@@ -1120,6 +1120,15 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Unsupported number of bytes ({0}) per character on position {1}, step {2}, in file {3}!.
+        /// </summary>
+        public static string SerzWrongByteCount {
+            get {
+                return ResourceManager.GetString("SerzWrongByteCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný Initialision of SteamManager failed!.
         /// </summary>
         public static string SteamInitFail {

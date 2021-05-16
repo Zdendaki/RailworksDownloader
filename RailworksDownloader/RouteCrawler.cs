@@ -244,7 +244,7 @@ namespace RailworksDownloader
                 }
                 else
                 {
-                    ParseXMLBlueprint(stream, isScenario);
+                    ParseXMLBlueprint(stream, debugFname, isScenario);
                 }
             }
         }
@@ -255,7 +255,7 @@ namespace RailworksDownloader
         /// <param name="stream">XML blueprint stream</param>
         /// <param name="isScenario">Is scenario file</param>
         /// <returns></returns>
-        private void ParseXMLBlueprint(Stream stream, bool isScenario = false)
+        private void ParseXMLBlueprint(MemoryStream stream, string debugFname, bool isScenario = false)
         {
             // Load blueprint file
             XmlDocument doc = new XmlDocument();
@@ -266,25 +266,40 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
-                SentrySdk.CaptureException(e);
+                SentrySdk.WithScope(scope =>
+                {
+                    scope.AddAttachment(stream.ToArray(), debugFname);
+                    SentrySdk.CaptureException(e);
+                });
                 return;
             }
 
-            foreach (XmlNode node in doc.SelectNodes("//Provider").Cast<XmlNode>().ToArray())
+            try
             {
-                XmlNode blueprintSetID = node.ParentNode;
-                XmlNode absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
-                string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
-                string ext = Path.GetExtension(fname).ToLower();
-                if (!string.IsNullOrWhiteSpace(fname) && (ext == ".xml" || ext == ".bin"))
+                foreach (XmlNode node in doc.SelectNodes("//Provider").Cast<XmlNode>().ToArray())
                 {
-                    if (isScenario)
-                        lock (ScenarioDeps)
-                            ScenarioDeps.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
-                    else
-                        lock (Dependencies)
-                            Dependencies.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
+                    XmlNode blueprintSetID = node.ParentNode;
+                    XmlNode absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
+                    string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
+                    string ext = Path.GetExtension(fname).ToLower();
+                    if (!string.IsNullOrWhiteSpace(fname) && (ext == ".xml" || ext == ".bin"))
+                    {
+                        if (isScenario)
+                            lock (ScenarioDeps)
+                                ScenarioDeps.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
+                        else
+                            lock (Dependencies)
+                                Dependencies.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                SentrySdk.WithScope(scope =>
+                {
+                    scope.AddAttachment(stream.ToArray(), debugFname);
+                    SentrySdk.CaptureException(e);
+                });
             }
         }
 

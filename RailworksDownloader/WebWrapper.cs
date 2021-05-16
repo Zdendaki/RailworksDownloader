@@ -191,7 +191,8 @@ namespace RailworksDownloader
                                 break;
                         }*/
                         return new ObjectResult<object>((int)webResponse.StatusCode, Localization.Strings.DownloadError, tempFname);
-                    } else if (we.Status == WebExceptionStatus.RequestCanceled)
+                    }
+                    else if (we.Status == WebExceptionStatus.RequestCanceled)
                         return new ObjectResult<object>(-1, Localization.Strings.DownloadInterruptError);
 
                     return new ObjectResult<object>(500, we.Message, tempFname);

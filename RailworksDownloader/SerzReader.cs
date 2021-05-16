@@ -168,13 +168,13 @@ namespace RailworksDownloader
             public string Asset { get; set; }
         }
 
-        private class SerzException: Exception
+        private class SerzException : Exception
         {
             public long Position { get; set; }
             public int Step { get; set; }
             public string FileName { get; set; }
 
-            public SerzException(long position, int step, string fileName, string message, Exception innerException = null): base(message, innerException)
+            public SerzException(long position, int step, string fileName, string message, Exception innerException = null) : base(message, innerException)
             {
                 Position = position;
                 Step = step;
@@ -200,6 +200,8 @@ namespace RailworksDownloader
         private ushort BIndex { get; set; }
 
         private ushort SIndex { get; set; }
+
+        private bool ReachedEndOfRecord { get; set; }
 
         private int DebugStep { get; set; }
 
@@ -271,6 +273,9 @@ namespace RailworksDownloader
                                         break;
                                     }
                             }
+
+                            if (ReachedEndOfRecord)
+                                return;
                         }
                     }
                 }
@@ -334,7 +339,7 @@ namespace RailworksDownloader
                         continue;
                     }
 
-                    Trace.Assert(num_bytes == 3, string.Format("Unsupported number of bytes ({0}) per character on position {1}, step {2}, in file {3}!", num_bytes, br.BaseStream.Position, DebugStep, DebugFname));
+                    Trace.Assert(num_bytes == 3, string.Format(Localization.Strings.SerzWrongByteCount, num_bytes, br.BaseStream.Position, DebugStep, DebugFname));
 
                     byte[] bArr = br.ReadBytes(2);
 
@@ -566,7 +571,7 @@ namespace RailworksDownloader
         {
             Tag.Types command_type = (Tag.Types)br.ReadByte(); //read command byte
 
-            try 
+            try
             {
                 switch (command_type)
                 {
@@ -598,6 +603,9 @@ namespace RailworksDownloader
                             AllTags.Add(et);
 
                             CurrentXMLlevel--;
+
+                            if (string_id == 0)
+                                ReachedEndOfRecord = true;
 
                             break;
                         }
@@ -695,6 +703,10 @@ namespace RailworksDownloader
                         {
                             AllTags.Add(new EndTag(refTag.TagNameID));
                             CurrentXMLlevel--;
+
+                            if (refTag.TagNameID == 0)
+                                ReachedEndOfRecord = true;
+
                             break;
                         }
                     case Tag.Types.DataTag:

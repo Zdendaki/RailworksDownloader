@@ -313,7 +313,7 @@ namespace RailworksDownloader
                 Dispatcher.Invoke(() =>
                 {
                     //if (PM.PkgsToDownload.Count > 0)
-                        DownloadMissing.IsEnabled = true;
+                    DownloadMissing.IsEnabled = true;
                 });
                 PM.RunQueueWatcher();
             }).Start();
