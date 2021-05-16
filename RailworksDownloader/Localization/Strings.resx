@@ -474,6 +474,9 @@ Route: {1}</value>
   <data name="SerzUnkTypeFail" xml:space="preserve">
     <value>Unknown data type {0} at position {1}, step {2} in file {3}!</value>
   </data>
+  <data name="SerzWrongByteCount" xml:space="preserve">
+    <value>Unsupported number of bytes ({0}) per character on position {1}, step {2}, in file {3}!</value>
+  </data>
   <data name="SteamInitFail" xml:space="preserve">
     <value>Initialision of SteamManager failed!</value>
   </data>

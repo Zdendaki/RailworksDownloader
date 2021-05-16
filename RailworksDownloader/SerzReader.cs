@@ -201,6 +201,8 @@ namespace RailworksDownloader
 
         private ushort SIndex { get; set; }
 
+        private bool ReachedEndOfRecord { get; set; }
+
         private int DebugStep { get; set; }
 
         private string DebugFname { get; set; }
@@ -271,6 +273,9 @@ namespace RailworksDownloader
                                         break;
                                     }
                             }
+
+                            if (ReachedEndOfRecord)
+                                return;
                         }
                     }
                 }
@@ -339,7 +344,7 @@ namespace RailworksDownloader
                         continue;
                     }
 
-                    Trace.Assert(num_bytes == 3, string.Format("Unsupported number of bytes ({0}) per character on position {1}, step {2}, in file {3}!", num_bytes, br.BaseStream.Position, DebugStep, DebugFname));
+                    Trace.Assert(num_bytes == 3, string.Format(Localization.Strings.SerzWrongByteCount, num_bytes, br.BaseStream.Position, DebugStep, DebugFname));
 
                     byte[] bArr = br.ReadBytes(2);
 
@@ -604,6 +609,9 @@ namespace RailworksDownloader
 
                             CurrentXMLlevel--;
 
+                            if (string_id == 0)
+                                ReachedEndOfRecord = true;
+
                             break;
                         }
                     case Tag.Types.DataTag:
@@ -700,6 +708,10 @@ namespace RailworksDownloader
                         {
                             AllTags.Add(new EndTag(refTag.TagNameID));
                             CurrentXMLlevel--;
+
+                            if (refTag.TagNameID == 0)
+                                ReachedEndOfRecord = true;
+
                             break;
                         }
                     case Tag.Types.DataTag:

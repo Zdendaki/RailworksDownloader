@@ -43,7 +43,9 @@ namespace RailworksDownloader
                 AppManifestPath = GetAppManifestPath();
                 if (RWPath == null)
                     RWPath = GetRWInstallPath();
-                SteamFound = true;
+
+                if (RWPath != null)
+                    SteamFound = true;
             }
         }
 
@@ -58,7 +60,11 @@ namespace RailworksDownloader
             if (AppManifestPath == null)
                 return null;
 
-            return Path.Combine(Path.GetDirectoryName(AppManifestPath), "common", KeyValue.LoadAsText(AppManifestPath)["installdir"].Value);
+            KeyValue installDir = KeyValue.LoadAsText(AppManifestPath)["installdir"];
+            if (installDir == null || installDir.Value == null)
+                return null;
+
+            return Path.Combine(Path.GetDirectoryName(AppManifestPath), "common", installDir.Value);
         }
 
         public List<DLC> GetInstalledDLCFiles()

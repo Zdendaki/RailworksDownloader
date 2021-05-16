@@ -502,8 +502,12 @@ namespace RailworksDownloader
                 cmd.Parameters.AddWithValue("package_id", id);
                 foreach (string file in filesToAdd)
                 {
-                    cmd.Parameters.AddWithValue("file_name", file);
-                    cmd.ExecuteNonQuery();
+                    try
+                    {
+                        cmd.Parameters.AddWithValue("file_name", file);
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch { }
                 }
             }
         }

@@ -179,7 +179,7 @@ namespace RailworksDownloader
             return rel;
         }
 
-        public static Stream RemoveInvalidXmlChars(Stream istream)
+        public static MemoryStream RemoveInvalidXmlChars(MemoryStream istream)
         {
             byte[] buffer = StreamToByteArray(istream).Where(b => XmlConvert.IsXmlChar(Convert.ToChar(b))).ToArray();
 
@@ -234,6 +234,7 @@ namespace RailworksDownloader
 
             return true;
         }
+
         public static bool IsSuccessStatusCode(int statusCode)
         {
             return (statusCode >= 200) && (statusCode <= 299);
