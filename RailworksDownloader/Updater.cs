@@ -1,4 +1,5 @@
 ﻿using RailworksDownloader.Properties;
+using Sentry;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -25,7 +26,7 @@ namespace RailworksDownloader
             Task.Run(async () =>
             {
                 ObjectResult<AppVersionContent> jsonResult = await WebWrapper.GetAppVersion(apiUrl);
-                if (jsonResult != null && jsonResult.code > 0 && jsonResult.content.version_name != App.Version)
+                if (jsonResult != null && Utils.IsSuccessStatusCode(jsonResult.code) && jsonResult.content.version_name != App.Version)
                 {
                     isThereNewer = true;
                     UpdateUrl = new Uri(jsonResult.content.file_path);
@@ -51,17 +52,25 @@ namespace RailworksDownloader
                 OnDownloadProgressChanged?.Invoke(e.ProgressPercentage);
             };
 
-            string tempFname = Path.GetTempFileName();
-            await webClient.DownloadFileTaskAsync(UpdateUrl, tempFname);
-            OnDownloaded?.Invoke();
+            try
+            {
+                string tempFname = Path.GetTempFileName();
+                await webClient.DownloadFileTaskAsync(UpdateUrl, tempFname);
+                OnDownloaded?.Invoke();
 
-            Thread.Sleep(3000);
+                Thread.Sleep(3000);
 
-            string oldFilename = Assembly.GetExecutingAssembly().Location;
+                string oldFilename = Assembly.GetExecutingAssembly().Location;
 
-            string ps = Resources.UpdateScript.Replace("##01", tempFname).Replace("##02", oldFilename);
-            ExecuteCommand(ps);
-            Environment.Exit(0);
+                string ps = Resources.UpdateScript.Replace("##01", tempFname).Replace("##02", oldFilename);
+                ExecuteCommand(ps);
+                Environment.Exit(0);
+            }
+            catch (Exception e)
+            {
+                SentrySdk.CaptureException(e);
+                MessageBox.Show(Localization.Strings.UpdaterAdminDesc, Localization.Strings.ClientUpdateError, MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            }
         }
 
         private void ExecuteCommand(string command)
@@ -78,7 +87,7 @@ namespace RailworksDownloader
             }
             catch
             {
-                MessageBox.Show("You need to confirm administrator privileges to update Railworks Download Station.", "UAC required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                MessageBox.Show(Localization.Strings.UpdaterAdminDesc, Localization.Strings.UpdaterAdminTitle, MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 ExecuteCommand(command);
             }
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sentry;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -29,8 +30,12 @@ namespace RailworksDownloader
 
         internal static bool AutoDownload { get; set; } = true;
 
+        internal static IDisposable Sentry { get; set; }
+
         protected override void OnStartup(StartupEventArgs e)
         {
+            Sentry = SentrySdk.Init("https://b3e42d20f2524d6b9e71b51b446929e8@o572516.ingest.sentry.io/5722005");
+
             Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
             if (e.Args.Length > 0)
@@ -68,6 +73,12 @@ namespace RailworksDownloader
                 Default.UpgradeRequired = false;
                 Default.Save();
             }
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            Sentry.Dispose();
+            base.OnExit(e);
         }
     }
 }

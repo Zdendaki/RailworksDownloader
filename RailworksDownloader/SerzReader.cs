@@ -1,4 +1,4 @@
-﻿using SteamKit2;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -168,9 +168,32 @@ namespace RailworksDownloader
             public string Asset { get; set; }
         }
 
-        private const uint SERZ_MAGIC = 1515341139U;
+        private class SerzException: Exception
+        {
+            public long Position { get; set; }
+            public int Step { get; set; }
+            public string FileName { get; set; }
+
+            public SerzException(long position, int step, string fileName, string message, Exception innerException = null): base(message, innerException)
+            {
+                Position = position;
+                Step = step;
+                FileName = fileName;
+            }
+        }
+
+        public enum MODES
+        {
+            wholeFile = 0,
+            routeName = 1,
+        }
+
+        public const uint SERZ_MAGIC = 1515341139U;
         private const string XML_HEADER = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n";
         private const byte BINDEX_MAX = 0xFF;
+        private readonly MODES SERZ_MODE;
+
+        public string RouteName { get; set; } = string.Empty;
 
         private int CurrentXMLlevel { get; set; }
 
@@ -180,7 +203,12 @@ namespace RailworksDownloader
 
         private int DebugStep { get; set; }
 
-        private Stream InputStream { get; set; }
+        private string DebugFname { get; set; }
+
+        private bool AwaitDisplayName { get; set; } = false;
+
+        private MemoryStream InputStream { get; set; }
+
         private FileStream OutputStream { get; set; }
 
         private readonly string[] Strings = new string[0xFFFF];
@@ -191,15 +219,11 @@ namespace RailworksDownloader
 
         private readonly List<SerzDependency> Dependencies = new List<SerzDependency>();
 
-        public SerzReader(string inputFile)
-        {
-            InputStream = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
-            Deserialize();
-        }
-
-        public SerzReader(Stream fileStream)
+        public SerzReader(MemoryStream fileStream, string debugFname, MODES serzMode = MODES.wholeFile)
         {
             InputStream = fileStream;
+            DebugFname = debugFname;
+            SERZ_MODE = serzMode;
             Deserialize();
         }
 
@@ -237,13 +261,37 @@ namespace RailworksDownloader
                                 ParseExistingTag(cur_byte, ref binaryReader);
                             }
                             DebugStep++;
+
+                            switch (SERZ_MODE)
+                            {
+                                case MODES.routeName:
+                                    {
+                                        if (AwaitDisplayName && !string.IsNullOrWhiteSpace(RouteName))
+                                            return;
+                                        break;
+                                    }
+                            }
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
-                        Trace.Assert(false, $"Error when parsing bin file:\n{e}");
+                    if (!(e is ThreadInterruptedException) && !(e is ThreadAbortException))
+                    {
+                        SentrySdk.WithScope(scope =>
+                        {
+                            scope.AddAttachment(InputStream.ToArray(), DebugFname);
+                            SentrySdk.CaptureException(e);
+                        });
+                        if (e is SerzException)
+                        {
+                            Debug.Assert(false, e.Message);
+                        }
+                        else
+                        {
+                            Trace.Assert(false, string.Format(Localization.Strings.SerzCommonFail, DebugFname), e.ToString());
+                        }
+                    }
                 }
             }
         }
@@ -266,7 +314,10 @@ namespace RailworksDownloader
         {
             ushort string_id = br.ReadUInt16(); //read two bytes as short
 
-            Debug.Assert(string_id < SIndex || string_id == 0xFFFF, string.Format("Adding non loaded string id {0} at position {1}, step {2}!", string_id, br.BaseStream.Position, DebugStep));
+            if (string_id >= SIndex && string_id != 0xFFFF)
+            {
+                throw new SerzException(br.BaseStream.Position, DebugStep, DebugFname, string.Format(Localization.Strings.SerzNLoadStringFail, string_id, br.BaseStream.Position, DebugStep, DebugFname));
+            }
 
             Debug.Assert(Strings.Length != 41);
 
@@ -311,99 +362,78 @@ namespace RailworksDownloader
 
             DataTag dt;
 
-            switch (Strings[format_id])
+            string format = Strings[format_id];
+
+            switch (format)
             {
                 case "cDeltaString":
+                    dt = new DataTag(DataTag.DataTypes.String, ReadString(ref br), 0, tagName_id);
+                    string elemContent = Strings[dt.IntValue];
+                    if (!string.IsNullOrWhiteSpace(elemContent))
                     {
-                        dt = new DataTag(DataTag.DataTypes.String, ReadString(ref br), 0, tagName_id);
-                        string elemContent = Strings[dt.IntValue];
-                        if (!string.IsNullOrWhiteSpace(elemContent))
+                        switch (Strings[tagName_id])
                         {
-                            switch (Strings[tagName_id])
-                            {
-                                case "Provider":
-                                    {
-                                        Dependencies.Add(new SerzDependency());
-                                        Dependencies.Last().Provider = elemContent;
-                                        break;
-                                    }
-                                case "Product":
-                                    {
-                                        if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Product))
-                                            Dependencies.Last().Product = elemContent;
-                                        break;
-                                    }
-                                case "BlueprintID":
-                                    {
-                                        if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Asset))
-                                            Dependencies.Last().Asset = elemContent;
-                                        break;
-                                    }
-                            }
+                            case "Provider":
+                                Dependencies.Add(new SerzDependency());
+                                Dependencies.Last().Provider = elemContent;
+                                break;
+                            case "Product":
+                                if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Product))
+                                    Dependencies.Last().Product = elemContent;
+                                break;
+                            case "BlueprintID":
+                                if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Asset))
+                                    Dependencies.Last().Asset = elemContent;
+                                break;
+                            case "English":
+                            case "French":
+                            case "Italian":
+                            case "German":
+                            case "Spanish":
+                            case "Dutch":
+                            case "Polish":
+                            case "Russian":
+                                if (AwaitDisplayName)
+                                    RouteName = elemContent;
+                                break;
                         }
-                        break;
                     }
+                    break;
                 case "sInt64":
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Int64, (ulong)(br.ReadInt64() - long.MinValue), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Int64, (ulong)(br.ReadInt64() - long.MinValue), 0, tagName_id);
+                    break;
                 case "sInt32":
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Int32, (ulong)(br.ReadInt32() - long.MinValue), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Int32, (ulong)(br.ReadInt32() - long.MinValue), 0, tagName_id);
+                    break;
                 case "sInt16":
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Int16, (ulong)(br.ReadInt16() - long.MinValue), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Int16, (ulong)(br.ReadInt16() - long.MinValue), 0, tagName_id);
+                    break;
                 case "sInt8":
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Int8, (ulong)(br.ReadSByte() - long.MinValue), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Int8, (ulong)(br.ReadSByte() - long.MinValue), 0, tagName_id);
+                    break;
                 case "sUInt64":
-                    {
-                        dt = new DataTag(DataTag.DataTypes.UInt64, br.ReadUInt64(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.UInt64, br.ReadUInt64(), 0, tagName_id);
+                    break;
                 case "sUInt32":
-                    {
-                        dt = new DataTag(DataTag.DataTypes.UInt32, br.ReadUInt32(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.UInt32, br.ReadUInt32(), 0, tagName_id);
+                    break;
                 case "sUInt16":
-                    {
-                        dt = new DataTag(DataTag.DataTypes.UInt16, br.ReadUInt16(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.UInt16, br.ReadUInt16(), 0, tagName_id);
+                    break;
                 case "sUInt8":
-                    {
-                        dt = new DataTag(DataTag.DataTypes.UInt8, br.ReadByte(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.UInt8, br.ReadByte(), 0, tagName_id);
+                    break;
                 case "bool":
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Boolean, br.ReadByte(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Boolean, br.ReadByte(), 0, tagName_id);
+                    break;
                 case "sFloat32":
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Float32, br.ReadSingle(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Float32, br.ReadSingle(), 0, tagName_id);
+                    break;
                 case "sFloat64":
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Float64, br.ReadDouble(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Float64, br.ReadDouble(), 0, tagName_id);
+                    break;
                 default:
-                    {
-                        Debug.Assert(false, string.Format("Unknown data type {0} at position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
-                        return;
-                        //throw new Exception(string.Format("Unknown data type {0} at position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
-                    }
+                    throw new SerzException(br.BaseStream.Position, DebugStep, DebugFname, string.Format(Localization.Strings.SerzUnkFormatFail, format, br.BaseStream.Position, DebugStep, DebugFname));
             }
 
             BinTags[BIndex % BINDEX_MAX] = dt;
@@ -422,95 +452,73 @@ namespace RailworksDownloader
             switch (format_id)
             {
                 case DataTag.DataTypes.String:
+                    dt = new DataTag(DataTag.DataTypes.String, ReadString(ref br), 0, tagName_id);
+                    string elemContent = Strings[dt.IntValue];
+                    if (!string.IsNullOrWhiteSpace(elemContent))
                     {
-                        dt = new DataTag(DataTag.DataTypes.String, ReadString(ref br), 0, tagName_id);
-                        string elemContent = Strings[dt.IntValue];
-                        if (!string.IsNullOrWhiteSpace(elemContent))
+                        switch (Strings[tagName_id])
                         {
-                            switch (Strings[tagName_id])
-                            {
-                                case "Provider":
-                                    {
-                                        Dependencies.Add(new SerzDependency());
-                                        Dependencies.Last().Provider = elemContent;
-                                        break;
-                                    }
-                                case "Product":
-                                    {
-                                        if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Product))
-                                            Dependencies.Last().Product = elemContent;
-                                        break;
-                                    }
-                                case "BlueprintID":
-                                    {
-                                        if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Asset))
-                                            Dependencies.Last().Asset = elemContent;
-                                        break;
-                                    }
-                            }
+                            case "Provider":
+                                Dependencies.Add(new SerzDependency());
+                                Dependencies.Last().Provider = elemContent;
+                                break;
+                            case "Product":
+                                if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Product))
+                                    Dependencies.Last().Product = elemContent;
+                                break;
+                            case "BlueprintID":
+                                if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Asset))
+                                    Dependencies.Last().Asset = elemContent;
+                                break;
+                            case "English":
+                            case "French":
+                            case "Italian":
+                            case "German":
+                            case "Spanish":
+                            case "Dutch":
+                            case "Polish":
+                            case "Russian":
+                                if (AwaitDisplayName)
+                                    RouteName = elemContent;
+                                break;
                         }
-                        break;
                     }
+                    break;
                 case DataTag.DataTypes.Int64:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Int64, (ulong)(br.ReadInt64() - long.MinValue), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Int64, (ulong)(br.ReadInt64() - long.MinValue), 0, tagName_id);
+                    break;
                 case DataTag.DataTypes.Int32:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Int32, (ulong)(br.ReadInt32() - long.MinValue), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Int32, (ulong)(br.ReadInt32() - long.MinValue), 0, tagName_id);
+                    break;
                 case DataTag.DataTypes.Int16:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Int16, (ulong)(br.ReadInt16() - long.MinValue), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Int16, (ulong)(br.ReadInt16() - long.MinValue), 0, tagName_id);
+                    break;
                 case DataTag.DataTypes.Int8:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Int8, (ulong)(br.ReadSByte() - long.MinValue), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Int8, (ulong)(br.ReadSByte() - long.MinValue), 0, tagName_id);
+                    break;
                 case DataTag.DataTypes.UInt64:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.UInt64, br.ReadUInt64(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.UInt64, br.ReadUInt64(), 0, tagName_id);
+                    break;
                 case DataTag.DataTypes.UInt32:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.UInt32, br.ReadUInt32(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.UInt32, br.ReadUInt32(), 0, tagName_id);
+                    break;
                 case DataTag.DataTypes.UInt16:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.UInt16, br.ReadUInt16(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.UInt16, br.ReadUInt16(), 0, tagName_id);
+                    break;
                 case DataTag.DataTypes.UInt8:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.UInt8, br.ReadByte(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.UInt8, br.ReadByte(), 0, tagName_id);
+                    break;
                 case DataTag.DataTypes.Boolean:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Boolean, br.ReadByte(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Boolean, br.ReadByte(), 0, tagName_id);
+                    break;
                 case DataTag.DataTypes.Float32:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Float32, br.ReadSingle(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Float32, br.ReadSingle(), 0, tagName_id);
+                    break;
                 case DataTag.DataTypes.Float64:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Float64, br.ReadDouble(), 0, tagName_id);
-                        break;
-                    }
+                    dt = new DataTag(DataTag.DataTypes.Float64, br.ReadDouble(), 0, tagName_id);
+                    break;
                 default:
-                    {
-                        dt = new DataTag(DataTag.DataTypes.Boolean, 0, 0, tagName_id);
-                        break;
-                    }
+                    throw new SerzException(br.BaseStream.Position, DebugStep, DebugFname, string.Format(Localization.Strings.SerzUnkTagFormFail, format_id, br.BaseStream.Position, DebugStep, DebugFname));
             }
 
             AllTags.Add(dt);
@@ -521,7 +529,9 @@ namespace RailworksDownloader
             ushort tagName_id = ReadString(ref br); //reads name of tag
             ushort format_id = ReadString(ref br); //reads format of saved data
 
-            Debug.Assert(Strings[format_id] == "sFloat32", string.Format("Unknown format {0} in mattrice on position {1}, step {2}!", Strings[format_id], br.BaseStream.Position, DebugStep));
+            string format = Strings[format_id];
+            if (format != "sFloat32")
+                throw new SerzException(br.BaseStream.Position, DebugStep, DebugFname, string.Format(Localization.Strings.SerzUnkFormatFail, format, br.BaseStream.Position, DebugStep, DebugFname));
 
             ushort num_elements = br.ReadByte();
             float[] elements = new float[num_elements];
@@ -558,103 +568,111 @@ namespace RailworksDownloader
         {
             Tag.Types command_type = (Tag.Types)br.ReadByte(); //read command byte
 
-            switch (command_type)
+            try 
             {
-                case Tag.Types.OpenTag:
-                    {
-                        ushort tagName_id = ReadString(ref br); //reads name of tag
-                        int node_id = br.ReadInt32(); //gets node id
-                        int node_type = br.ReadInt32(); //gets node type
-
-                        StartTag st = new StartTag(node_id, node_type, tagName_id);
-
-                        BinTags[BIndex % BINDEX_MAX] = st;
-                        AllTags.Add(st);
-
-                        CurrentXMLlevel++;
-
-                        break;
-                    }
-                case Tag.Types.CloseTag:
-                    {
-                        ushort string_id = br.ReadUInt16(); //read two bytes as short
-
-                        EndTag et = new EndTag(string_id);
-
-                        BinTags[BIndex % BINDEX_MAX] = et;
-                        AllTags.Add(et);
-
-                        CurrentXMLlevel--;
-
-                        break;
-                    }
-                case Tag.Types.DataTag:
-                    {
-                        ParseNewDataTag(ref br);
-                        break;
-                    }
-                case Tag.Types.MatrixTag:
-                    {
-                        ParseNewMatrixTag(ref br);
-                        break;
-                    }
-                case Tag.Types.NilTag:
-                    {
-                        NilTag nt = new NilTag();
-
-                        BinTags[BIndex % BINDEX_MAX] = nt;
-                        AllTags.Add(nt);
-
-                        break;
-                    }
-                case Tag.Types.RefTag:
-                    {
-                        ushort tagName_id = ReadString(ref br);
-                        int node_id = br.ReadInt32();
-
-                        RefTag rt = new RefTag(node_id, tagName_id);
-
-                        BinTags[BIndex % BINDEX_MAX] = rt;
-                        AllTags.Add(rt);
-
-                        break;
-                    }
-                case Tag.Types.MagicTag:
-                    {
-                        byte unknown_byte = br.ReadByte();
-                        uint unknown_uint = br.ReadUInt32();
-
-                        MagicTag mt = new MagicTag(unknown_byte, unknown_uint);
-
-                        BinTags[BIndex % BINDEX_MAX] = mt;
-
-                        //Debug.Assert(false, string.Format("Magic tag at level {0}, byte {1}, uint {2}, BIndex {3}!!!", CurrentXMLlevel, unknown_byte, unknown_uint, BIndex % BINDEX_MAX));
-
-                        break;
-                    }
-                case Tag.Types.BlobTag:
-                    {
-                        uint blobSize = br.ReadUInt32();
-                        byte[] blobData = new byte[blobSize];
-
-                        for (int i = 0; i < Math.Ceiling((double)blobSize / int.MaxValue); i++)
+                switch (command_type)
+                {
+                    case Tag.Types.OpenTag:
                         {
-                            int buffer_size = (int)Math.Min(blobSize - int.MaxValue * i, int.MaxValue);
-                            byte[] buffer = br.ReadBytes(buffer_size);
-                            Array.Copy(buffer, 0, blobData, int.MaxValue * i, buffer_size);
+                            ushort tagName_id = ReadString(ref br); //reads name of tag
+                            int node_id = br.ReadInt32(); //gets node id
+                            int node_type = br.ReadInt32(); //gets node type
+
+                            StartTag st = new StartTag(node_id, node_type, tagName_id);
+
+                            BinTags[BIndex % BINDEX_MAX] = st;
+                            AllTags.Add(st);
+
+                            CurrentXMLlevel++;
+
+                            if (Strings[tagName_id] == "DisplayName")
+                                AwaitDisplayName = true;
+
+                            break;
                         }
+                    case Tag.Types.CloseTag:
+                        {
+                            ushort string_id = br.ReadUInt16(); //read two bytes as short
 
-                        BlobTag bt = new BlobTag(blobSize, blobData);
+                            EndTag et = new EndTag(string_id);
 
-                        BinTags[BIndex % BINDEX_MAX] = bt;
-                        AllTags.Add(bt);
+                            BinTags[BIndex % BINDEX_MAX] = et;
+                            AllTags.Add(et);
 
-                        break;
-                    }
-                default:
-                    Debug.Assert(false, string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
-                    break;
-                    //throw new Exception(string.Format("Unknown tag format {0} at position {1}, step {2}!", command_type, br.BaseStream.Position, DebugStep));
+                            CurrentXMLlevel--;
+
+                            break;
+                        }
+                    case Tag.Types.DataTag:
+                        {
+                            ParseNewDataTag(ref br);
+                            break;
+                        }
+                    case Tag.Types.MatrixTag:
+                        {
+                            ParseNewMatrixTag(ref br);
+                            break;
+                        }
+                    case Tag.Types.NilTag:
+                        {
+                            NilTag nt = new NilTag();
+
+                            BinTags[BIndex % BINDEX_MAX] = nt;
+                            AllTags.Add(nt);
+
+                            break;
+                        }
+                    case Tag.Types.RefTag:
+                        {
+                            ushort tagName_id = ReadString(ref br);
+                            int node_id = br.ReadInt32();
+
+                            RefTag rt = new RefTag(node_id, tagName_id);
+
+                            BinTags[BIndex % BINDEX_MAX] = rt;
+                            AllTags.Add(rt);
+
+                            break;
+                        }
+                    case Tag.Types.MagicTag:
+                        {
+                            byte unknown_byte = br.ReadByte();
+                            uint unknown_uint = br.ReadUInt32();
+
+                            MagicTag mt = new MagicTag(unknown_byte, unknown_uint);
+
+                            BinTags[BIndex % BINDEX_MAX] = mt;
+
+                            //Debug.Assert(false, string.Format("Magic tag at level {0}, byte {1}, uint {2}, BIndex {3}!!!", CurrentXMLlevel, unknown_byte, unknown_uint, BIndex % BINDEX_MAX));
+
+                            break;
+                        }
+                    case Tag.Types.BlobTag:
+                        {
+                            uint blobSize = br.ReadUInt32();
+                            byte[] blobData = new byte[blobSize];
+
+                            for (int i = 0; i < Math.Ceiling((double)blobSize / int.MaxValue); i++)
+                            {
+                                int buffer_size = (int)Math.Min(blobSize - int.MaxValue * i, int.MaxValue);
+                                byte[] buffer = br.ReadBytes(buffer_size);
+                                Array.Copy(buffer, 0, blobData, int.MaxValue * i, buffer_size);
+                            }
+
+                            BlobTag bt = new BlobTag(blobSize, blobData);
+
+                            BinTags[BIndex % BINDEX_MAX] = bt;
+                            AllTags.Add(bt);
+
+                            break;
+                        }
+                    default:
+                        throw new SerzException(br.BaseStream.Position, DebugStep, DebugFname, string.Format(Localization.Strings.SerzUnkTagFormFail, command_type, br.BaseStream.Position, DebugStep, DebugFname));
+                }
+            }
+            catch (Exception e)
+            {
+                throw new SerzException(br.BaseStream.Position, DebugStep, DebugFname, string.Format(Localization.Strings.SerzParseNewTagFail, br.BaseStream.Position, DebugStep, DebugFname), e);
             }
         }
 
@@ -739,9 +757,9 @@ namespace RailworksDownloader
                         }
                 }
             }
-            catch
+            catch (Exception e)
             {
-                Debug.Assert(false, $"Unable to parse position {br.BaseStream.Position}!");
+                throw new SerzException(br.BaseStream.Position, DebugStep, DebugFname, string.Format(Localization.Strings.SerzParseExTagFail, br.BaseStream.Position, DebugStep, DebugFname), e);
             }
 
         }
@@ -774,7 +792,7 @@ namespace RailworksDownloader
                 Tag currentTag = AllTags[i];
                 Tag nextTag = i + 1 < AllTags.Count ? AllTags[i + 1] : null;
 
-                Debug.Assert(currentTag.TagNameID < SIndex, $"Attempted to flush unreaded string!");
+                Debug.Assert(currentTag.TagNameID < SIndex, string.Format(Localization.Strings.SerzFlushNStringFail, currentTag.TagNameID, DebugStep, DebugFname));
 
                 if (i == 0)
                 {

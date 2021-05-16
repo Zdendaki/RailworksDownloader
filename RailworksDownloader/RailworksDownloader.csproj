@@ -47,7 +47,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>none</DebugType>
+    <DebugType>embedded</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -55,6 +55,7 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>true</Prefer32Bit>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>RailworksDownloader.App</StartupObject>
@@ -109,6 +110,10 @@
       <DependentUpon>ConflictPackageDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Dependency.cs" />
+    <Compile Include="DependencyDetailsWindow.xaml.cs">
+      <DependentUpon>DependencyDetailsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DependencyPackage.cs" />
     <Compile Include="DependencyWindow.xaml.cs">
       <DependentUpon>DependencyWindow.xaml</DependentUpon>
     </Compile>
@@ -117,12 +122,32 @@
     </Compile>
     <Compile Include="Extensions.cs" />
     <Compile Include="LoadedRoute.cs" />
+    <Compile Include="Localization\Strings.de.Designer.cs">
+      <DependentUpon>Strings.de.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="Localization\Strings.pl.Designer.cs">
+      <DependentUpon>Strings.pl.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="Localization\Strings.Designer.cs">
+      <DependentUpon>Strings.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
     <Compile Include="LoginDialog.xaml.cs">
       <DependentUpon>LoginDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="PackageManager.cs" />
     <Compile Include="PackageManagerWindow.xaml.cs">
       <DependentUpon>PackageManagerWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Localization\Strings.cs.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Strings.cs.resx</DependentUpon>
     </Compile>
     <Compile Include="Railworks.cs" />
     <Compile Include="InstallPackageDialog.xaml.cs">
@@ -136,11 +161,20 @@
     <Compile Include="SerzReader.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="SqLiteAdapter.cs" />
+    <Compile Include="SQLqueries.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SQLqueries.resx</DependentUpon>
+    </Compile>
     <Compile Include="SteamManager.cs" />
     <Compile Include="Updater.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="WebWrapper.cs" />
     <Page Include="ConflictPackageDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DependencyDetailsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -195,9 +229,32 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <EmbeddedResource Include="Localization\Strings.de.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.de.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Localization\Strings.pl.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.pl.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Localization\Strings.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Localization\Strings.cs.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.cs.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SQLqueries.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SQLqueries.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="app.manifest" />
     <None Include="Properties\Settings.settings">
@@ -210,19 +267,25 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Costura.Fody">
-      <Version>4.1.0</Version>
+      <Version>5.2.0</Version>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Fody">
-      <Version>6.3.0</Version>
+      <Version>6.5.1</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="ModernWpfUI">
-      <Version>0.9.3</Version>
+      <Version>0.9.4</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>12.0.3</Version>
+      <Version>13.0.1</Version>
+    </PackageReference>
+    <PackageReference Include="Resource.Embedder">
+      <Version>2.1.1</Version>
+    </PackageReference>
+    <PackageReference Include="Sentry">
+      <Version>3.3.1</Version>
     </PackageReference>
     <PackageReference Include="SharpZipLib">
       <Version>1.3.1</Version>

@@ -35,7 +35,7 @@ namespace RailworksDownloader
             {
                 Filter = "RailWorks|RailWorks.exe",
                 FileName = "RailWorks.exe",
-                Title = "Select RailWorks installation path"
+                Title = Localization.Strings.SelectRWPathTitle
             };
 
             if (ofd.ShowDialog() == true)
@@ -44,7 +44,7 @@ namespace RailworksDownloader
             }
         }
 
-        private void DefaultButton_Click(object sender, RoutedEventArgs e)
+        private void AutoButton_Click(object sender, RoutedEventArgs e)
         {
             UserPath.Text = App.SteamManager.RWPath;
         }

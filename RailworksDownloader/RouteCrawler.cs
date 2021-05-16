@@ -1,4 +1,5 @@
 ﻿using ICSharpCode.SharpZipLib.Zip;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -32,6 +33,14 @@ namespace RailworksDownloader
         private LoadedRoute SavedRoute;
         // Database adapter
         private readonly SqLiteAdapter Adapter;
+
+        private bool APchanged { get; set; }
+        private bool LoftsChanged { get; set; }
+        private bool RoadsChanged { get; set; }
+        private bool TracksChanged { get; set; }
+        private bool SceneryChanged { get; set; }
+        private bool RPchanged { get; set; }
+        private bool ScenariosChanged { get; set; }
 
         /// <summary>
         /// Is route from asset pack
@@ -78,7 +87,7 @@ namespace RailworksDownloader
             Dependencies = dependencies;
             ScenarioDeps = scenarioDeps;
             Adapter = new SqLiteAdapter(Path.Combine(RoutePath, "cache.dls"));
-            SavedRoute = Adapter.LoadSavedRoute(ContainsAP);
+            SavedRoute = Adapter.LoadSavedRoute();
         }
 
         public string GetTemporaryDirectory()
@@ -110,7 +119,10 @@ namespace RailworksDownloader
                     catch (Exception e)
                     {
                         if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
-                            Trace.Assert(false, $"Error when crawling route \"{RoutePath}\":\n{e}");
+                        {
+                            SentrySdk.CaptureException(e);
+                            Trace.Assert(false, string.Format(Localization.Strings.CrawlingRouteFail, RoutePath), e.ToString());
+                        }
                     }
 
                     // If crawling skipped because cache or inaccuracy, adds to 100 %
@@ -131,6 +143,7 @@ namespace RailworksDownloader
         /// Report route progress
         /// </summary>
         /// <param name="file"></param>
+        /// <returns></returns>
         private void ReportProgress(string file)
         {
             ReportProgress(GetFileSize(file));
@@ -144,7 +157,7 @@ namespace RailworksDownloader
                 Progress += fsize;
             }
 
-            Debug.Assert(Progress <= AllFilesSize, "Fatal, Progress is bigger than size of all files! " + Progress + ":" + AllFilesSize + "\nRoute: " + RoutePath);
+            Debug.Assert(Progress <= AllFilesSize, string.Format(Localization.Strings.ProgressFail, Progress, AllFilesSize, RoutePath));
             if (Progress <= AllFilesSize)
             {
 
@@ -166,116 +179,84 @@ namespace RailworksDownloader
         }
 
         /// <summary>
-        /// Parse blueprint ID node
+        /// Get single file dependencies
         /// </summary>
-        /// <param name="blueprintIDNode">Blueprint node</param>
-        /// <returns>Parsed node</returns>
-        private string ParseAbsoluteBlueprintIDNode(XmlNode blueprintIDNode)
+        /// <param name="blueprintPath">Route properties path</param>
+        /// <returns></returns>
+        private async Task GetSingleFileDependencies(string blueprintPath)
         {
-            if (blueprintIDNode != null)
-            {
-                XmlNode absoluteBlueprintID = blueprintIDNode.FirstChild;
-                XmlNode blueprintSetID = absoluteBlueprintID.FirstChild.FirstChild;
-                string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
-                if (string.IsNullOrWhiteSpace(fname) || !(Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
-                    return string.Empty;
-                return NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname));
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Parse skies node
-        /// </summary>
-        /// <param name="skiesNode">Skies node</param>
-        /// <returns>Parsed node</returns>
-        private IEnumerable<string> ParseSkiesNode(XmlNode skiesNode)
-        {
-            foreach (XmlNode n in skiesNode.FirstChild)
-            {
-                yield return ParseAbsoluteBlueprintIDNode(n);
-            }
-        }
-
-        /// <summary>
-        /// Get all route properties dependencies
-        /// </summary>
-        /// <param name="propertiesPath">Route properties path</param>
-        /// <returns>All route properties dependencies</returns>
-        private async Task<List<string>> GetRoutePropertiesDependencies(string propertiesPath)
-        {
-            // Check if route properties exists
-            if (!File.Exists(propertiesPath))
-                return new List<string>();
-
-            List<string> dependencies = new List<string>();
-
-            // Load route properties file
-            XmlDocument doc = new XmlDocument();
-
-            doc.Load(XmlReader.Create(RemoveInvalidXmlChars(propertiesPath), new XmlReaderSettings() { CheckCharacters = false }));
-
-            XmlElement root = doc.DocumentElement;
-
-            // Parse route properties entries
             await Task.Run(() =>
             {
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("BlueprintID"))));
-                dependencies.AddRange(ParseSkiesNode(root.SelectSingleNode("Skies")));
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("WeatherBlueprint"))));
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("TerrainBlueprint"))));
-                dependencies.Add(NormalizePath(ParseAbsoluteBlueprintIDNode(root.SelectSingleNode("MapBlueprint"))));
+                // Check if route properties exists
+                if (File.Exists(blueprintPath))
+                {
+                    using (Stream fs = File.OpenRead(blueprintPath))
+                    {
+                        ParseBlueprint(fs, blueprintPath);
+                    }
+                }
             });
-
-            ReportProgress(propertiesPath);
-
-            return dependencies;
         }
 
         /// <summary>
         /// Parse blueprint file
         /// </summary>
         /// <param name="blueprintPath">Blueprint file path</param>
-        /// <returns>Parsed file</returns>
+        /// <param name="isScenario">Is scenario file</param>
+        /// <returns></returns>
         private void ParseBlueprint(string blueprintPath, bool isScenario = false)
         {
-            if (!File.Exists(blueprintPath))
-                return;
-
-            // Load blueprint file
-            XmlDocument doc = new XmlDocument();
-
-            try
+            // Check if blueprint exists
+            if (File.Exists(blueprintPath))
             {
-                doc.Load(XmlReader.Create(RemoveInvalidXmlChars(blueprintPath), new XmlReaderSettings() { CheckCharacters = false }));
-            }
-            catch
-            {
-                return;
-            }
-
-            // Parse blueprint file
-            //Parallel.ForEach(Routes, (ri) => ri.Crawler.Start());
-            foreach (XmlNode node in doc.SelectNodes("//Provider").Cast<XmlNode>().ToArray())
-            {
-                XmlNode blueprintSetID = node.ParentNode;
-                XmlNode absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
-                string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
-                if (!string.IsNullOrWhiteSpace(fname) && (Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
+                using (Stream fs = File.OpenRead(blueprintPath))
                 {
-                    if (isScenario)
-                        lock (ScenarioDeps)
-                            ScenarioDeps.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
-                    else
-                        lock (Dependencies)
-                            Dependencies.Add(NormalizePath(Path.Combine(blueprintSetID.FirstChild.InnerText, blueprintSetID.LastChild.InnerText, fname)));
+                    ParseBlueprint(fs, blueprintPath, isScenario);
                 }
             }
         }
 
-        private void ParseBlueprint(Stream stream, bool isScenario = false)
+        /// <summary>
+        /// Parse blueprint file
+        /// </summary>
+        /// <param name="stream">Blueprint stream</param>
+        /// <param name="isScenario">Is scenario file</param>
+        /// <returns></returns>
+        private void ParseBlueprint(Stream istream, string debugFname, bool isScenario = false)
         {
+            MemoryStream stream = new MemoryStream();
+            istream.CopyTo(stream);
+            istream.Close();
+            stream.Seek(0, SeekOrigin.Begin);
 
+            if (stream.Length > 4)
+            {
+                if (Utils.CheckIsSerz(stream))
+                {
+                    SerzReader sr = new SerzReader(stream, debugFname);
+
+                    if (isScenario)
+                        lock (ScenarioDeps)
+                            ScenarioDeps.UnionWith(sr.GetDependencies());
+                    else
+                        lock (Dependencies)
+                            Dependencies.UnionWith(sr.GetDependencies());
+                }
+                else
+                {
+                    ParseXMLBlueprint(stream, isScenario);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Parse XML blueprint file
+        /// </summary>
+        /// <param name="stream">XML blueprint stream</param>
+        /// <param name="isScenario">Is scenario file</param>
+        /// <returns></returns>
+        private void ParseXMLBlueprint(Stream stream, bool isScenario = false)
+        {
             // Load blueprint file
             XmlDocument doc = new XmlDocument();
 
@@ -283,8 +264,9 @@ namespace RailworksDownloader
             {
                 doc.Load(XmlReader.Create(RemoveInvalidXmlChars(stream), new XmlReaderSettings() { CheckCharacters = false }));
             }
-            catch
+            catch (Exception e)
             {
+                SentrySdk.CaptureException(e);
                 return;
             }
 
@@ -293,7 +275,8 @@ namespace RailworksDownloader
                 XmlNode blueprintSetID = node.ParentNode;
                 XmlNode absoluteBlueprintID = blueprintSetID.ParentNode.ParentNode;
                 string fname = absoluteBlueprintID.LastChild.InnerText.ToLower();
-                if (!string.IsNullOrWhiteSpace(fname) && (Path.GetExtension(fname) == ".xml" || Path.GetExtension(fname) == ".bin"))
+                string ext = Path.GetExtension(fname).ToLower();
+                if (!string.IsNullOrWhiteSpace(fname) && (ext == ".xml" || ext == ".bin"))
                 {
                     if (isScenario)
                         lock (ScenarioDeps)
@@ -326,19 +309,9 @@ namespace RailworksDownloader
                         foreach (string file in Directory.GetFiles(dirs[i], "*", SearchOption.AllDirectories))
                         {
                             string ext = Path.GetExtension(file).ToLower();
-                            if (ext == ".bin")
-                            {
-                                SerzReader sr = new SerzReader(file);
-
-                                lock (ScenarioDeps)
-                                    ScenarioDeps.UnionWith(sr.GetDependencies());
-
-                                ReportProgress(file);
-                            }
-                            else if (ext == ".xml")
+                            if (ext == ".xml" || ext == ".bin")
                             {
                                 ParseBlueprint(file, true);
-
                                 ReportProgress(file);
                             }
                         }
@@ -348,59 +321,35 @@ namespace RailworksDownloader
         }
 
         /// <summary>
-        /// Get network dependencies
+        /// Get tiles dependencies
         /// </summary>
-        /// <param name="path">Network directory path</param>
+        /// <param name="path">Directory path</param>
         /// <returns></returns>
-        private async Task GetNetworkDependencies(string dir)
+        private async Task GetTilesDependencies(string dir)
         {
             await Task.Run(() =>
             {
-                // Foreach all Network files
-                foreach (string file in Directory.GetFiles(dir, "*.bin"))
+                // Foreach all tiles files
+                foreach (string file in Directory.GetFiles(dir))
                 {
-                    SerzReader sr = new SerzReader(file);
-
-                    lock (Dependencies)
-                        Dependencies.UnionWith(sr.GetDependencies());
-
-                    ReportProgress(file);
-                }
-            });
-        }
-
-        /// <summary>
-        /// Get scenery depencencies
-        /// </summary>
-        /// <param name="path">Route scenery directory</param>
-        /// <returns></returns>
-        private async Task GetSceneryDependencies(string path)
-        {
-            await Task.Run(() =>
-            {
-                // Foreach all Network files
-                foreach (string file in Directory.GetFiles(path, "*.bin"))
-                {
-                    SerzReader sr = new SerzReader(file);
-
-                    lock (Dependencies)
-                        Dependencies.UnionWith(sr.GetDependencies());
-
-                    ReportProgress(file);
+                    string ext = Path.GetExtension(file).ToLower();
+                    if (ext == ".xml" || ext == ".bin")
+                    {
+                        ParseBlueprint(file);
+                        ReportProgress(file);
+                    }
                 }
             });
         }
 
         private async Task GetDependenciesInternal()
         {
-            bool loftsChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Loft Tiles")) != SavedRoute.LoftChecksum;
-            bool roadsChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Road Tiles")) != SavedRoute.RoadChecksum;
-            bool tracksChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Track Tiles")) != SavedRoute.TrackChecksum;
-            bool sceneryChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Scenery")) != SavedRoute.SceneryChecksum;
-            bool rpChanged = GetFileMD5(Path.Combine(RoutePath, "RouteProperties.xml")) != SavedRoute.RoutePropertiesChecksum;
-            bool scenariosChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Scenarios")) != SavedRoute.ScenariosChecksum;
-
-            Task md5 = ComputeChecksums();
+            /*bool loftsChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Loft Tiles"), ref SavedRoute.LoftLastWrite, ref SavedRoute.LoftChecksum);
+            bool roadsChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Road Tiles"), ref SavedRoute.RoadLastWrite, ref SavedRoute.LoftChecksum);
+            bool tracksChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Track Tiles"), ref SavedRoute.TrackLastWrite, ref SavedRoute.TrackChecksum);
+            bool sceneryChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Scenery"), ref SavedRoute.SceneryLastWrite, ref SavedRoute.SceneryChecksum);
+            bool rpChanged = GetFileChanged(Path.Combine(RoutePath, "RouteProperties.xml"), ref SavedRoute.RoutePropertiesLastWrite, ref SavedRoute.RoutePropertiesChecksum);
+            bool scenariosChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Scenarios"), ref SavedRoute.ScenariosLastWrite, ref SavedRoute.ScenariosChecksum);*/
 
             lock (Dependencies)
             {
@@ -413,17 +362,17 @@ namespace RailworksDownloader
                         ScenarioDeps.UnionWith(SavedRoute.ScenarioDeps);
             }
 
-            if (loftsChanged || roadsChanged || tracksChanged || sceneryChanged || rpChanged || scenariosChanged)
+            if (LoftsChanged || RoadsChanged || TracksChanged || SceneryChanged || RPchanged || ScenariosChanged)
             {
                 Task n1 = null;
                 Task n2 = null;
                 Task n3 = null;
                 Task s = null;
                 Task t = null;
-                Task<List<string>> prop = null;
+                Task prop = null;
 
-                if (rpChanged)
-                    prop = GetRoutePropertiesDependencies(Path.Combine(RoutePath, "RouteProperties.xml"));
+                if (RPchanged)
+                    prop = GetSingleFileDependencies(Utils.FindFile(RoutePath, "RouteProperties.*"));
 
                 Parallel.ForEach(Directory.GetDirectories(RoutePath), dir =>
                 {
@@ -436,27 +385,27 @@ namespace RailworksDownloader
                                 switch (Path.GetFileName(network_dir).ToLower())
                                 {
                                     case "loft tiles":
-                                        if (loftsChanged)
-                                            n1 = GetNetworkDependencies(network_dir);
+                                        if (LoftsChanged)
+                                            n1 = GetTilesDependencies(network_dir);
                                         break;
                                     case "road tiles":
-                                        if (roadsChanged)
-                                            n2 = GetNetworkDependencies(network_dir);
+                                        if (RoadsChanged)
+                                            n2 = GetTilesDependencies(network_dir);
                                         break;
                                     case "track tiles":
-                                        if (tracksChanged)
-                                            n3 = GetNetworkDependencies(network_dir);
+                                        if (TracksChanged)
+                                            n3 = GetTilesDependencies(network_dir);
                                         break;
                                 }
                             });
                             break;
                         case "scenarios":
-                            if (scenariosChanged)
+                            if (ScenariosChanged)
                                 s = GetScenariosDependencies(dir);
                             break;
                         case "scenery":
-                            if (sceneryChanged)
-                                t = GetSceneryDependencies(dir);
+                            if (SceneryChanged)
+                                t = GetTilesDependencies(dir);
                             break;
                     }
                 });
@@ -471,18 +420,9 @@ namespace RailworksDownloader
                     await s;
                 if (t != null)
                     await t;
-
-                List<string> routeProperties = new List<string>();
                 if (prop != null)
-                {
-                    routeProperties = await prop;
-
-                    lock (Dependencies)
-                        Dependencies.UnionWith(routeProperties);
-                }
+                    await prop;
             }
-
-            await md5;
 
             SavedRoute.Dependencies = Dependencies;
             SavedRoute.ScenarioDeps = ScenarioDeps;
@@ -498,45 +438,16 @@ namespace RailworksDownloader
             tt.Start();
         }
 
-        private async Task ComputeChecksums()
-        {
-            await Task.Run(() =>
-            {
-                if (ContainsAP)
-                    SavedRoute.APChecksum = GetDirectoryMD5(RoutePath, true);
-                SavedRoute.RoutePropertiesChecksum = GetFileMD5(Path.Combine(RoutePath, "RouteProperties.xml"));
-                SavedRoute.LoftChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Loft Tiles"));
-                SavedRoute.RoadChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Road Tiles"));
-                SavedRoute.TrackChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Track Tiles"));
-                SavedRoute.SceneryChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Scenery"));
-                SavedRoute.ScenariosChecksum = GetDirectoryMD5(Path.Combine(RoutePath, "Scenarios"));
-            });
-        }
-
         private void ParseAPEntry(ZipFile file, ZipEntry entry, bool isScenario = false)
         {
             try
             {
                 Stream inputStream = file.GetInputStream(entry);
 
-                if (inputStream.CanRead && inputStream.CanSeek)
+                string ext = Path.GetExtension(entry.Name).ToLower();
+                if (inputStream.CanRead && (ext == ".xml" || ext == ".bin"))
                 {
-                    string ext = Path.GetExtension(entry.Name).ToLower();
-                    if (ext == ".xml")
-                    {
-                        ParseBlueprint(inputStream, isScenario);
-                    }
-                    else if (ext == ".bin")
-                    {
-                        SerzReader sr = new SerzReader(inputStream);
-
-                        if (isScenario)
-                            lock (ScenarioDeps)
-                                ScenarioDeps.UnionWith(sr.GetDependencies());
-                        else
-                            lock (Dependencies)
-                                Dependencies.UnionWith(sr.GetDependencies());
-                    }
+                    ParseBlueprint(inputStream, Path.Combine(file.Name, entry.Name), isScenario);
 
                     ReportProgress(entry.Size);
                 }
@@ -544,14 +455,17 @@ namespace RailworksDownloader
             catch (Exception e)
             {
                 if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
-                    Trace.Assert(false, $"Error when reading gzip entry of file \"{file.Name}\":\n{e}");
+                {
+                    SentrySdk.CaptureException(e);
+                    Trace.Assert(false, string.Format(Localization.Strings.GzipEntryFail, file.Name), e.ToString());
+                }
             }
         }
 
         private async Task GetDependencies()
         {
             //int count = 0;
-            if (ContainsAP && GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum) // && GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum)
+            if (ContainsAP && GetDirectoryChanged(RoutePath, ref SavedRoute.APLastWrite, ref SavedRoute.APChecksum, true)) // && GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum)
             {
                 Parallel.ForEach(Directory.GetFiles(RoutePath, "*.ap", SearchOption.AllDirectories), file =>
                 {
@@ -594,14 +508,17 @@ namespace RailworksDownloader
                             }
                             else
                             {
-                                Trace.Assert(false, $"Gzip file \"{file}\" is corrupted!");
+                                Trace.Assert(false, string.Format(Localization.Strings.GzipFileFail, file));
                             }
                         }
                     }
                     catch (Exception e)
                     {
                         if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
-                            Trace.Assert(false, $"Error while reading gzip file: \"{file}\":\n{e}");
+                        {
+                            SentrySdk.CaptureException(e);
+                            Trace.Assert(false, string.Format(Localization.Strings.GzipReadFail, file), e.ToString());
+                        }
                     }
                 });
             }
@@ -613,21 +530,21 @@ namespace RailworksDownloader
         {
             long size = 0;
 
-            bool apChanged = false;
+            APchanged = false;
 
             if (ContainsAP)
             {
-                apChanged = GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum;
+                APchanged = GetDirectoryMD5(RoutePath, true) != SavedRoute.APChecksum;
             }
 
-            bool loftsChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Loft Tiles")) != SavedRoute.LoftChecksum;
-            bool roadsChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Road Tiles")) != SavedRoute.RoadChecksum;
-            bool tracksChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Networks", "Track Tiles")) != SavedRoute.TrackChecksum;
-            bool sceneryChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Scenery")) != SavedRoute.SceneryChecksum;
-            bool rpChanged = GetFileMD5(Path.Combine(RoutePath, "RouteProperties.xml")) != SavedRoute.RoutePropertiesChecksum;
-            bool scenariosChanged = GetDirectoryMD5(Path.Combine(RoutePath, "Scenarios")) != SavedRoute.ScenariosChecksum;
+            LoftsChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Loft Tiles"), ref SavedRoute.LoftLastWrite, ref SavedRoute.LoftChecksum);
+            RoadsChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Road Tiles"), ref SavedRoute.RoadLastWrite, ref SavedRoute.LoftChecksum);
+            TracksChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Track Tiles"), ref SavedRoute.TrackLastWrite, ref SavedRoute.TrackChecksum);
+            SceneryChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Scenery"), ref SavedRoute.SceneryLastWrite, ref SavedRoute.SceneryChecksum);
+            RPchanged = GetFileChanged(Path.Combine(RoutePath, "RouteProperties.xml"), ref SavedRoute.RoutePropertiesLastWrite, ref SavedRoute.RoutePropertiesChecksum);
+            ScenariosChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Scenarios"), ref SavedRoute.ScenariosLastWrite, ref SavedRoute.ScenariosChecksum);
 
-            if (rpChanged)
+            if (RPchanged)
             {
                 size += GetFileSize(Path.Combine(RoutePath, "RouteProperties.xml"));
             }
@@ -639,18 +556,18 @@ namespace RailworksDownloader
                 switch (Path.GetFileName(dir).ToLower())
                 {
                     case "networks":
-                        if (loftsChanged)
+                        if (LoftsChanged)
                             size += GetDirectorySize(Path.Combine(dir, "Loft Tiles"), commonMask);
 
-                        if (roadsChanged)
+                        if (RoadsChanged)
                             size += GetDirectorySize(Path.Combine(dir, "Road Tiles"), commonMask);
 
-                        if (tracksChanged)
+                        if (TracksChanged)
                             size += GetDirectorySize(Path.Combine(dir, "Track Tiles"), commonMask);
 
                         break;
                     case "scenarios":
-                        if (scenariosChanged)
+                        if (ScenariosChanged)
                         {
                             foreach (string dir2 in Directory.GetDirectories(dir))
                             {
@@ -659,13 +576,13 @@ namespace RailworksDownloader
                         }
                         break;
                     case "scenery":
-                        if (sceneryChanged)
+                        if (SceneryChanged)
                             size += GetDirectorySize(dir, commonMask);
                         break;
                 }
             }
 
-            if (apChanged)
+            if (APchanged)
             {
                 foreach (string file in Directory.GetFiles(RoutePath, "*.ap", SearchOption.AllDirectories))
                 {
@@ -700,9 +617,10 @@ namespace RailworksDownloader
                             }
                         }
                     }
-                    catch
+                    catch (Exception e)
                     {
-                        Trace.Assert(false, $"Error while counting size of file: \"{file}\"!");
+                        SentrySdk.CaptureException(e);
+                        Trace.Assert(false, string.Format(Localization.Strings.CountSizeFail, file));
                     }
                 }
             }
@@ -759,7 +677,7 @@ namespace RailworksDownloader
             }
         }
 
-        private string GetDirectoryMD5(string path, bool isAP = false)
+        private string GetDirectoryMD5(string path, bool isAP)
         {
             if (!Directory.Exists(path))
                 return null;
@@ -773,27 +691,6 @@ namespace RailworksDownloader
                 {
                     byte[] pathBytes = Encoding.UTF8.GetBytes(filePath);
                     md5.TransformBlock(pathBytes, 0, pathBytes.Length, pathBytes, 0);
-
-                    /*ulong fsize = (ulong)GetFileSize(filePath);
-                    ulong freeMem = Math.Min(new ComputerInfo().AvailablePhysicalMemory, (ulong)(0x100000000 - MemoryInformation.GetMemoryUsageForProcess(nProcessID)));
-                    if (fsize > 0x1F400000 || (new ComputerInfo().AvailablePhysicalMemory < fsize*20)) //File bigger than 10MB or total memory used > 2GB - read chunk by chunk
-                    {
-                        const int buffSize = 0x402000;
-                        byte[] buffer = new byte[buffSize];
-                        using (FileStream inputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-                        {
-                            int read;
-                            while ((read = inputStream.Read(buffer, 0, buffSize)) > 0)
-                            {
-                                md5.TransformBlock(buffer, 0, read, buffer, 0);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        byte[] fileBytes = File.ReadAllBytes(filePath);
-                        md5.TransformBlock(fileBytes, 0, fileBytes.Length, fileBytes, 0);
-                    }*/
 
                     try
                     {
@@ -818,6 +715,73 @@ namespace RailworksDownloader
                 md5.TransformFinalBlock(new byte[0], 0, 0);
                 return BitConverter.ToString(md5.Hash).Replace("-", "").ToLower();
             }
+        }
+
+        private DateTime GetPathLastWriteTime(string path)
+        {
+            FileAttributes attr = File.GetAttributes(path);
+            if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
+            {
+                FileInfo fi = new FileInfo(path);
+                return fi.LastWriteTime;
+            }
+            else
+            {
+                DirectoryInfo di = new DirectoryInfo(path);
+                return di.LastWriteTime;
+            }
+        }
+
+        private DateTime GetDirectoryLastWriteTime(string path, bool isAP)
+        {
+            DateTime newestLastWrite = new DateTime();
+            //string[] filePaths = isAP ? Directory.GetFiles(path, "*.ap", SearchOption.AllDirectories).OrderBy(p => p).ToArray() : Directory.GetFiles(path, "*.bin", SearchOption.AllDirectories).OrderBy(p => p).ToArray();
+            string[] filePaths = isAP ? Directory.GetFiles(path, "*.ap", SearchOption.AllDirectories).OrderBy(p => p).ToArray() : (new List<string> { path }).ToArray();
+
+            foreach (string fpath in filePaths)
+            {
+                DateTime lastWrite = GetPathLastWriteTime(fpath);
+
+                if (lastWrite > newestLastWrite)
+                    newestLastWrite = lastWrite;
+            }
+
+            return newestLastWrite;
+        }
+
+        private bool GetFileChanged(string path, ref DateTime lastWrite, ref string checksum, bool isAp = false)
+        {
+            if (!File.Exists(path))
+                return false;
+
+            DateTime newLastWrite = new FileInfo(path).LastWriteTime;
+            if (newLastWrite <= lastWrite)
+                return false;
+            lastWrite = newLastWrite;
+
+            string newChecksum = GetFileMD5(path);
+            if (newChecksum == checksum)
+                return false;
+            checksum = newChecksum;
+
+            return true;
+        }
+
+        private bool GetDirectoryChanged(string path, ref DateTime lastWrite, ref string checksum, bool isAp = false)
+        {
+            if (!Directory.Exists(path))
+                return false;
+
+            DateTime newLastWrite = GetDirectoryLastWriteTime(path, isAp);
+            if (newLastWrite <= lastWrite)
+                return false;
+            lastWrite = newLastWrite;
+
+            string newChecksum = GetDirectoryMD5(path, isAp);
+            if (newChecksum == checksum)
+                return false;
+            checksum = newChecksum;
+            return true;
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using ModernWpf.Controls;
+using Sentry;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -24,12 +26,12 @@ namespace RailworksDownloader
         public DownloadDialog(bool cancel = true)
         {
             InitializeComponent();
-            Title = "Preparing download!";
+            Title = Localization.Strings.PrepareTitle;
             CancelButton = cancel;
             //FileName.Content = "";
         }
 
-        public async Task UpdatePackages(Dictionary<int, int> update, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
+        internal async Task UpdatePackages(Dictionary<int, int> update, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
         {
             for (int i = 0; i < update.Count; i++)
             {
@@ -38,37 +40,61 @@ namespace RailworksDownloader
                 p.Version = pair.Value;
                 Dispatcher.Invoke(() =>
                 {
-                    Title = $"Updating packages {i + 1}/{update.Count}";
-                    FileName.Content = p?.DisplayName ?? "#INVALID FILE NAME";
+                    Title = string.Format(Localization.Strings.UpdateTitle, i + 1, update.Count);
+                    FileName.Content = p?.DisplayName ?? Localization.Strings.InvalidFileName;
                 });
 
-                await Task.Run(async () =>
+                int pkgId = pair.Key;
+                wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
+
+                try
                 {
-                    int pkgId = pair.Key;
-                    wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
                     ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
-                    if (dl_result.code == 1)
+                    if (WebWrapper.CancelDownload)
+                        return;
+
+                    if (Utils.IsSuccessStatusCode(dl_result.code))
                     {
                         Dispatcher.Invoke(() => CancelButton = false);
 
+                        //cleanup before installig new version
+                        List<string> removedFiles = Utils.RemoveFiles(sqLiteAdapter.LoadPackageFiles(pkgId));
+                        sqLiteAdapter.RemovePackageFiles(removedFiles);
+
+                        List<string> installedFiles = new List<string>();
+                        List<string> failedFiles = new List<string>();
                         using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
                         {
                             foreach (ZipArchiveEntry e in a.Entries)
                             {
-                                if (e.Name == string.Empty)
+                                if (e.Name == string.Empty) //is directory
                                     continue;
 
-                                string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, installedPackages.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName));
+                                string rel_assets_path = Path.Combine(p.TargetPath, e.FullName);
+                                string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
 
-                                if (!Directory.Exists(path))
-                                    Directory.CreateDirectory(path);
+                                try
+                                {
+                                    if (!Directory.Exists(path))
+                                        Directory.CreateDirectory(path);
 
-                                e.ExtractToFile(Path.Combine(path, e.Name), true);
+                                    e.ExtractToFile(Path.Combine(path, e.Name), true);
+                                    installedFiles.Add(rel_assets_path);
+                                }
+                                catch (Exception ex)
+                                {
+                                    SentrySdk.CaptureException(ex);
+                                    failedFiles.Add(e.FullName);
+                                }
                             }
                         }
+
+                        Trace.Assert(failedFiles.Count == 0, Localization.Strings.FailedCopyFiles, string.Join("\n", failedFiles));
+
+                        sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
                         installedPackages[installedPackages.FindIndex(x => x.PackageId == pkgId)] = p;
-                        sqLiteAdapter.SaveInstalledPackage(p);
+                        sqLiteAdapter.SavePackage(p);
                         new Task(() =>
                         {
                             sqLiteAdapter.FlushToFile(true);
@@ -78,33 +104,44 @@ namespace RailworksDownloader
                     }
                     else
                     {
-                        new Task(() =>
+                        if (dl_result.code > 0)
                         {
-
-                            App.Window.Dispatcher.Invoke(() =>
+                            if (dl_result.code == 498)
                             {
-                                MainWindow.ErrorDialog = new ContentDialog()
+                                App.Token = null;
+                            }
+                            new Task(() =>
+                            {
+                                App.Window.Dispatcher.Invoke(() =>
                                 {
-                                    Title = "Error occured while downloading",
-                                    Content = dl_result.message,
-                                    SecondaryButtonText = "OK",
-                                    Owner = App.Window
-                                };
+                                    MainWindow.ErrorDialog = new ContentDialog()
+                                    {
+                                        Title = Localization.Strings.DownloadError,
+                                        Content = dl_result.message,
+                                        SecondaryButtonText = Localization.Strings.Ok,
+                                        Owner = App.Window
+                                    };
 
-                                MainWindow.ErrorDialog.ShowAsync();
-                            });
+                                    MainWindow.ErrorDialog.ShowAsync();
+                                });
 
-                        }).Start();
+                            }).Start();
+                        }
+                        break;
                     }
 
                     File.Delete((string)dl_result.content);
-                });
+                }
+                catch (Exception e) {
+                    SentrySdk.CaptureException(e);
+                    break;
+                }
             }
 
             App.Window.Dispatcher.Invoke(() => Hide());
         }
 
-        public async Task DownloadPackages(HashSet<int> download, List<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
+        internal async Task DownloadPackages(HashSet<int> download, List<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
         {
             download.RemoveWhere(x => cached.Any(y => y.PackageId == x && (y.IsPaid || installedPackages.Any(z => z.PackageId == x))));
             int count = download.Count;
@@ -118,9 +155,9 @@ namespace RailworksDownloader
                     {
                         MainWindow.ErrorDialog = new ContentDialog()
                         {
-                            Title = "Critical error",
-                            Content = "Attempted to download non cached package!",
-                            SecondaryButtonText = "OK",
+                            Title = Localization.Strings.CriticalError,
+                            Content = Localization.Strings.NonCached,
+                            SecondaryButtonText = Localization.Strings.Ok,
                             Owner = App.Window
                         };
 
@@ -131,71 +168,103 @@ namespace RailworksDownloader
 
                 Dispatcher.Invoke(() =>
                 {
-                    Title = $"Downloading packages {i + 1}/{count}";
+                    Title = string.Format(Localization.Strings.DownloadTitle, i + 1, count);
                     string DisplayNameShort = null;
 
                     if (p?.DisplayName.Length > 50)
                     {
-                        DisplayNameShort = (p?.DisplayName.Substring(0, 50) + "...") ?? "#INVALID FILE NAME";
+                        DisplayNameShort = (p?.DisplayName.Substring(0, 50) + "...") ?? Localization.Strings.InvalidFileName;
                     }
                     else
                     {
-                        DisplayNameShort = p?.DisplayName ?? "#INVALID FILE NAME";
+                        DisplayNameShort = p?.DisplayName ?? Localization.Strings.InvalidFileName;
                     }
                     FileName.Content = DisplayNameShort;
                 });
 
                 int pkgId = p.PackageId;
                 wrapper.OnDownloadProgressChanged += Wrapper_OnDownloadProgressChanged;
-                ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
-                if (dl_result.code == 1)
+                try
                 {
-                    Dispatcher.Invoke(() => CancelButton = false);
+                    ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
 
-                    using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
+                    if (Utils.IsSuccessStatusCode(dl_result.code))
                     {
-                        foreach (ZipArchiveEntry e in a.Entries)
+                        Dispatcher.Invoke(() => CancelButton = false);
+
+                        List<string> installedFiles = new List<string>();
+                        List<string> failedFiles = new List<string>();
+                        using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
                         {
-                            if (e.Name == string.Empty)
-                                continue;
-
-                            string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, cached.Where(x => x.PackageId == pkgId).Select(x => x.TargetPath).First(), e.FullName));
-
-                            if (!Directory.Exists(path))
-                                Directory.CreateDirectory(path);
-
-                            e.ExtractToFile(Path.Combine(path, e.Name), true);
-                        }
-                    }
-                    installedPackages.Add(p);
-                    sqLiteAdapter.SaveInstalledPackage(p);
-                    sqLiteAdapter.FlushToFile(true);
-                    download.Remove(pkgId);
-                    Dispatcher.Invoke(() => CancelButton = true);
-                }
-                else
-                {
-                    new Task(() =>
-                    {
-
-                        App.Window.Dispatcher.Invoke(() =>
-                        {
-                            MainWindow.ErrorDialog = new ContentDialog()
+                            foreach (ZipArchiveEntry e in a.Entries)
                             {
-                                Title = "Error occured while downloading",
-                                Content = dl_result.message,
-                                SecondaryButtonText = "OK",
-                                Owner = App.Window
-                            };
+                                if (e.Name == string.Empty)
+                                    continue;
 
-                            MainWindow.ErrorDialog.ShowAsync();
-                        });
+                                string rel_assets_path = Path.Combine(p.TargetPath, e.FullName);
+                                string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
 
-                    }).Start();
+                                try
+                                {
+                                    if (!Directory.Exists(path))
+                                        Directory.CreateDirectory(path);
+
+                                    e.ExtractToFile(Path.Combine(path, e.Name), true);
+                                    installedFiles.Add(rel_assets_path);
+                                }
+                                catch (Exception ex)
+                                {
+                                    SentrySdk.CaptureException(ex);
+                                    failedFiles.Add(e.FullName);
+                                }
+                            }
+                        }
+
+                        Trace.Assert(failedFiles.Count == 0, Localization.Strings.FailedCopyFiles, string.Join("\n", failedFiles));
+
+                        sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
+                        installedPackages.Add(p);
+                        sqLiteAdapter.SavePackage(p);
+                        sqLiteAdapter.FlushToFile(true);
+                        download.Remove(pkgId);
+                        Dispatcher.Invoke(() => CancelButton = true);
+                    }
+                    else
+                    {
+                        if (dl_result.code > 0)
+                        {
+                            if (dl_result.code == 498)
+                            {
+                                App.Token = null;
+                            }
+                            new Task(() =>
+                            {
+                                App.Window.Dispatcher.Invoke(() =>
+                                {
+                                    MainWindow.ErrorDialog = new ContentDialog()
+                                    {
+                                        Title = Localization.Strings.DownloadError,
+                                        Content = dl_result.message,
+                                        SecondaryButtonText = Localization.Strings.Ok,
+                                        Owner = App.Window
+                                    };
+
+                                    MainWindow.ErrorDialog.ShowAsync();
+                                });
+
+                            }).Start();
+                        }
+                        break;
+                    }
+
+                    File.Delete((string)dl_result.content);
                 }
-
-                File.Delete((string)dl_result.content);
+                catch (Exception e)
+                {
+                    SentrySdk.CaptureException(e);
+                    break;
+                }
             }
 
             App.Window.Dispatcher.Invoke(() => Hide());
@@ -205,7 +274,7 @@ namespace RailworksDownloader
         {
             Dispatcher.Invoke(() =>
             {
-                Title = $"Downloading update of application...";
+                Title = Localization.Strings.DownloadingUpdate;
                 FileName.Content = null;
                 CancelButton = false;
                 DownloadProgress.IsIndeterminate = false;
@@ -226,8 +295,8 @@ namespace RailworksDownloader
             {
                 Dispatcher.Invoke(() =>
                 {
-                    Title = $"Installing update...";
-                    FileName.Content = "Application will be restarted";
+                    Title = Localization.Strings.InstallingUpdate;
+                    FileName.Content = Localization.Strings.ApplicationRestart;
                     DownloadProgress.Value = 100;
                     DownloadProgress.IsIndeterminate = true;
                     Progress.Content = null;
@@ -244,7 +313,7 @@ namespace RailworksDownloader
                     if (progress >= 100)
                     {
                         DownloadProgress.IsIndeterminate = true;
-                        Progress.Content = "Installing...";
+                        Progress.Content = Localization.Strings.Installing;
                     }
                     else
                     {
@@ -262,6 +331,7 @@ namespace RailworksDownloader
         {
             if (CancelButton)
             {
+                WebWrapper.CancelDownload = true;
                 App.Window.Dispatcher.Invoke(() =>
                 {
                     App.Window.ScanRailworks.IsEnabled = true;

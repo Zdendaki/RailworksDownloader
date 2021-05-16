@@ -1,8 +1,10 @@
-﻿using System;
+﻿using RailworksDownloader.Properties;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace RailworksDownloader
@@ -173,14 +175,170 @@ namespace RailworksDownloader
             return rel;
         }
 
-        public static Stream RemoveInvalidXmlChars(string fname)
-        {
-            return new MemoryStream(File.ReadAllBytes(fname).Where(b => XmlConvert.IsXmlChar(Convert.ToChar(b))).ToArray());
-        }
-
         public static Stream RemoveInvalidXmlChars(Stream istream)
         {
             return new MemoryStream(StreamToByteArray(istream).Where(b => XmlConvert.IsXmlChar(Convert.ToChar(b))).ToArray());
+        }
+
+        public static async Task<bool> CheckLogin(Action callback, MainWindow mw, Uri ApiUrl, bool invalidateToken = false)
+        {
+            if (App.Token == default || invalidateToken)
+            {
+                if (string.IsNullOrWhiteSpace(Settings.Default.Username) || string.IsNullOrWhiteSpace(Settings.Default.Password))
+                {
+                    mw.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(ApiUrl, callback); });
+                    return false;
+                }
+
+                string login = Settings.Default.Username;
+                string passwd = PasswordEncryptor.Decrypt(Settings.Default.Password, login.Trim());
+
+                ObjectResult<LoginContent> result = await WebWrapper.Login(login, passwd, ApiUrl);
+
+                if (result == null || !IsSuccessStatusCode(result.code) || result.content == null || result.content.privileges < 0)
+                {
+                    mw.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(ApiUrl, callback); });
+                    return false;
+                }
+
+                LoginContent loginContent = result.content;
+                App.Token = loginContent.token;
+            }
+
+            if (!MainWindow.ReportedDLC)
+                mw.ReportDLC();
+
+            return true;
+        }
+        public static bool IsSuccessStatusCode(int statusCode)
+        {
+            return (statusCode >= 200) && (statusCode <= 299);
+        }
+
+        public static bool CheckIsSerz(Stream fstream)
+        {
+            byte[] buff = new byte[4];
+            fstream.Read(buff, 0, 4);
+            fstream.Seek(0, SeekOrigin.Begin);
+            bool flag = BitConverter.ToUInt32(buff, 0) == SerzReader.SERZ_MAGIC;
+            return (flag);
+        }
+
+        public static bool CheckIsSerz(string fname)
+        {
+            using (Stream fs = File.OpenRead(fname))
+            {
+                return CheckIsSerz(fs);
+            }
+        }
+
+        public static string FindFile(string dir, string pattern)
+        {
+            DirectoryInfo di = new DirectoryInfo(dir);
+            foreach (FileInfo file in di.GetFiles(pattern))
+            {
+                string fe = file.Extension.ToLower();
+                if (fe == ".xml" || fe == ".bin")
+                    return file.FullName;
+            }
+            return null;
+        }
+
+        private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private struct WIN32_FIND_DATA
+        {
+            public uint dwFileAttributes;
+            public System.Runtime.InteropServices.ComTypes.FILETIME ftCreationTime;
+            public System.Runtime.InteropServices.ComTypes.FILETIME ftLastAccessTime;
+            public System.Runtime.InteropServices.ComTypes.FILETIME ftLastWriteTime;
+            public uint nFileSizeHigh;
+            public uint nFileSizeLow;
+            public uint dwReserved0;
+            public uint dwReserved1;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string cFileName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 14)]
+            public string cAlternateFileName;
+        }
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr FindFirstFile(string lpFileName, out WIN32_FIND_DATA lpFindFileData);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        private static extern bool FindNextFile(IntPtr hFindFile, out WIN32_FIND_DATA lpFindFileData);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool FindClose(IntPtr hFindFile);
+
+        public static bool CheckDirectoryEmpty(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                throw new ArgumentNullException(path);
+            }
+
+            if (Directory.Exists(path))
+            {
+                if (path.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                    path += "*";
+                else
+                    path += Path.DirectorySeparatorChar + "*";
+
+                IntPtr findHandle = FindFirstFile(path, out WIN32_FIND_DATA findData);
+
+                if (findHandle != INVALID_HANDLE_VALUE)
+                {
+                    try
+                    {
+                        bool empty = true;
+                        do
+                        {
+                            if (findData.cFileName != "." && findData.cFileName != "..")
+                                empty = false;
+                        } while (empty && FindNextFile(findHandle, out findData));
+
+                        return empty;
+                    }
+                    finally
+                    {
+                        FindClose(findHandle);
+                    }
+                }
+
+                throw new Exception("Failed to get directory first file",
+                    Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error()));
+            }
+            throw new DirectoryNotFoundException();
+        }
+
+        public static void RemoveEmptyFolder(string folderToRemove)
+        {
+            if (CheckDirectoryEmpty(folderToRemove) && App.Railworks.AssetsPath != NormalizePath(folderToRemove))
+            {
+                Directory.Delete(folderToRemove);
+                RemoveEmptyFolder(Directory.GetParent(folderToRemove).FullName);
+            }
+        }
+
+        public static List<string> RemoveFiles(List<string> filesToRemove)
+        {
+            List<string> removedFiles = new List<string>();
+
+            foreach (string file in filesToRemove)
+            {
+                try
+                {
+                    string absolute = Path.Combine(App.Railworks.AssetsPath, file);
+                    File.Delete(absolute);
+                    removedFiles.Add(file);
+                    RemoveEmptyFolder(Path.GetDirectoryName(absolute));
+                }
+                catch { }
+            }
+
+            return removedFiles;
         }
 
         private static byte[] StreamToByteArray(Stream istream)

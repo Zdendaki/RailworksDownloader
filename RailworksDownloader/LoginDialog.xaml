@@ -1,13 +1,15 @@
-﻿<ui:ContentDialog  
+﻿<ui:ContentDialog
     x:Class="RailworksDownloader.LoginDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.modernwpf.com/2019"
-    Title="Login"
-    PrimaryButtonText="Cancel"
-    SecondaryButtonText="Login"
+    xmlns:loc="clr-namespace:RailworksDownloader.Localization"
+    Title="{x:Static loc:Strings.LoginTitle}"
+    PrimaryButtonText="{x:Static loc:Strings.LoginPrimary}"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
+    SecondaryButtonText="{x:Static loc:Strings.LoginSecondary}"
     SecondaryButtonClick="ContentDialog_SecondaryButtonClick">
-    
+
     <Grid Height="Auto" MinWidth="450">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -21,12 +23,12 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <TextBlock Margin="0,0,0,10" TextWrapping="Wrap" Grid.Row="0" Height="Auto" Grid.ColumnSpan="2">
-            Please login with your Railworks Download Station account.
+            <Run Text="{x:Static loc:Strings.LoginDesc}"/>
         </TextBlock>
-        <TextBox Grid.Row="1" x:Name="Username" Margin="0,0,0,10" VerticalAlignment="Top" ui:ControlHelper.PlaceholderText="E-mail address..." Grid.ColumnSpan="2" />
-        <PasswordBox Grid.Row="2" x:Name="Password" Margin="0,10,0,0" VerticalAlignment="Top" ui:ControlHelper.PlaceholderText="Password..." Grid.ColumnSpan="2" />
-        <CheckBox Grid.Row="3" Grid.Column="0" Content="Stay logged in" Margin="0,5,10,0" />
-        <TextBlock Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" Margin="0,5,0,0"><Hyperlink NavigateUri="https://dls.rw.jachyhm.cz">Forgot passord</Hyperlink></TextBlock>
+        <TextBox Grid.Row="1" x:Name="Username" Margin="0,0,0,10" VerticalAlignment="Top" ui:ControlHelper.PlaceholderText="{x:Static loc:Strings.LoginEmailHint}" Grid.ColumnSpan="2" />
+        <PasswordBox Grid.Row="2" x:Name="Password" Margin="0,10,0,0" VerticalAlignment="Top" ui:ControlHelper.PlaceholderText="{x:Static loc:Strings.LoginPasswordHint}" Grid.ColumnSpan="2" />
+        <CheckBox Grid.Row="3" Grid.Column="0" Content="{x:Static loc:Strings.LoginCheckbox}" Margin="0,5,10,0" />
+        <TextBlock Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" Margin="0,5,0,0"><Hyperlink NavigateUri="https://dls.rw.jachyhm.cz"><Run Text="{x:Static loc:Strings.LoginForgot}"/></Hyperlink></TextBlock>
         <Label x:Name="ErrorLabel" Grid.Row="4" Grid.ColumnSpan="2" Content="ASDFGHHJK" Padding="10,5" Background="#c23616" Foreground="White" Margin="0,5" FontWeight="Medium" Visibility="Collapsed" />
     </Grid>
 </ui:ContentDialog>
