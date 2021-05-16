@@ -1,4 +1,4 @@
-﻿using Sentry;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -296,6 +296,20 @@ namespace RailworksDownloader
             }
         }
 
+        private ushort GetCharNumBytes(byte b)
+        {
+            if ((b & 0b01000000) == 0 || b < 0x80)
+                return 1;
+
+            if ((b & 0b00100000) == 0)
+                return 2;
+
+            if ((b & 0b00010000) == 0)
+                return 3;
+
+            return 4;
+        }
+
         private ushort ReadString(ref BinaryReader br)
         {
             ushort string_id = br.ReadUInt16(); //read two bytes as short
@@ -308,9 +322,29 @@ namespace RailworksDownloader
             if (string_id == 0xFFFF) //if string index == FFFF then it is string itself
             {
                 int string_len = br.ReadInt32(); //read string length
-                char[] _s = br.ReadChars(string_len); //reads bytes of string len
-                //string s = Encoding.UTF8.GetString(_s); //converts byte array to string
-                Strings[SIndex % 0xFFFF] = new string(_s); //saves string
+                char[] _s = new char[string_len];
+                for (int i = 0; i < string_len; i++)
+                {
+                    byte b = br.ReadByte();
+
+                    int num_bytes = GetCharNumBytes(b);
+                    if (num_bytes == 1)
+                    {
+                        _s[i] = (char)b;
+                        continue;
+                    }
+
+                    Trace.Assert(num_bytes == 3, string.Format("Unsupported number of bytes ({0}) per character on position {1}, step {2}, in file {3}!", num_bytes, br.BaseStream.Position, DebugStep, DebugFname));
+
+                    byte[] bArr = br.ReadBytes(2);
+
+                    byte decoded = (byte)(bArr[1] | ((bArr[0] & 0b00000001) << 6));
+
+                    _s[i] = Encoding.GetEncoding("windows-1250").GetChars(new byte[] { decoded })[0];
+                }
+
+                string s = new string(_s);
+                Strings[SIndex % 0xFFFF] = s; //saves string
                 string_id = (ushort)(SIndex % 0xFFFF);
 
                 SIndex++;
