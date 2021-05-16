@@ -248,6 +248,20 @@ namespace RailworksDownloader
             }
         }
 
+        private ushort GetCharNumBytes(byte b)
+        {
+            if ((b & 0b01000000) == 0 || b < 0x80)
+                return 1;
+
+            if ((b & 0b00100000) == 0)
+                return 2;
+
+            if ((b & 0b00010000) == 0)
+                return 3;
+
+            return 4;
+        }
+
         private ushort ReadString(ref BinaryReader br)
         {
             ushort string_id = br.ReadUInt16(); //read two bytes as short
@@ -263,24 +277,21 @@ namespace RailworksDownloader
                 for (int i = 0; i < string_len; i++)
                 {
                     byte b = br.ReadByte();
-                    _s[i] = (char)b;
-                    if (b < 0xA0)
-                        continue;
 
-                    byte[] bchar;
-                    switch (b)
+                    int num_bytes = GetCharNumBytes(b);
+                    if (num_bytes == 1)
                     {
-                        case 0xEF:
-                            bchar = br.ReadBytes(2);
-                            bchar[0] += 4;
-                            break;
-                        default:
-                            bchar = new byte[2] { b, br.ReadByte() };
-                            break;
+                        _s[i] = (char)b;
+                        continue;
                     }
 
-                    char[] c = Encoding.UTF8.GetChars(bchar);
-                    Array.Copy(c, 0, _s, i, c.Length);
+                    Trace.Assert(num_bytes == 3, string.Format("Unsupported number of bytes ({0}) per character on position {1}, step {2}, in file {3}!", num_bytes, br.BaseStream.Position, DebugStep, DebugFname));
+
+                    byte[] bArr = br.ReadBytes(2);
+
+                    byte decoded = (byte)(bArr[1] | ((bArr[0] & 0b00000001) << 6));
+
+                    _s[i] = Encoding.GetEncoding("windows-1250").GetChars(new byte[] { decoded })[0];
                 }
 
                 string s = new string(_s);
