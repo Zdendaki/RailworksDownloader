@@ -319,8 +319,6 @@ namespace RailworksDownloader
                 throw new SerzException(br.BaseStream.Position, DebugStep, DebugFname, string.Format(Localization.Strings.SerzNLoadStringFail, string_id, br.BaseStream.Position, DebugStep, DebugFname));
             }
 
-            Debug.Assert(Strings.Length != 41);
-
             if (string_id == 0xFFFF) //if string index == FFFF then it is string itself
             {
                 int string_len = br.ReadInt32(); //read string length
