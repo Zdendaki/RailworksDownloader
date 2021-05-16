@@ -173,25 +173,24 @@ namespace RailworksDownloader
                     {
                         HttpWebResponse webResponse = (HttpWebResponse)we.Response;
                         string responseContent = new StreamReader(webResponse.GetResponseStream()).ReadToEnd();
-                        dynamic responseJson = JsonConvert.DeserializeObject(responseContent);
-                        if (responseJson != null)
+                        try
                         {
-                            string responseMessage = responseJson.message;
-                            int responseCode = responseJson.code;
-                            return new ObjectResult<object>(responseCode, responseMessage, tempFname);
+                            dynamic responseJson = JsonConvert.DeserializeObject(responseContent);
+                            if (responseJson != null)
+                            {
+                                string responseMessage = responseJson.message;
+                                int responseCode = responseJson.code;
+                                return new ObjectResult<object>(responseCode, responseMessage, tempFname);
+                            }
                         }
-                        /*switch ((int)webResponse.StatusCode)
+                        catch
                         {
-                            case 403:
-                            case 404:
-                            case 498:
-                            case 400:
-                            case 405:
-                            case 500:
-                                break;
-                        }*/
+                            return new ObjectResult<object>(-1, Localization.Strings.DownloadError, tempFname);
+                        }
+
                         return new ObjectResult<object>((int)webResponse.StatusCode, Localization.Strings.DownloadError, tempFname);
-                    } else if (we.Status == WebExceptionStatus.RequestCanceled)
+                    }
+                    else if (we.Status == WebExceptionStatus.RequestCanceled)
                         return new ObjectResult<object>(-1, Localization.Strings.DownloadInterruptError);
 
                     return new ObjectResult<object>(500, we.Message, tempFname);

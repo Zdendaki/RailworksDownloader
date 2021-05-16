@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace RailworksDownloader
@@ -59,6 +60,56 @@ namespace RailworksDownloader
             hashSetToPop.Remove(res);
 
             return res;
+        }
+
+        public static void WriteList(this BinaryWriter bw, IEnumerable<int> input)
+        {
+            if (input != default)
+            {
+                bw.Write(input.Count());
+                foreach (int value in input)
+                {
+                    bw.Write(value);
+                }
+            }
+            else
+                bw.Write(0);
+        }
+
+        public static void WriteList(this BinaryWriter bw, IEnumerable<string> input)
+        {
+            if (input != default)
+            {
+                bw.Write(input.Count());
+                foreach (string value in input)
+                {
+                    bw.Write(value);
+                }
+            }
+            else
+                bw.Write(0);
+        }
+
+        public static List<int> ReadListInt(this BinaryReader br)
+        {
+            List<int> list = new List<int>();
+            int length = br.ReadInt32();
+            for (int i = 0; i < length; i++)
+            {
+                list.Add(br.ReadInt32());
+            }
+            return list;
+        }
+
+        public static List<string> ReadListString(this BinaryReader br)
+        {
+            List<string> list = new List<string>();
+            int length = br.ReadInt32();
+            for (int i = 0; i < length; i++)
+            {
+                list.Add(br.ReadString());
+            }
+            return list;
         }
     }
 }

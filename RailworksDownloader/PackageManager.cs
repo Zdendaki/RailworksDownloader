@@ -1,6 +1,5 @@
 ﻿using ModernWpf.Controls;
 using Newtonsoft.Json;
-using RailworksDownloader.Properties;
 using Sentry;
 using System;
 using System.Collections.Generic;
@@ -302,8 +301,6 @@ namespace RailworksDownloader
                 conflictDeps.ExceptWith(pkg.FilesContained);
             }
 
-            //HashSet<int> conflictPackages = conflictPkgs.Select(x => x.PackageId).ToHashSet();
-
             bool rewriteAll = false;
             bool keepAll = false;
 
@@ -311,7 +308,7 @@ namespace RailworksDownloader
             {
                 int id = conflictPackages.ElementAt(i);
 
-                if (Settings.Default.IgnoredPackages?.Contains(id) == true)
+                if (App.Settings.IgnoredPackages?.Contains(id) == true)
                     continue;
 
                 Package p = CachedPackages.FirstOrDefault(x => x.PackageId == id);
@@ -319,14 +316,14 @@ namespace RailworksDownloader
                 bool rewrite = false;
                 if (!rewriteAll && !keepAll)
                 {
-                    Task<ContentDialogResult> t = null;
+                    Task<ContentDialogResult> t = null; 
                     MainWindow.Dispatcher.Invoke(() =>
                     {
                         MainWindow.ContentDialog = new ConflictPackageDialog(p.DisplayName);
                         t = MainWindow.ContentDialog.ShowAsync();
                     });
 
-                    ContentDialogResult result = await t;
+                    ContentDialogResult result = await t; // BUG: InvalidOperationException - Only one dialog can be opened at any time.
 
                     ConflictPackageDialog dlg = (ConflictPackageDialog)MainWindow.ContentDialog;
 
@@ -344,11 +341,8 @@ namespace RailworksDownloader
                 }
                 else
                 {
-                    if (Settings.Default.IgnoredPackages == null)
-                        Settings.Default.IgnoredPackages = new List<int>();
-
-                    Settings.Default.IgnoredPackages.Add(id);
-                    Settings.Default.Save();
+                    App.Settings.IgnoredPackages.Add(id);
+                    App.Settings.Save();
                 }
             }
         }

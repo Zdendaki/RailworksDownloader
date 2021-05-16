@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
-using static RailworksDownloader.Properties.Settings;
 
 namespace RailworksDownloader
 {
@@ -21,6 +20,8 @@ namespace RailworksDownloader
         internal static SteamManager SteamManager { get; set; }
 
         internal static PackageManager PackageManager { get; set; }
+
+        internal static Settings Settings { get; set; }
 
         internal static string Token { get; set; }
 
@@ -67,16 +68,14 @@ namespace RailworksDownloader
             if (Process.GetProcesses().Count(p => p.ProcessName == thisprocessname) > 1)
                 Environment.Exit(0);
 
-            if (Default.UpgradeRequired)
-            {
-                Default.Upgrade();
-                Default.UpgradeRequired = false;
-                Default.Save();
-            }
+            Settings = new Settings();
+            Settings.Load();
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
+            Settings.Save();
+
             Sentry.Dispose();
             base.OnExit(e);
         }

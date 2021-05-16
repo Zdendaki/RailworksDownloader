@@ -1,6 +1,5 @@
 ﻿using Microsoft.Win32;
 using ModernWpf.Controls;
-using RailworksDownloader.Properties;
 using Sentry;
 using System;
 using System.Collections.Generic;
@@ -72,12 +71,16 @@ namespace RailworksDownloader
 
                 Closing += MainWindowDialog_Closing;
 
-                string savedRWPath = Settings.Default.RailworksLocation;
+                string savedRWPath = App.Settings.RailworksLocation;
                 App.Railworks = new Railworks(string.IsNullOrWhiteSpace(savedRWPath) ? App.SteamManager.RWPath : savedRWPath);
                 App.Railworks.ProgressUpdated += RW_ProgressUpdated;
                 App.Railworks.RouteSaving += RW_RouteSaving;
                 App.Railworks.CrawlingComplete += RW_CrawlingComplete;
                 RW = App.Railworks;
+
+                Cleanup c = new Cleanup();
+
+                c.PerformCleanup();
 
                 try
                 {
@@ -99,15 +102,15 @@ namespace RailworksDownloader
                         rpd.ShowAsync();
                     }
 
-                    if (string.IsNullOrWhiteSpace(Settings.Default.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                    if (string.IsNullOrWhiteSpace(App.Settings.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
                     {
-                        Settings.Default.RailworksLocation = RW.RWPath;
-                        Settings.Default.Save();
+                        App.Settings.RailworksLocation = RW.RWPath;
+                        App.Settings.Save();
                     }
 
                     PathChanged();
 
-                    Settings.Default.PropertyChanged += PropertyChanged;
+                    App.Settings.RailworksPathChanged += RailworksPathChanged;
 
                     DownloadDialog.Owner = this;
 
@@ -132,6 +135,8 @@ namespace RailworksDownloader
                     SentrySdk.CaptureException(e);
                     Trace.Assert(false, Localization.Strings.UpdaterPanic, e.ToString());
                 }
+
+                
             }
             catch (Exception e)
             {
@@ -313,7 +318,7 @@ namespace RailworksDownloader
                 Dispatcher.Invoke(() =>
                 {
                     //if (PM.PkgsToDownload.Count > 0)
-                        DownloadMissing.IsEnabled = true;
+                    DownloadMissing.IsEnabled = true;
                 });
                 PM.RunQueueWatcher();
             }).Start();
@@ -352,13 +357,10 @@ namespace RailworksDownloader
             }
         }
 
-        private void PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void RailworksPathChanged()
         {
-            if (e.PropertyName == "RailworksLocation")
-            {
-                RW.RWPath = Settings.Default.RailworksLocation;
-                PathChanged();
-            }
+            RW.RWPath = App.Settings.RailworksLocation;
+            PathChanged();
         }
 
         private void PathChanged()

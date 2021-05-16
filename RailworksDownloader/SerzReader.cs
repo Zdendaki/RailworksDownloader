@@ -168,13 +168,13 @@ namespace RailworksDownloader
             public string Asset { get; set; }
         }
 
-        private class SerzException: Exception
+        private class SerzException : Exception
         {
             public long Position { get; set; }
             public int Step { get; set; }
             public string FileName { get; set; }
 
-            public SerzException(long position, int step, string fileName, string message, Exception innerException = null): base(message, innerException)
+            public SerzException(long position, int step, string fileName, string message, Exception innerException = null) : base(message, innerException)
             {
                 Position = position;
                 Step = step;
@@ -333,6 +333,11 @@ namespace RailworksDownloader
                         _s[i] = (char)b;
                         continue;
                     }
+                    else if (num_bytes == 2)
+                    {
+                        _s[i] = Encoding.UTF8.GetChars(new byte[] { b, br.ReadByte() })[0];
+                        continue;
+                    }
 
                     Trace.Assert(num_bytes == 3, string.Format("Unsupported number of bytes ({0}) per character on position {1}, step {2}, in file {3}!", num_bytes, br.BaseStream.Position, DebugStep, DebugFname));
 
@@ -365,7 +370,7 @@ namespace RailworksDownloader
             switch (format)
             {
                 case "cDeltaString":
-                    dt = new DataTag(DataTag.DataTypes.String, ReadString(ref br), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.String, ReadString(ref br), 0, tagName_id);
                     string elemContent = Strings[dt.IntValue];
                     if (!string.IsNullOrWhiteSpace(elemContent))
                     {
@@ -398,37 +403,37 @@ namespace RailworksDownloader
                     }
                     break;
                 case "sInt64":
-                    dt = new DataTag(DataTag.DataTypes.Int64, (ulong)(br.ReadInt64() - long.MinValue), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.Int64, (ulong)(br.ReadInt64() - long.MinValue), 0, tagName_id);
                     break;
                 case "sInt32":
-                    dt = new DataTag(DataTag.DataTypes.Int32, (ulong)(br.ReadInt32() - long.MinValue), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.Int32, (ulong)(br.ReadInt32() - long.MinValue), 0, tagName_id);
                     break;
                 case "sInt16":
-                    dt = new DataTag(DataTag.DataTypes.Int16, (ulong)(br.ReadInt16() - long.MinValue), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.Int16, (ulong)(br.ReadInt16() - long.MinValue), 0, tagName_id);
                     break;
                 case "sInt8":
-                    dt = new DataTag(DataTag.DataTypes.Int8, (ulong)(br.ReadSByte() - long.MinValue), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.Int8, (ulong)(br.ReadSByte() - long.MinValue), 0, tagName_id);
                     break;
                 case "sUInt64":
-                    dt = new DataTag(DataTag.DataTypes.UInt64, br.ReadUInt64(), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.UInt64, br.ReadUInt64(), 0, tagName_id);
                     break;
                 case "sUInt32":
-                    dt = new DataTag(DataTag.DataTypes.UInt32, br.ReadUInt32(), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.UInt32, br.ReadUInt32(), 0, tagName_id);
                     break;
                 case "sUInt16":
-                    dt = new DataTag(DataTag.DataTypes.UInt16, br.ReadUInt16(), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.UInt16, br.ReadUInt16(), 0, tagName_id);
                     break;
                 case "sUInt8":
-                    dt = new DataTag(DataTag.DataTypes.UInt8, br.ReadByte(), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.UInt8, br.ReadByte(), 0, tagName_id);
                     break;
                 case "bool":
-                    dt = new DataTag(DataTag.DataTypes.Boolean, br.ReadByte(), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.Boolean, br.ReadByte(), 0, tagName_id);
                     break;
                 case "sFloat32":
-                    dt = new DataTag(DataTag.DataTypes.Float32, br.ReadSingle(), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.Float32, br.ReadSingle(), 0, tagName_id);
                     break;
                 case "sFloat64":
-                    dt = new DataTag(DataTag.DataTypes.Float64, br.ReadDouble(), 0, tagName_id);
+                    dt = new DataTag(Tag.DataTypes.Float64, br.ReadDouble(), 0, tagName_id);
                     break;
                 default:
                     throw new SerzException(br.BaseStream.Position, DebugStep, DebugFname, string.Format(Localization.Strings.SerzUnkFormatFail, format, br.BaseStream.Position, DebugStep, DebugFname));
@@ -443,14 +448,14 @@ namespace RailworksDownloader
             ref Tag refTag = ref BinTags[cur_byte];
 
             ushort tagName_id = refTag.TagNameID; //reads name of tag
-            DataTag.DataTypes format_id = ((DataTag)refTag).DataType; //reads format of saved data
+            Tag.DataTypes format_id = ((DataTag)refTag).DataType; //reads format of saved data
 
             DataTag dt;
 
             switch (format_id)
             {
-                case DataTag.DataTypes.String:
-                    dt = new DataTag(DataTag.DataTypes.String, ReadString(ref br), 0, tagName_id);
+                case Tag.DataTypes.String:
+                    dt = new DataTag(Tag.DataTypes.String, ReadString(ref br), 0, tagName_id);
                     string elemContent = Strings[dt.IntValue];
                     if (!string.IsNullOrWhiteSpace(elemContent))
                     {
@@ -482,38 +487,38 @@ namespace RailworksDownloader
                         }
                     }
                     break;
-                case DataTag.DataTypes.Int64:
-                    dt = new DataTag(DataTag.DataTypes.Int64, (ulong)(br.ReadInt64() - long.MinValue), 0, tagName_id);
+                case Tag.DataTypes.Int64:
+                    dt = new DataTag(Tag.DataTypes.Int64, (ulong)(br.ReadInt64() - long.MinValue), 0, tagName_id);
                     break;
-                case DataTag.DataTypes.Int32:
-                    dt = new DataTag(DataTag.DataTypes.Int32, (ulong)(br.ReadInt32() - long.MinValue), 0, tagName_id);
+                case Tag.DataTypes.Int32:
+                    dt = new DataTag(Tag.DataTypes.Int32, (ulong)(br.ReadInt32() - long.MinValue), 0, tagName_id);
                     break;
-                case DataTag.DataTypes.Int16:
-                    dt = new DataTag(DataTag.DataTypes.Int16, (ulong)(br.ReadInt16() - long.MinValue), 0, tagName_id);
+                case Tag.DataTypes.Int16:
+                    dt = new DataTag(Tag.DataTypes.Int16, (ulong)(br.ReadInt16() - long.MinValue), 0, tagName_id);
                     break;
-                case DataTag.DataTypes.Int8:
-                    dt = new DataTag(DataTag.DataTypes.Int8, (ulong)(br.ReadSByte() - long.MinValue), 0, tagName_id);
+                case Tag.DataTypes.Int8:
+                    dt = new DataTag(Tag.DataTypes.Int8, (ulong)(br.ReadSByte() - long.MinValue), 0, tagName_id);
                     break;
-                case DataTag.DataTypes.UInt64:
-                    dt = new DataTag(DataTag.DataTypes.UInt64, br.ReadUInt64(), 0, tagName_id);
+                case Tag.DataTypes.UInt64:
+                    dt = new DataTag(Tag.DataTypes.UInt64, br.ReadUInt64(), 0, tagName_id);
                     break;
-                case DataTag.DataTypes.UInt32:
-                    dt = new DataTag(DataTag.DataTypes.UInt32, br.ReadUInt32(), 0, tagName_id);
+                case Tag.DataTypes.UInt32:
+                    dt = new DataTag(Tag.DataTypes.UInt32, br.ReadUInt32(), 0, tagName_id);
                     break;
-                case DataTag.DataTypes.UInt16:
-                    dt = new DataTag(DataTag.DataTypes.UInt16, br.ReadUInt16(), 0, tagName_id);
+                case Tag.DataTypes.UInt16:
+                    dt = new DataTag(Tag.DataTypes.UInt16, br.ReadUInt16(), 0, tagName_id);
                     break;
-                case DataTag.DataTypes.UInt8:
-                    dt = new DataTag(DataTag.DataTypes.UInt8, br.ReadByte(), 0, tagName_id);
+                case Tag.DataTypes.UInt8:
+                    dt = new DataTag(Tag.DataTypes.UInt8, br.ReadByte(), 0, tagName_id);
                     break;
-                case DataTag.DataTypes.Boolean:
-                    dt = new DataTag(DataTag.DataTypes.Boolean, br.ReadByte(), 0, tagName_id);
+                case Tag.DataTypes.Boolean:
+                    dt = new DataTag(Tag.DataTypes.Boolean, br.ReadByte(), 0, tagName_id);
                     break;
-                case DataTag.DataTypes.Float32:
-                    dt = new DataTag(DataTag.DataTypes.Float32, br.ReadSingle(), 0, tagName_id);
+                case Tag.DataTypes.Float32:
+                    dt = new DataTag(Tag.DataTypes.Float32, br.ReadSingle(), 0, tagName_id);
                     break;
-                case DataTag.DataTypes.Float64:
-                    dt = new DataTag(DataTag.DataTypes.Float64, br.ReadDouble(), 0, tagName_id);
+                case Tag.DataTypes.Float64:
+                    dt = new DataTag(Tag.DataTypes.Float64, br.ReadDouble(), 0, tagName_id);
                     break;
                 default:
                     throw new SerzException(br.BaseStream.Position, DebugStep, DebugFname, string.Format(Localization.Strings.SerzUnkTagFormFail, format_id, br.BaseStream.Position, DebugStep, DebugFname));
@@ -566,7 +571,7 @@ namespace RailworksDownloader
         {
             Tag.Types command_type = (Tag.Types)br.ReadByte(); //read command byte
 
-            try 
+            try
             {
                 switch (command_type)
                 {

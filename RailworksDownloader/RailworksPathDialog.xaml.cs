@@ -1,6 +1,5 @@
 ﻿using Microsoft.Win32;
 using ModernWpf.Controls;
-using RailworksDownloader.Properties;
 using System.IO;
 using System.Windows;
 
@@ -15,15 +14,15 @@ namespace RailworksDownloader
         {
             InitializeComponent();
 
-            UserPath.Text = Settings.Default.RailworksLocation;
+            UserPath.Text = App.Settings.RailworksLocation;
         }
 
         private void ContentDialog_SecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
             if (UserPath.Text.Length > 3)
             {
-                Settings.Default.RailworksLocation = UserPath.Text;
-                Settings.Default.Save();
+                App.Settings.RailworksLocation = UserPath.Text;
+                App.Settings.Save();
             }
             else
                 args.Cancel = true;

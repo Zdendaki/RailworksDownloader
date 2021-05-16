@@ -1,33 +1,109 @@
-﻿namespace RailworksDownloader.Properties
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+
+namespace RailworksDownloader
 {
-
-
-    // Tato třída umožňuje zpracovávat specifické události v třídě nastavení:
-    //  Událost SettingChanging se vyvolá před změnou hodnoty nastavení.
-    //  Událost PropertyChanged se vyvolá po změně hodnoty nastavení.
-    //  Událost SettingsLoaded se vyvolá po načtení hodnot nastavení.
-    //  Událost SettingsSaving se vyvolá před uložením hodnot nastavení.
-    internal sealed partial class Settings
+    internal class Settings
     {
+        private string railworksLocation;
+        public string RailworksLocation
+        {
+            get => railworksLocation;
+            set
+            {
+                railworksLocation = value;
+                RailworksPathChanged?.Invoke();
+            }
+        }
+
+        public string Username { get; set; }
+
+        public string Password { get; set; }
+
+        public List<int> IgnoredPackages { get; set; }
+
+        public List<string> PerformedCleanups { get; set; }
+
+        public event PropertyChangedEventHandler RailworksPathChanged;
+
+        public delegate void PropertyChangedEventHandler();
+
+        private static readonly string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DLS", "settings.bin");
+
+        object l = new object();
 
         public Settings()
         {
-            // // Pro přidávání obslužných rutin událostí určených pro ukládání a změnu nastavení odkomentujte prosím níže uvedené řádky:
-            //
-            // this.SettingChanging += this.SettingChangingEventHandler;
-            //
-            // this.SettingsSaving += this.SettingsSavingEventHandler;
-            //
+            IgnoredPackages = new List<int>();
+            PerformedCleanups = new List<string>();
         }
 
-        private void SettingChangingEventHandler(object sender, System.Configuration.SettingChangingEventArgs e)
+        public void Load()
         {
-            // Kód pro zpracování události SettingChangingEvent přidejte sem.
+            if (!File.Exists(path))
+                return;
+
+            byte[] buffer = File.ReadAllBytes(path);
+
+            if (buffer.Length == 0)
+                return;
+
+            for (int i = 0; i < buffer.Length; i++)
+                buffer[i] = (byte)(buffer[i] ^ ((255 - i) & 255));
+
+            using (MemoryStream ms = new MemoryStream(buffer))
+            {
+                using (GZipStream zip = new GZipStream(ms, CompressionMode.Decompress, false))
+                {
+                    using (BinaryReader br = new BinaryReader(zip))
+                    {
+                        RailworksLocation = br.ReadString();
+                        Username = br.ReadString();
+                        Password = br.ReadString();
+                        IgnoredPackages = br.ReadListInt();
+                        PerformedCleanups = br.ReadListString();
+                    }
+                }
+            }
         }
 
-        private void SettingsSavingEventHandler(object sender, System.ComponentModel.CancelEventArgs e)
+        public void Save()
         {
-            // Kód pro zpracování události SettingsSaving přidejte sem.
+            if (!Directory.Exists(Path.GetDirectoryName(path)))
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+            lock(l)
+            {
+                using (FileStream fs = new FileStream(path, FileMode.Create))
+                {
+                    byte[] buffer;
+
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        using (GZipStream zip = new GZipStream(ms, CompressionMode.Compress, false))
+                        {
+                            using (BinaryWriter bw = new BinaryWriter(zip))
+                            {
+                                bw.Write(RailworksLocation ?? "");
+                                bw.Write(Username ?? "");
+                                bw.Write(Password ?? "");
+                                bw.WriteList(IgnoredPackages);
+                                bw.WriteList(PerformedCleanups);
+                            }
+                        }
+
+                        buffer = ms.ToArray();
+                    }
+
+                    for (int i = 0; i < buffer.Length; i++)
+                        buffer[i] = (byte)(buffer[i] ^ ((255 - i) & 255));
+
+                    fs.Write(buffer, 0, buffer.Length);
+                }
+            }
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using ModernWpf.Controls;
-using RailworksDownloader.Properties;
 using System;
 using System.Threading.Tasks;
 using System.Windows;
@@ -40,9 +39,9 @@ namespace RailworksDownloader
                     ObjectResult<LoginContent> result = await WebWrapper.Login(login.Trim(), pass, ApiUrl);
                     if (result != null && Utils.IsSuccessStatusCode(result.code) && result.content?.privileges >= 0)
                     {
-                        Settings.Default.Username = login.Trim();
-                        Settings.Default.Password = Utils.PasswordEncryptor.Encrypt(pass, login.Trim());
-                        Settings.Default.Save();
+                        App.Settings.Username = login.Trim();
+                        App.Settings.Password = Utils.PasswordEncryptor.Encrypt(pass, login.Trim());
+                        App.Settings.Save();
                         App.Token = result.content.token;
                         Callback();
                     }

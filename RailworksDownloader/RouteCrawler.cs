@@ -231,7 +231,7 @@ namespace RailworksDownloader
 
             if (stream.Length > 4)
             {
-                if (Utils.CheckIsSerz(stream))
+                if (CheckIsSerz(stream))
                 {
                     SerzReader sr = new SerzReader(stream, debugFname);
 
@@ -242,9 +242,9 @@ namespace RailworksDownloader
                         lock (Dependencies)
                             Dependencies.UnionWith(sr.GetDependencies());
                 }
-                else
+                else if (CheckIsXML(stream))
                 {
-                    ParseXMLBlueprint(stream, isScenario);
+                    ParseXMLBlueprint(stream, debugFname, isScenario);
                 }
             }
         }
@@ -255,7 +255,7 @@ namespace RailworksDownloader
         /// <param name="stream">XML blueprint stream</param>
         /// <param name="isScenario">Is scenario file</param>
         /// <returns></returns>
-        private void ParseXMLBlueprint(Stream stream, bool isScenario = false)
+        private void ParseXMLBlueprint(Stream stream, string debugFname, bool isScenario = false)
         {
             // Load blueprint file
             XmlDocument doc = new XmlDocument();
@@ -266,7 +266,11 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
-                SentrySdk.CaptureException(e);
+                SentrySdk.WithScope(scope =>
+                {
+                    scope.AddAttachment(stream, debugFname);
+                    SentrySdk.CaptureException(e);
+                });
                 return;
             }
 

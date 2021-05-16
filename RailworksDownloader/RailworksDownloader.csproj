@@ -106,6 +106,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Cleanup.cs" />
     <Compile Include="ConflictPackageDialog.xaml.cs">
       <DependentUpon>ConflictPackageDialog.xaml</DependentUpon>
     </Compile>

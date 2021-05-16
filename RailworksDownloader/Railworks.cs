@@ -66,7 +66,7 @@ namespace RailworksDownloader
             RWPath = string.IsNullOrWhiteSpace(path) ? GetRWPath() : path;
 
             if (RWPath != null)
-                AssetsPath = Utils.NormalizePath(Path.Combine(RWPath, "Assets"));
+                AssetsPath = NormalizePath(Path.Combine(RWPath, "Assets"));
 
             Routes = new List<RouteInfo>();
         }
@@ -106,7 +106,7 @@ namespace RailworksDownloader
                 istream.Close();
                 stream.Seek(0, SeekOrigin.Begin);
 
-                if (Utils.CheckIsSerz(stream))
+                if (CheckIsSerz(stream))
                 {
                     SerzReader sr = new SerzReader(stream, file, SerzReader.MODES.routeName);
                     Trace.Assert(sr.RouteName != null, Localization.Strings.NoRouteName);
@@ -186,7 +186,7 @@ namespace RailworksDownloader
 
             foreach (string dir in Directory.GetDirectories(path))
             {
-                string rp_path = Utils.FindFile(dir, "RouteProperties.*");
+                string rp_path = FindFile(dir, "RouteProperties.*");
                 string routeHash = Path.GetFileName(dir);
 
                 if (File.Exists(rp_path))

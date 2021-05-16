@@ -1,9 +1,12 @@
-﻿using RailworksDownloader.Properties;
+﻿using Sentry;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -15,6 +18,7 @@ namespace RailworksDownloader
         {
             [DllImport("KERNEL32.DLL")]
             private static extern int OpenProcess(uint dwDesiredAccess, int bInheritHandle, uint dwProcessId);
+
             [DllImport("KERNEL32.DLL")]
             private static extern int CloseHandle(int handle);
 
@@ -177,21 +181,41 @@ namespace RailworksDownloader
 
         public static Stream RemoveInvalidXmlChars(Stream istream)
         {
-            return new MemoryStream(StreamToByteArray(istream).Where(b => XmlConvert.IsXmlChar(Convert.ToChar(b))).ToArray());
+            byte[] buffer = StreamToByteArray(istream).Where(b => XmlConvert.IsXmlChar(Convert.ToChar(b))).ToArray();
+
+            if (Array.Exists(buffer, x => x == (byte)'&'))
+            {
+                int prevSize = buffer.Length;
+
+                string s = Encoding.UTF8.GetString(buffer);
+                buffer = Encoding.UTF8.GetBytes(Regex.Replace(s, @"(?!\&[a-zA-Z0-9#]{1,8}\;)(&)", "&amp;"));
+
+                Trace.Assert(buffer.Length < prevSize + prevSize / 100, "Error occured while fixing XML file.");
+                if (buffer.Length > prevSize + prevSize / 100)
+                {
+                    SentrySdk.WithScope(scope =>
+                    {
+                        scope.AddAttachment(buffer, "dump.xml", AttachmentType.Default, "text/xml");
+                        SentrySdk.CaptureMessage($"Regex replaced over {(buffer.Length - prevSize) / 5} characters from XML file.", SentryLevel.Warning);
+                    });
+                }
+            }
+
+            return new MemoryStream(buffer);
         }
 
         public static async Task<bool> CheckLogin(Action callback, MainWindow mw, Uri ApiUrl, bool invalidateToken = false)
         {
             if (App.Token == default || invalidateToken)
             {
-                if (string.IsNullOrWhiteSpace(Settings.Default.Username) || string.IsNullOrWhiteSpace(Settings.Default.Password))
+                if (string.IsNullOrWhiteSpace(App.Settings.Username) || string.IsNullOrWhiteSpace(App.Settings.Password))
                 {
                     mw.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(ApiUrl, callback); });
                     return false;
                 }
 
-                string login = Settings.Default.Username;
-                string passwd = PasswordEncryptor.Decrypt(Settings.Default.Password, login.Trim());
+                string login = App.Settings.Username;
+                string passwd = PasswordEncryptor.Decrypt(App.Settings.Password, login.Trim());
 
                 ObjectResult<LoginContent> result = await WebWrapper.Login(login, passwd, ApiUrl);
 
@@ -229,6 +253,27 @@ namespace RailworksDownloader
             using (Stream fs = File.OpenRead(fname))
             {
                 return CheckIsSerz(fs);
+            }
+        }
+
+        public static bool CheckIsXML(Stream stream)
+        {
+            try
+            {
+                string buffer;
+                BinaryReader br = new BinaryReader(stream);
+                char[] ch = br.ReadChars(32);
+                buffer = new string(ch);
+
+                return buffer.TrimStart().StartsWith("<");
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                stream.Seek(0, SeekOrigin.Begin);
             }
         }
 

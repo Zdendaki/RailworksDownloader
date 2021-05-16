@@ -14,10 +14,10 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="5*" />
-            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <ProgressBar x:Name="DownloadProgress" Grid.Row="0" Grid.ColumnSpan="2" Value="0"/>
         <Label x:Name="FileName" Content="Downloading Some very large fucking Damo's broken package" Grid.Column="0" Grid.Row="1" />
-        <Label x:Name="Progress" Content="0 %" Grid.Column="1" Grid.Row="1" HorizontalContentAlignment="Right" />
+        <Label x:Name="Progress" Content="0 %" Grid.Column="1" Grid.Row="1" HorizontalContentAlignment="Right" Margin="5,0,0,0" />
     </Grid>
 </ui:ContentDialog>
