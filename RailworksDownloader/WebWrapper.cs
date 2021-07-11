@@ -234,6 +234,17 @@ namespace RailworksDownloader
                 if (response.IsSuccessStatusCode)
                 {
                     return JsonConvert.DeserializeObject<ObjectResult<LoginContent>>(await response.Content.ReadAsStringAsync()) ?? new ObjectResult<LoginContent>(500, Localization.Strings.ServerEmptyResponse);
+                } 
+                else
+                {
+                    try
+                    {
+                        return JsonConvert.DeserializeObject<ObjectResult<LoginContent>>(await response.Content.ReadAsStringAsync()) ?? new ObjectResult<LoginContent>(500, Localization.Strings.ServerEmptyResponse);
+                    }
+                    catch
+                    {
+                        return new ObjectResult<LoginContent>(500, Localization.Strings.UnknownError);
+                    }
                 }
             }
             catch (Exception e)

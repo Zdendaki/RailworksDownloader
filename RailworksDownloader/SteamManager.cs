@@ -144,10 +144,13 @@ namespace RailworksDownloader
 
             if (libraryFoldersKv != null)
             {
-                libraryFolders.AddRange(libraryFoldersKv.Children
-                    .Where(libraryFolder => int.TryParse(libraryFolder.Name, out _))
-                    .Select(x => Path.Combine(x.Value, "steamapps"))
-                );
+                foreach (KeyValue libraryFolder in libraryFoldersKv.Children)
+                {
+                    if (int.TryParse(libraryFolder.Name, out _) && libraryFolder.Value != null)
+                    {
+                        libraryFolders.Add(Path.Combine(libraryFolder.Value, "steamapps"));
+                    }
+                }
             }
 
             return libraryFolders;
