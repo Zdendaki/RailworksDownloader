@@ -168,6 +168,21 @@
   <data name="ClientUpdateErrorTitle" xml:space="preserve">
     <value>Klient nie mógł się zaktualizować</value>
   </data>
+  <data name="ClipboarBuilderMainString" xml:space="preserve">
+    <value>Lista {0}/{1} {2} uzytych w {3} {4}:</value>
+  </data>
+  <data name="ClipboardBuilderItems" xml:space="preserve">
+    <value>plików</value>
+  </data>
+  <data name="ClipboardBuilderPackages" xml:space="preserve">
+    <value>pacziek</value>
+  </data>
+  <data name="ClipboardBuilderRoutes" xml:space="preserve">
+    <value>mapie</value>
+  </data>
+  <data name="ClipboardBuilderScenarios" xml:space="preserve">
+    <value>scenariuszich mapy</value>
+  </data>
   <data name="ColorHintBlue" xml:space="preserve">
     <value>Nieznany</value>
   </data>

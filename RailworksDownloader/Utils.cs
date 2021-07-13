@@ -5,9 +5,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Xml;
 
 namespace RailworksDownloader
@@ -193,11 +195,14 @@ namespace RailworksDownloader
                 Trace.Assert(buffer.Length < prevSize + prevSize / 100, "Error occured while fixing XML file.");
                 if (buffer.Length > prevSize + prevSize / 100)
                 {
-                    SentrySdk.WithScope(scope =>
+                    if (App.ReportErrors)
                     {
-                        scope.AddAttachment(buffer, "dump.xml", AttachmentType.Default, "text/xml");
-                        SentrySdk.CaptureMessage($"Regex replaced over {(buffer.Length - prevSize) / 5} characters from XML file.", SentryLevel.Warning);
-                    });
+                        SentrySdk.WithScope(scope =>
+                        {
+                            scope.AddAttachment(buffer, "dump.xml", AttachmentType.Default, "text/xml");
+                            SentrySdk.CaptureMessage($"Regex replaced over {(buffer.Length - prevSize) / 5} characters from XML file.", SentryLevel.Warning);
+                        });
+                    }
                 }
             }
 
@@ -385,6 +390,42 @@ namespace RailworksDownloader
             }
 
             return removedFiles;
+        }
+
+        public static bool CheckInvalidPathChars(string path, bool checkAdditional = false)
+        {
+            if (path == null)
+                return true;
+
+            return path.IndexOfAny(Path.GetInvalidPathChars()) >= 0 || (checkAdditional && AnyPathHasWildCardCharacters(path));
+        }
+
+        public static bool IsAdministrator()
+        {
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+
+        public static void ElevatePrivileges()
+        {
+            var exeName = Process.GetCurrentProcess().MainModule.FileName;
+            ProcessStartInfo startInfo = new ProcessStartInfo(exeName);
+            startInfo.Verb = "runas";
+            Process.Start(startInfo);
+            Application.Current.Shutdown();
+            return;
+        }
+
+        private static bool AnyPathHasWildCardCharacters(string path, int startIndex = 0)
+        {
+            char currentChar;
+            for (int i = startIndex; i < path.Length; i++)
+            {
+                currentChar = path[i];
+                if (currentChar == '*' || currentChar == '?') return true;
+            }
+            return false;
         }
 
         private static byte[] StreamToByteArray(Stream istream)

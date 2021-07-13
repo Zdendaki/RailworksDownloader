@@ -31,6 +31,8 @@ namespace RailworksDownloader
 
         internal static bool AutoDownload { get; set; } = true;
 
+        internal static bool ReportErrors { get; set; } = true;
+
         internal static IDisposable Sentry { get; set; }
 
         protected override void OnStartup(StartupEventArgs e)

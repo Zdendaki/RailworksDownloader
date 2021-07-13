@@ -125,20 +125,25 @@ namespace RailworksDownloader
                     }
                     catch (Exception e)
                     {
-                        SentrySdk.WithScope(scope =>
-                        {
-                            scope.AddAttachment(stream.ToArray(), file);
-                            SentrySdk.CaptureException(e);
-                        });
+                        if (App.ReportErrors) {
+                            SentrySdk.WithScope(scope =>
+                            {
+                                scope.AddAttachment(stream.ToArray(), file);
+                                SentrySdk.CaptureException(e);
+                            });
+                        }
                         MessageBox.Show(string.Format(Localization.Strings.ParseRoutePropFail, file), Localization.Strings.ParseRoutePropFailTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
                 }
 
-                SentrySdk.WithScope(scope =>
+                if (App.ReportErrors)
                 {
-                    scope.AddAttachment(stream.ToArray(), file);
-                    SentrySdk.CaptureMessage($"{file} has no route name!", SentryLevel.Warning);
-                });
+                    SentrySdk.WithScope(scope =>
+                    {
+                        scope.AddAttachment(stream.ToArray(), file);
+                        SentrySdk.CaptureMessage($"{file} has no route name!", SentryLevel.Warning);
+                    });
+                }
             }
             Debug.Assert(false, Localization.Strings.NoRouteName);
             return routeHash;
@@ -183,6 +188,9 @@ namespace RailworksDownloader
         {
             string path = Path.Combine(RWPath, "Content", "Routes");
             List<RouteInfo> list = new List<RouteInfo>();
+
+            if (!Directory.Exists(path))
+                return list;
 
             foreach (string dir in Directory.GetDirectories(path))
             {
@@ -313,7 +321,7 @@ namespace RailworksDownloader
 
         private bool CheckForFileInAP(string directory, string fileToFind)
         {
-            if (NormalizePath(directory) == NormalizePath(AssetsPath))
+            if (NormalizePath(directory) == NormalizePath(AssetsPath) || string.IsNullOrWhiteSpace(directory))
             {
                 return false;
             }
@@ -328,7 +336,7 @@ namespace RailworksDownloader
                             ZipArchive zipFile = System.IO.Compression.ZipFile.OpenRead(file);
 
                             lock (APDepsLock)
-                                APDependencies.UnionWith(from x in zipFile.Entries where (x.FullName.Contains(".xml") || x.FullName.Contains(".bin")) select NormalizePath(GetRelativePath(AssetsPath, Path.Combine(directory, x.FullName))));
+                                APDependencies.UnionWith(from x in zipFile.Entries where x.FullName.Contains(".xml") || x.FullName.Contains(".bin") select NormalizePath(GetRelativePath(AssetsPath, Path.Combine(directory, x.FullName))));
                         }
                         catch (Exception e)
                         {
@@ -347,6 +355,10 @@ namespace RailworksDownloader
         public void GetInstalledDeps()
         {
             AllInstalledDeps = new HashSet<string>();
+
+            if (!Directory.Exists(AssetsPath))
+                return;
+
             string[] files = Directory.GetFiles(AssetsPath, "*.*", SearchOption.AllDirectories);
             foreach (string file in files)
             {

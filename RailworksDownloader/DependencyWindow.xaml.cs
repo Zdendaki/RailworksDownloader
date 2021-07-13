@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -133,6 +135,53 @@ namespace RailworksDownloader
                 };
                 ddw.ShowDialog();
             }
+        }
+
+        private void ListView_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.C && (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
+            {
+                if (!(sender is ListView))
+                    return;
+
+                ListView listView = (ListView)sender;
+                if (listView == null || listView.SelectedItems.Count <= 0)
+                    return;
+
+                CopySelectedItemsToClipboard(listView, listView.SelectedItem is DependencyPackage);
+            }
+        }
+
+        private void CopySelectedItemsToClipboard(ListView listView, bool isPackage = false)
+        {
+            List<BaseDependency> selectedItems = listView.SelectedItems.Cast<BaseDependency>().ToList();
+
+            BaseDependency firstItem = selectedItems.First();
+            DependencyState oldState = firstItem.State;
+
+            StringBuilder builder = new StringBuilder();
+
+            string type = isPackage ? Localization.Strings.ClipboardBuilderPackages : Localization.Strings.ClipboardBuilderItems;
+            string placement = listView.ItemsSource == ScenarioDeps || listView.ItemsSource == ScenarioPkgs ? Localization.Strings.ClipboardBuilderScenarios : Localization.Strings.ClipboardBuilderRoutes;
+            builder.AppendLine(String.Format(Localization.Strings.ClipboarBuilderMainString, selectedItems.Count, listView.Items.Count, type, placement, RouteInfo.Name));
+            builder.AppendLine($"     -----{firstItem.PrettyState.ToUpper()}-----");
+
+            foreach (BaseDependency dep in selectedItems)
+            {
+                if (dep.State != oldState)
+                {
+                    builder.AppendLine();
+                    builder.AppendLine($"     -----{dep.PrettyState.ToUpper()}-----");
+                    oldState = dep.State;
+                }
+
+                string extension = isPackage ? "" : ".xml";
+                string pkgId = isPackage ? $" [https://dls.rw.jachyhm.cz/?package={dep.PkgID}]" : "";
+
+                builder.AppendLine($"          {dep.PrettyState} - {dep.Name}{pkgId}{extension}");
+            }
+
+            Clipboard.SetText(builder.ToString());
         }
     }
 }

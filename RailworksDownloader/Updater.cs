@@ -26,10 +26,14 @@ namespace RailworksDownloader
             Task.Run(async () =>
             {
                 ObjectResult<AppVersionContent> jsonResult = await WebWrapper.GetAppVersion(apiUrl);
-                if (jsonResult != null && Utils.IsSuccessStatusCode(jsonResult.code) && jsonResult.content.version_name != App.Version)
-                {
-                    isThereNewer = true;
-                    UpdateUrl = new Uri(jsonResult.content.file_path);
+                if (jsonResult != null && Utils.IsSuccessStatusCode(jsonResult.code)) {
+                    App.ReportErrors = jsonResult.content.report_errors;
+
+                    if (jsonResult.content.version_name != App.Version)
+                    {
+                        isThereNewer = true;
+                        UpdateUrl = new Uri(jsonResult.content.file_path);
+                    }
                 }
             }).Wait();
 

@@ -18,6 +18,9 @@ namespace RailworksDownloader
 
         public void PerformCleanup()
         {
+            if (App.Railworks.RWPath == null)
+                return;
+
             if (versions.Contains(version) && !App.Settings.PerformedCleanups.Contains(version))
             {
                 foreach (var route in Directory.GetDirectories(Path.Combine(App.Railworks.RWPath, "Content", "Routes")))

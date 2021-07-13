@@ -266,11 +266,14 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
-                SentrySdk.WithScope(scope =>
+                if (App.ReportErrors)
                 {
-                    scope.AddAttachment(stream, debugFname);
-                    SentrySdk.CaptureException(e);
-                });
+                    SentrySdk.WithScope(scope =>
+                    {
+                        scope.AddAttachment(stream, debugFname);
+                        SentrySdk.CaptureException(e);
+                    });
+                }
                 return;
             }
 
@@ -295,11 +298,14 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
-                SentrySdk.WithScope(scope =>
+                if (App.ReportErrors)
                 {
-                    scope.AddAttachment(stream.ToArray(), debugFname);
-                    SentrySdk.CaptureException(e);
-                });
+                    SentrySdk.WithScope(scope =>
+                    {
+                        scope.AddAttachment(stream.ToArray(), debugFname);
+                        SentrySdk.CaptureException(e);
+                    });
+                }
             }
         }
 

@@ -168,6 +168,21 @@
   <data name="ClientUpdateErrorTitle" xml:space="preserve">
     <value>Chyba při aktualizaci klienta</value>
   </data>
+  <data name="ClipboarBuilderMainString" xml:space="preserve">
+    <value>Seznam {0}/{1} {2} použitých {3} {4}:</value>
+  </data>
+  <data name="ClipboardBuilderItems" xml:space="preserve">
+    <value>souborů</value>
+  </data>
+  <data name="ClipboardBuilderPackages" xml:space="preserve">
+    <value>balíčků</value>
+  </data>
+  <data name="ClipboardBuilderRoutes" xml:space="preserve">
+    <value>v trati</value>
+  </data>
+  <data name="ClipboardBuilderScenarios" xml:space="preserve">
+    <value>ve scénářích trati</value>
+  </data>
   <data name="ColorHintBlue" xml:space="preserve">
     <value>Neznámý</value>
   </data>

@@ -18,7 +18,7 @@
                         <RowDefinition x:Name="DLRD" Height="2*" MinHeight="100" />
                     </Grid.RowDefinitions>
                     
-                    <ListView x:Name="DependenciesPackagesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListView x:Name="DependenciesPackagesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" KeyUp="ListView_KeyUp">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -52,7 +52,7 @@
                         </Grid.RowDefinitions>
 
                         <Label Content="{x:Static loc:Strings.UnknownFiles}" Margin="10,10,0,2" FontWeight="Bold" FontSize="16" Grid.Row="0" />
-                        <ListView x:Name="DependenciesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Row="1">
+                        <ListView x:Name="DependenciesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Row="1" KeyUp="ListView_KeyUp">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem">
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -86,7 +86,7 @@
                         <RowDefinition x:Name="SLRD" Height="2*" MinHeight="100" />
                     </Grid.RowDefinitions>
 
-                    <ListView x:Name="ScenarioPackagesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListView x:Name="ScenarioPackagesList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" KeyUp="ListView_KeyUp">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -120,7 +120,7 @@
                         </Grid.RowDefinitions>
 
                         <Label Content="{x:Static loc:Strings.UnknownFiles}" Margin="10,10,0,2" FontWeight="Bold" FontSize="16" Grid.Row="0" />
-                        <ListView x:Name="ScenarioDepsList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Row="1">
+                        <ListView x:Name="ScenarioDepsList" Margin="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Row="1" KeyUp="ListView_KeyUp">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem">
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />

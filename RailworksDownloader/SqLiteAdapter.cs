@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
 using System.Linq;
+using System.Security;
+using System.Security.Permissions;
 using static RailworksDownloader.Utils;
 
 namespace RailworksDownloader
@@ -182,15 +184,24 @@ namespace RailworksDownloader
 
         internal void FlushToFile(bool keepOpen = false)
         {
-            lock (DBLock)
+            PermissionSet permissionSet = new PermissionSet(PermissionState.None);
+            FileIOPermission writePermission = new FileIOPermission(FileIOPermissionAccess.Write, DatabasePath);
+            permissionSet.AddPermission(writePermission);
+
+            if (permissionSet.IsSubsetOf(AppDomain.CurrentDomain.PermissionSet))
             {
-                FileConn = new SQLiteConnection(ConnectionString);
-                FileConn.Open();
-                MemoryConn.BackupDatabase(FileConn, "main", "main", -1, null, 0);
-                FileConn.Close();
-                if (!keepOpen)
-                    MemoryConn.Close();
+                lock (DBLock)
+                {
+                    FileConn = new SQLiteConnection(ConnectionString);
+                    FileConn.Open();
+                    MemoryConn.BackupDatabase(FileConn, "main", "main", -1, null, 0);
+                    FileConn.Close();
+                    if (!keepOpen)
+                        MemoryConn.Close();
+                }
             }
+            else if (!IsAdministrator())
+                ElevatePrivileges();
         }
 
         internal void SaveRoute(LoadedRoute route)

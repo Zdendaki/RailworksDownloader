@@ -62,37 +62,7 @@ namespace RailworksDownloader
                         List<string> removedFiles = Utils.RemoveFiles(sqLiteAdapter.LoadPackageFiles(pkgId));
                         sqLiteAdapter.RemovePackageFiles(removedFiles);
 
-                        List<string> installedFiles = new List<string>();
-                        List<string> failedFiles = new List<string>();
-                        using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
-                        {
-                            foreach (ZipArchiveEntry e in a.Entries)
-                            {
-                                if (e.Name == string.Empty) //is directory
-                                    continue;
-
-                                string rel_assets_path = Path.Combine(p.TargetPath, e.FullName);
-                                string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
-
-                                try
-                                {
-                                    if (!Directory.Exists(path))
-                                        Directory.CreateDirectory(path);
-
-                                    e.ExtractToFile(Path.Combine(path, e.Name), true);
-                                    installedFiles.Add(rel_assets_path);
-                                }
-                                catch (Exception ex)
-                                {
-                                    SentrySdk.CaptureException(ex);
-                                    failedFiles.Add(e.FullName);
-                                }
-                            }
-                        }
-
-                        Trace.Assert(failedFiles.Count == 0, Localization.Strings.FailedCopyFiles, string.Join("\n", failedFiles));
-
-                        sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
+                        sqLiteAdapter.SavePackageFiles(pkgId, InstallFiles(p, dl_result));
                         installedPackages[installedPackages.FindIndex(x => x.PackageId == pkgId)] = p;
                         sqLiteAdapter.SavePackage(p);
                         new Task(() =>
@@ -194,37 +164,7 @@ namespace RailworksDownloader
                     {
                         Dispatcher.Invoke(() => CancelButton = false);
 
-                        List<string> installedFiles = new List<string>();
-                        List<string> failedFiles = new List<string>();
-                        using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
-                        {
-                            foreach (ZipArchiveEntry e in a.Entries)
-                            {
-                                if (e.Name == string.Empty)
-                                    continue;
-
-                                string rel_assets_path = Path.Combine(p.TargetPath, e.FullName);
-                                string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
-
-                                try
-                                {
-                                    if (!Directory.Exists(path))
-                                        Directory.CreateDirectory(path);
-
-                                    e.ExtractToFile(Path.Combine(path, e.Name), true);
-                                    installedFiles.Add(rel_assets_path);
-                                }
-                                catch (Exception ex)
-                                {
-                                    SentrySdk.CaptureException(ex);
-                                    failedFiles.Add(e.FullName);
-                                }
-                            }
-                        }
-
-                        Trace.Assert(failedFiles.Count == 0, Localization.Strings.FailedCopyFiles, string.Join("\n", failedFiles));
-
-                        sqLiteAdapter.SavePackageFiles(pkgId, installedFiles);
+                        sqLiteAdapter.SavePackageFiles(pkgId, InstallFiles(p, dl_result));
                         installedPackages.Add(p);
                         sqLiteAdapter.SavePackage(p);
                         sqLiteAdapter.FlushToFile(true);
@@ -303,6 +243,50 @@ namespace RailworksDownloader
                     Progress.Content = null;
                 });
             };
+        }
+
+        private List<string> InstallFiles(Package p, ObjectResult<object> dl_result)
+        {
+            List<string> installedFiles = new List<string>();
+            List<string> failedFiles = new List<string>();
+            using (ZipArchive a = ZipFile.OpenRead((string)dl_result.content))
+            {
+                foreach (ZipArchiveEntry e in a.Entries)
+                {
+                    if (e.Name == string.Empty) //is directory
+                        continue;
+
+                    string rel_assets_path = Path.Combine(p.TargetPath, e.FullName).TrimStart(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar });
+                    string path = Path.GetDirectoryName(Path.Combine(App.Railworks.AssetsPath, rel_assets_path));
+
+                    try
+                    {
+                        if (!Directory.Exists(path))
+                            Directory.CreateDirectory(path);
+
+                        e.ExtractToFile(Path.Combine(path, e.Name), true);
+                        installedFiles.Add(rel_assets_path);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex is UnauthorizedAccessException) {
+                            Utils.ElevatePrivileges();
+                        }
+
+                        SentrySdk.WithScope(scope =>
+                        {
+                            if (ex is InvalidDataException)
+                                SentrySdk.CaptureMessage($"Package {p.PackageId} uses unsupported compression type!", SentryLevel.Fatal);
+                            SentrySdk.CaptureException(ex);
+                        });
+                        failedFiles.Add(e.FullName);
+                    }
+                }
+            }
+
+            Trace.Assert(failedFiles.Count == 0, Localization.Strings.FailedCopyFiles, string.Join("\n", failedFiles));
+
+            return installedFiles;
         }
 
         private void Wrapper_OnDownloadProgressChanged(float progress)

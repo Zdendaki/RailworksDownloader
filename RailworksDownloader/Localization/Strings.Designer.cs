@@ -214,6 +214,51 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný List of {0}/{1} {2} used in {3} {4}:.
+        /// </summary>
+        public static string ClipboarBuilderMainString {
+            get {
+                return ResourceManager.GetString("ClipboarBuilderMainString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný items.
+        /// </summary>
+        public static string ClipboardBuilderItems {
+            get {
+                return ResourceManager.GetString("ClipboardBuilderItems", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný packages.
+        /// </summary>
+        public static string ClipboardBuilderPackages {
+            get {
+                return ResourceManager.GetString("ClipboardBuilderPackages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný routes.
+        /// </summary>
+        public static string ClipboardBuilderRoutes {
+            get {
+                return ResourceManager.GetString("ClipboardBuilderRoutes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný scenarios of map.
+        /// </summary>
+        public static string ClipboardBuilderScenarios {
+            get {
+                return ResourceManager.GetString("ClipboardBuilderScenarios", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný Unknown.
         /// </summary>
         public static string ColorHintBlue {

@@ -159,12 +159,16 @@ namespace RailworksDownloader
         internal SqLiteAdapter SqLiteAdapter { get; set; }
 
         public HashSet<string> DownloadableDeps { get; set; } = new HashSet<string>();
+
         public Dictionary<string, int> DownloadableDepsPackages { get; set; } = new Dictionary<string, int>();
 
         public HashSet<string> DownloadablePaidDeps { get; set; } = new HashSet<string>();
+
         public Dictionary<string, int> DownloadablePaidDepsPackages { get; set; } = new Dictionary<string, int>();
 
         public EventWaitHandle CacheInit = new EventWaitHandle(false, EventResetMode.ManualReset);
+
+        public FileSystemWatcher msmqWatcher { get; set; }
 
         internal HashSet<int> PkgsToDownload { get; set; } = new HashSet<int>();
 
@@ -177,8 +181,6 @@ namespace RailworksDownloader
         private MainWindow MainWindow { get; set; }
 
         private bool MSMQRunning { get; set; } = false;
-
-        public bool StopMSMQ { get; set; } = false;
 
         public PackageManager(Uri apiUrl, MainWindow mw, string RWPath)
         {
@@ -316,9 +318,10 @@ namespace RailworksDownloader
                 bool rewrite = false;
                 if (!rewriteAll && !keepAll)
                 {
-                    Task<ContentDialogResult> t = null; 
+                    Task<ContentDialogResult> t = null;
                     MainWindow.Dispatcher.Invoke(() =>
                     {
+                        MainWindow.ContentDialog?.Hide();
                         MainWindow.ContentDialog = new ConflictPackageDialog(p.DisplayName);
                         t = MainWindow.ContentDialog.ShowAsync();
                     });
@@ -360,11 +363,11 @@ namespace RailworksDownloader
 
         public void DownloadDependencies()
         {
+            if (App.IsDownloading)
+                return;
+
             Task.Run(async () =>
             {
-                if (App.IsDownloading)
-                    return;
-
                 if (!await Utils.CheckLogin(DownloadDependencies, MainWindow, ApiUrl))
                 {
                     App.Window.Dispatcher.Invoke(() =>
@@ -434,6 +437,7 @@ namespace RailworksDownloader
                         Task<ContentDialogResult> t = null;
                         MainWindow.Dispatcher.Invoke(() =>
                         {
+                            MainWindow.ContentDialog?.Hide();
                             MainWindow.ContentDialog.Title = Localization.Strings.NewerTitle;
                             MainWindow.ContentDialog.Content = string.Format(Localization.Strings.NewerDesc, package.DisplayName);
                             MainWindow.ContentDialog.PrimaryButtonText = Localization.Strings.NewerPrimary;
@@ -461,7 +465,7 @@ namespace RailworksDownloader
             });
         }
 
-        public void RunQueueWatcher()
+        public FileSystemWatcher RunQueueWatcher()
         {
             new Task(async () =>
             {
@@ -469,19 +473,20 @@ namespace RailworksDownloader
                 await ReceiveMSMQ();
                 MSMQRunning = false;
             }).Start();
-            using (FileSystemWatcher watcher = new FileSystemWatcher())
+
+            FileSystemWatcher watcher = new FileSystemWatcher
             {
-                watcher.Path = Path.GetTempPath();
+                Path = Path.GetTempPath(),
 
-                watcher.Filter = "DLS.queue";
+                Filter = "DLS.queue",
 
-                watcher.NotifyFilter = NotifyFilters.LastWrite;
+                NotifyFilter = NotifyFilters.LastWrite
+            };
 
-                watcher.Changed += OnChanged;
-                watcher.EnableRaisingEvents = true;
+            watcher.Changed += new FileSystemEventHandler(OnChanged);
+            watcher.EnableRaisingEvents = true;
 
-                while (!StopMSMQ) ;
-            }
+            return watcher;
         }
 
         public void RemovePackage(int pkgId)
@@ -495,7 +500,7 @@ namespace RailworksDownloader
 
         private void OnChanged(object source, FileSystemEventArgs e)
         {
-            System.Threading.Thread.Sleep(500);
+            System.Threading.Thread.Sleep(50);
             if (MSMQRunning)
                 return;
 

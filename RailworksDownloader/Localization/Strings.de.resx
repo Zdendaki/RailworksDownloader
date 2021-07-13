@@ -168,6 +168,21 @@
   <data name="ClientUpdateErrorTitle" xml:space="preserve">
     <value>Fehler beim Installieren des Updates</value>
   </data>
+  <data name="ClipboarBuilderMainString" xml:space="preserve">
+    <value>Liste der {0}/{1} {2}, die in {3} {4} verwendet werden:</value>
+  </data>
+  <data name="ClipboardBuilderItems" xml:space="preserve">
+    <value>Dateien</value>
+  </data>
+  <data name="ClipboardBuilderPackages" xml:space="preserve">
+    <value>Paketen</value>
+  </data>
+  <data name="ClipboardBuilderRoutes" xml:space="preserve">
+    <value>Strecke</value>
+  </data>
+  <data name="ClipboardBuilderScenarios" xml:space="preserve">
+    <value>Szenarien der Strecke</value>
+  </data>
   <data name="ColorHintBlue" xml:space="preserve">
     <value>Unbekannt</value>
   </data>

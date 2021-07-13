@@ -12,7 +12,7 @@ namespace RailworksDownloader
         Paid
     }
 
-    public class Dependency
+    public class BaseDependency
     {
         public string Name { get; set; }
 
@@ -38,13 +38,15 @@ namespace RailworksDownloader
 
         public DependencyState State { get; set; }
 
+        public int? PkgID { get; set; }
+
+    }
+
+    public class Dependency: BaseDependency
+    {
         public bool IsScenario { get; set; }
 
         public bool IsRoute { get; set; }
-
-        public int? PkgID { get; set; }
-
-        public HashSet<string> Presence { get; set; }
 
         public Dependency(string name, int? pkgId) : this(name, false, pkgId) { }
 

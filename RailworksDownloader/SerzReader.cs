@@ -283,11 +283,14 @@ namespace RailworksDownloader
                 {
                     if (!(e is ThreadInterruptedException) && !(e is ThreadAbortException))
                     {
-                        SentrySdk.WithScope(scope =>
+                        if (App.ReportErrors)
                         {
-                            scope.AddAttachment(InputStream.ToArray(), DebugFname);
-                            SentrySdk.CaptureException(e);
-                        });
+                            SentrySdk.WithScope(scope =>
+                            {
+                                scope.AddAttachment(InputStream.ToArray(), DebugFname);
+                                SentrySdk.CaptureException(e);
+                            });
+                        }
                         if (e is SerzException)
                         {
                             Debug.Assert(false, e.Message);
@@ -781,6 +784,7 @@ namespace RailworksDownloader
 
         public string[] GetDependencies()
         {
+            Dependencies.RemoveAll(x => CheckInvalidPathChars(x.Asset, true) || CheckInvalidPathChars(x.Product, true) || CheckInvalidPathChars(x.Provider, true));
             SerzDependency[] deps = Dependencies.Where(x => !string.IsNullOrWhiteSpace(x.Asset) && (Path.GetExtension(x.Asset.ToLower()) == ".xml" || Path.GetExtension(x.Asset.ToLower()) == ".bin")).ToArray();
             int depsCount = deps.Length;
 

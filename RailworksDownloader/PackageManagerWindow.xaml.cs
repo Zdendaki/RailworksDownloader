@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Windows;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RailworksDownloader
 {
@@ -30,6 +32,9 @@ namespace RailworksDownloader
         {
             foreach (Package package in PackagesList.SelectedItems)
             {
+                if (package.IsPaid)
+                    continue;
+
                 PM.RemovePackage(package.PackageId);
             }
             PackagesList.ItemsSource = null;
@@ -38,7 +43,12 @@ namespace RailworksDownloader
 
         private void PackagesList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            RemoveSelectedPackage.IsEnabled = PackagesList.SelectedItems.Count > 0;
+            bool anyIsPaid = false;
+            foreach (Package package in PackagesList.SelectedItems)
+            {
+                anyIsPaid |= package.IsPaid;
+            }
+            RemoveSelectedPackage.IsEnabled = PackagesList.SelectedItems.Count > 0 && !anyIsPaid;
         }
 
         private void PackagesList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)

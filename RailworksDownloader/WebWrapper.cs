@@ -96,6 +96,7 @@ namespace RailworksDownloader
         public DateTime deployed { get; set; }
         public string comment { get; set; }
         public string file_path { get; set; }
+        public bool report_errors { get; set; }
     }
 
     public class ReportDLCcontent

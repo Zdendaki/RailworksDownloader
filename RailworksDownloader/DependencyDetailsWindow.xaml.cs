@@ -12,7 +12,7 @@ namespace RailworksDownloader
         {
             InitializeComponent();
 
-            PackageFilesList.ItemsSource = info.ParsedDependencies.Items.Where(x => x.PkgID == package.ID);
+            PackageFilesList.ItemsSource = info.ParsedDependencies.Items.Where(x => x.PkgID == package.PkgID);
             Title = string.Format(Localization.Strings.DepsDetailsWindowTitle, package.Name, info.Name);
         }
     }

@@ -72,15 +72,11 @@ namespace RailworksDownloader
                 Closing += MainWindowDialog_Closing;
 
                 string savedRWPath = App.Settings.RailworksLocation;
-                App.Railworks = new Railworks(string.IsNullOrWhiteSpace(savedRWPath) ? App.SteamManager.RWPath : savedRWPath);
+                App.Railworks = new Railworks(string.IsNullOrWhiteSpace(savedRWPath) ? App.SteamManager?.RWPath : savedRWPath);
                 App.Railworks.ProgressUpdated += RW_ProgressUpdated;
                 App.Railworks.RouteSaving += RW_RouteSaving;
                 App.Railworks.CrawlingComplete += RW_CrawlingComplete;
                 RW = App.Railworks;
-
-                Cleanup c = new Cleanup();
-
-                c.PerformCleanup();
 
                 try
                 {
@@ -107,6 +103,9 @@ namespace RailworksDownloader
                         App.Settings.RailworksLocation = RW.RWPath;
                         App.Settings.Save();
                     }
+
+                    Cleanup c = new Cleanup();
+                    c.PerformCleanup();
 
                     PathChanged();
 
@@ -157,6 +156,9 @@ namespace RailworksDownloader
                     dlcReportFinishedHandler.Set();
                 return;
             }
+
+            if (App.SteamManager == null)
+                return;
 
             dlcReportFinishedHandler.Reset();
             Task.Run(async () =>
@@ -211,7 +213,7 @@ namespace RailworksDownloader
         internal void RW_CrawlingComplete()
         {
             crawlingComplete = true;
-            PM.StopMSMQ = true;
+            PM.msmqWatcher?.Dispose();
 
             Dispatcher.Invoke(() =>
             {
@@ -297,7 +299,6 @@ namespace RailworksDownloader
                 {
                     TotalProgress.IsIndeterminate = false;
 
-                    PM.StopMSMQ = false;
                     ScanRailworks.IsEnabled = true;
                     ScanRailworks.Content = Localization.Strings.MainRescan;
                 });
@@ -320,7 +321,7 @@ namespace RailworksDownloader
                     //if (PM.PkgsToDownload.Count > 0)
                     DownloadMissing.IsEnabled = true;
                 });
-                PM.RunQueueWatcher();
+                PM.msmqWatcher = PM.RunQueueWatcher();
             }).Start();
         }
 
@@ -417,6 +418,9 @@ namespace RailworksDownloader
 
         private void ScanRailworks_Click(object sender, RoutedEventArgs e)
         {
+            if (RW == null)
+                return;
+
             Dispatcher.Invoke(() =>
             {
                 ScanRailworks.IsEnabled = false;
@@ -456,6 +460,9 @@ namespace RailworksDownloader
 
         private void ManagePackages_Click(object sender, RoutedEventArgs e)
         {
+            if (PM == null)
+                return; 
+
             PackageManagerWindow pmw = new PackageManagerWindow(PM);
             pmw.ShowDialog();
         }
