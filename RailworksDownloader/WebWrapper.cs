@@ -137,6 +137,8 @@ namespace RailworksDownloader
 
             OnDownloadProgressChanged?.Invoke(0);
 
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
             WebClient webClient = new WebClient();
             webClient.DownloadProgressChanged += (sender, e) =>
             {
@@ -210,6 +212,8 @@ namespace RailworksDownloader
 
             try
             {
+                ServicePointManager.Expect100Continue = true;
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
                 HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", encodedContent);
                 if (response.IsSuccessStatusCode)
                 {
@@ -231,6 +235,8 @@ namespace RailworksDownloader
 
             try
             {
+                ServicePointManager.Expect100Continue = true;
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
                 HttpResponseMessage response = await Client.PostAsync(ApiUrl + "login", encodedContent);
                 if (response.IsSuccessStatusCode)
                 {
@@ -238,9 +244,10 @@ namespace RailworksDownloader
                 } 
                 else
                 {
+                    string strResponse = await response.Content.ReadAsStringAsync();
                     try
                     {
-                        return JsonConvert.DeserializeObject<ObjectResult<LoginContent>>(await response.Content.ReadAsStringAsync()) ?? new ObjectResult<LoginContent>(500, Localization.Strings.ServerEmptyResponse);
+                        return JsonConvert.DeserializeObject<ObjectResult<LoginContent>>(strResponse) ?? new ObjectResult<LoginContent>(500, Localization.Strings.ServerEmptyResponse);
                     }
                     catch
                     {
@@ -268,6 +275,8 @@ namespace RailworksDownloader
 
             try
             {
+                ServicePointManager.Expect100Continue = true;
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
                 HttpResponseMessage response = await Client.PostAsync(ApiUrl + "query", content);
                 if (response.IsSuccessStatusCode)
                 {
@@ -296,6 +305,8 @@ namespace RailworksDownloader
 
             try
             {
+                ServicePointManager.Expect100Continue = true;
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
                 HttpResponseMessage response = await Client.PostAsync(apiUrl + "reportDLC", encodedContent);
                 if (response.IsSuccessStatusCode)
                 {
@@ -323,6 +334,8 @@ namespace RailworksDownloader
 
             try
             {
+                ServicePointManager.Expect100Continue = true;
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
                 HttpResponseMessage response = await new HttpClient(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate }).PostAsync(apiUrl + "getAppVersion", encodedContent);
                 if (response.IsSuccessStatusCode)
                     return JsonConvert.DeserializeObject<ObjectResult<AppVersionContent>>(await response.Content.ReadAsStringAsync());

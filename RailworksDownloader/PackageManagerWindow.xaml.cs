@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Windows;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace RailworksDownloader
 {
@@ -53,6 +51,9 @@ namespace RailworksDownloader
 
         private void PackagesList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            if (PackagesList.SelectedItem == null)
+                return;
+
             int id = ((Package)PackagesList.SelectedItem).PackageId;
             Process.Start($"https://dls.rw.jachyhm.cz?package={id}");
         }

@@ -243,6 +243,9 @@
   <data name="DepWindowTitle2" xml:space="preserve">
     <value>Scenario dependencies</value>
   </data>
+  <data name="DLCReportError" xml:space="preserve">
+    <value>There was an error while reporting installed DLS's!</value>
+  </data>
   <data name="DownloadError" xml:space="preserve">
     <value>Error occured while downloading</value>
   </data>
@@ -311,6 +314,9 @@
   </data>
   <data name="KeepLocal" xml:space="preserve">
     <value>Keep local!</value>
+  </data>
+  <data name="LoadingInstalledFilesError" xml:space="preserve">
+    <value>An unexpected error occured while getting installed files immediately after file "{0}"!</value>
   </data>
   <data name="LoginCheckbox" xml:space="preserve">
     <value>Stay logged in</value>

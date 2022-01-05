@@ -359,36 +359,45 @@ namespace RailworksDownloader
             if (!Directory.Exists(AssetsPath))
                 return;
 
-            string[] files = Directory.GetFiles(AssetsPath, "*.*", SearchOption.AllDirectories);
-            foreach (string file in files)
-            {
-                string ext = Path.GetExtension(file).ToLower();
-                if (ext == ".bin" || ext == ".xml")
+            string lastFileName = "";
+            try {
+                //string[] files = Directory.GetFiles(AssetsPath, "*.*", SearchOption.AllDirectories);
+                foreach (FileInfo fileInfo in new DirectoryInfo(AssetsPath).EnumerateFiles("*.*", SearchOption.AllDirectories))
                 {
-                    AllInstalledDeps.Add(NormalizePath(GetRelativePath(AssetsPath, file)));
-                }
-                else if (ext == ".ap")
-                {
-                    try
+                    lastFileName = fileInfo.FullName;
+                    string ext = fileInfo.Extension.ToLower();
+                    if (ext == ".bin" || ext == ".xml")
                     {
-                        using (ICSharpCode.SharpZipLib.Zip.ZipFile zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(file))
+                        AllInstalledDeps.Add(NormalizePath(GetRelativePath(AssetsPath, fileInfo.FullName)));
+                    }
+                    else if (ext == ".ap")
+                    {
+                        try
                         {
-                            foreach (ZipEntry entry in zip)
+                            using (ICSharpCode.SharpZipLib.Zip.ZipFile zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(fileInfo.FullName))
                             {
-                                string iExt = Path.GetExtension(entry.Name).ToLower();
-                                if (iExt == ".xml" || iExt == ".bin")
+                                foreach (ZipEntry entry in zip)
                                 {
-                                    AllInstalledDeps.Add(NormalizePath(GetRelativePath(AssetsPath, Path.Combine(Path.GetDirectoryName(file), entry.Name))));
+                                    string iExt = Path.GetExtension(entry.Name).ToLower();
+                                    if (iExt == ".xml" || iExt == ".bin")
+                                    {
+                                        AllInstalledDeps.Add(NormalizePath(GetRelativePath(AssetsPath, Path.Combine(Path.GetDirectoryName(fileInfo.FullName), entry.Name))));
+                                    }
                                 }
                             }
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        SentrySdk.CaptureException(e);
-                        Debug.Assert(false, string.Format(Localization.Strings.ReadingZipFail, file));
+                        catch (Exception e)
+                        {
+                            SentrySdk.CaptureException(e);
+                            Debug.Assert(false, string.Format(Localization.Strings.ReadingZipFail, fileInfo.FullName));
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                SentrySdk.CaptureException(e);
+                Trace.Assert(false, string.Format(Localization.Strings.LoadingInstalledFilesError, lastFileName), e.Message);
             }
             getAllInstalledDepsEvent.Set();
         }

@@ -55,7 +55,11 @@ namespace RailworksDownloader
 
                 DataContext = this;
 
-                Title = $"Railworks DLS client v{App.Version}";
+                string debugTitle = "";
+                if (App.Debug)
+                    debugTitle = " DEBUG!!!";
+
+                Title = $"Railworks DLS client v{App.Version}{debugTitle}";
 
                 App.Window = this;
 
@@ -163,20 +167,28 @@ namespace RailworksDownloader
             dlcReportFinishedHandler.Reset();
             Task.Run(async () =>
             {
-                RW_CheckingDLC(false);
-                List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
-                IEnumerable<Package> pkgs = await WebWrapper.ReportDLC(dlcList, App.Token, ApiUrl);
-                PM.InstalledPackages = PM.InstalledPackages.Union(pkgs).ToList();
-                new Task(() =>
+                try
                 {
-                    foreach (Package pkg in pkgs)
+                    RW_CheckingDLC(false);
+                    List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
+                    IEnumerable<Package> pkgs = await WebWrapper.ReportDLC(dlcList, App.Token, ApiUrl);
+                    PM.InstalledPackages = PM.InstalledPackages.Union(pkgs).ToList();
+                    new Task(() =>
                     {
-                        PM.SqLiteAdapter.SavePackage(pkg);
-                    }
-                    PM.SqLiteAdapter.FlushToFile(true);
-                }).Start();
-                PM.CacheInit.WaitOne();
-                PM.CachedPackages = PM.CachedPackages.Union(PM.InstalledPackages).ToList();
+                        foreach (Package pkg in pkgs)
+                        {
+                            PM.SqLiteAdapter.SavePackage(pkg);
+                        }
+                        PM.SqLiteAdapter.FlushToFile(true);
+                    }).Start();
+                    PM.CacheInit.WaitOne();
+                    PM.CachedPackages = PM.CachedPackages.Union(PM.InstalledPackages).ToList();
+                } 
+                catch (Exception e)
+                {
+                    SentrySdk.CaptureException(e);
+                    Trace.Assert(false, Localization.Strings.DLCReportError, e.Message);
+                }
                 dlcReportFinishedHandler.Set();
                 ReportedDLC = true;
                 RW_CheckingDLC(true);

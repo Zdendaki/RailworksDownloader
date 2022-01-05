@@ -243,6 +243,9 @@
   <data name="DepWindowTitle2" xml:space="preserve">
     <value>Závislosti scénářů</value>
   </data>
+  <data name="DLCReportError" xml:space="preserve">
+    <value>Nastala neočekávaná chyba při hlášení nainstalovaných DLC!</value>
+  </data>
   <data name="DownloadError" xml:space="preserve">
     <value>Nastala neočekávaná chyba při stahování</value>
   </data>
@@ -311,6 +314,9 @@
   </data>
   <data name="KeepLocal" xml:space="preserve">
     <value>Ponechat!</value>
+  </data>
+  <data name="LoadingInstalledFilesError" xml:space="preserve">
+    <value>Při čtení naisntalovaných souborů nastala neočekávaná chyba bezprostředně po souboru "{0}"!</value>
   </data>
   <data name="LoginCheckbox" xml:space="preserve">
     <value>Zůstat přihlášen</value>

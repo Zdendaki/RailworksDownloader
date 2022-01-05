@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace RailworksDownloader
 {
@@ -31,6 +32,8 @@ namespace RailworksDownloader
 
         internal static bool AutoDownload { get; set; } = true;
 
+        internal static bool Debug { get; set; } = false;
+
         internal static bool ReportErrors { get; set; } = true;
 
         internal static IDisposable Sentry { get; set; }
@@ -39,20 +42,33 @@ namespace RailworksDownloader
         {
             Sentry = SentrySdk.Init("https://b3e42d20f2524d6b9e71b51b446929e8@o572516.ingest.sentry.io/5722005");
 
+            if (!Debugger.IsAttached)
+            {
+                DispatcherUnhandledException += App_DispatcherUnhandledException;
+            }
+
             Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
             if (e.Args.Length > 0)
             {
-                if (e.Args[0].ToLower().Contains("preventautostart"))
+                for (int i = 0; i < e.Args.Length; i++)
                 {
-                    AutoDownload = false;
-                }
-                else
-                {
-                    for (int i = 0; i < e.Args.Length; i++)
+                    if (e.Args[i][0] == '-')
+                    {
+                        switch (e.Args[i].ToLower())
+                        {
+                            case "-preventautostart":
+                                AutoDownload = false;
+                                break;
+                            case "-debug":
+                                Debug = false;
+                                break;
+                        }
+                    }
+                    else
                     {
                         string[] parts = e.Args[i].Split(':');
-                        if (parts.Count() == 2)
+                        if (parts.Count() == 2 && parts[0].ToLower() == "dls")
                         {
                             if (int.TryParse(parts[1], out int pkgId))
                             {
@@ -80,6 +96,19 @@ namespace RailworksDownloader
 
             Sentry.Dispose();
             base.OnExit(e);
+        }
+
+        private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            try
+            {
+                Trace.Assert(false, e.Exception.Message, e.Exception.ToString());
+                e.Handled = true;
+            }
+            catch (Exception)
+            {
+                e.Handled = false;
+            }
         }
     }
 }

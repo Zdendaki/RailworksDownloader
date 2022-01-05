@@ -243,6 +243,9 @@
   <data name="DepWindowTitle2" xml:space="preserve">
     <value>Zależności scenariuszów</value>
   </data>
+  <data name="DLCReportError" xml:space="preserve">
+    <value>Podczas raportowania zainstalowanych DLC wystąpil nieoczekiwany błąd!</value>
+  </data>
   <data name="DownloadError" xml:space="preserve">
     <value>Wystąpil nieznany bląd przy pobieraniu</value>
   </data>
@@ -311,6 +314,9 @@
   </data>
   <data name="KeepLocal" xml:space="preserve">
     <value>Zostaw!</value>
+  </data>
+  <data name="LoadingInstalledFilesError" xml:space="preserve">
+    <value>Podczas czytania listy zainstalowanych plików wystąpil nieoczekiwany błąd natychmiast po pliku "{0}"!</value>
   </data>
   <data name="LoginCheckbox" xml:space="preserve">
     <value>Bądż zawsze zalogowany</value>

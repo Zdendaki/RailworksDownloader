@@ -439,6 +439,15 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný There was an error while reporting installed DLS&apos;s!.
+        /// </summary>
+        public static string DLCReportError {
+            get {
+                return ResourceManager.GetString("DLCReportError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný Error occured while downloading.
         /// </summary>
         public static string DownloadError {
@@ -642,6 +651,15 @@ namespace RailworksDownloader.Localization {
         public static string KeepLocal {
             get {
                 return ResourceManager.GetString("KeepLocal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný An unexpected error occured while getting installed files immediately after file &quot;{0}&quot;!.
+        /// </summary>
+        public static string LoadingInstalledFilesError {
+            get {
+                return ResourceManager.GetString("LoadingInstalledFilesError", resourceCulture);
             }
         }
         
