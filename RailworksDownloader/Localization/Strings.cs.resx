@@ -383,6 +383,9 @@ Chcete ho aktualizovat?</value>
   <data name="NoRouteName" xml:space="preserve">
     <value>Trať {0} neobsahuje žádný název, použije se hash!</value>
   </data>
+  <data name="NoSuchPackageFail" xml:space="preserve">
+    <value>Požadovaný balíček neexistuje!</value>
+  </data>
   <data name="Ok" xml:space="preserve">
     <value>Budiž!</value>
   </data>

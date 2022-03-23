@@ -80,22 +80,7 @@ namespace RailworksDownloader
                             {
                                 App.Token = null;
                             }
-                            new Task(() =>
-                            {
-                                App.Window.Dispatcher.Invoke(() =>
-                                {
-                                    MainWindow.ErrorDialog = new ContentDialog()
-                                    {
-                                        Title = Localization.Strings.DownloadError,
-                                        Content = dl_result.message,
-                                        SecondaryButtonText = Localization.Strings.Ok,
-                                        Owner = App.Window
-                                    };
-
-                                    MainWindow.ErrorDialog.ShowAsync();
-                                });
-
-                            }).Start();
+                            Utils.DisplayError(Localization.Strings.DownloadError, dl_result.message);
                         }
                         break;
                     }
@@ -109,7 +94,7 @@ namespace RailworksDownloader
                 }
             }
 
-            App.Window.Dispatcher.Invoke(() => Hide());
+            App.DialogQueue.RemoveDialog(this);
         }
 
         internal async Task DownloadPackages(HashSet<int> download, List<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
@@ -122,18 +107,7 @@ namespace RailworksDownloader
 
                 if (p == null)
                 {
-                    App.Window.Dispatcher.Invoke(() =>
-                    {
-                        MainWindow.ErrorDialog = new ContentDialog()
-                        {
-                            Title = Localization.Strings.CriticalError,
-                            Content = Localization.Strings.NonCached,
-                            SecondaryButtonText = Localization.Strings.Ok,
-                            Owner = App.Window
-                        };
-
-                        MainWindow.ErrorDialog.ShowAsync();
-                    });
+                    Utils.DisplayError(Localization.Strings.CriticalError, Localization.Strings.NonCached);
                     continue;
                 }
 
@@ -179,22 +153,7 @@ namespace RailworksDownloader
                             {
                                 App.Token = null;
                             }
-                            new Task(() =>
-                            {
-                                App.Window.Dispatcher.Invoke(() =>
-                                {
-                                    MainWindow.ErrorDialog = new ContentDialog()
-                                    {
-                                        Title = Localization.Strings.DownloadError,
-                                        Content = dl_result.message,
-                                        SecondaryButtonText = Localization.Strings.Ok,
-                                        Owner = App.Window
-                                    };
-
-                                    MainWindow.ErrorDialog.ShowAsync();
-                                });
-
-                            }).Start();
+                            Utils.DisplayError(Localization.Strings.DownloadError, dl_result.message);
                         }
                         break;
                     }
@@ -208,7 +167,7 @@ namespace RailworksDownloader
                 }
             }
 
-            App.Window.Dispatcher.Invoke(() => Hide());
+            App.DialogQueue.RemoveDialog(this);
         }
 
         internal void DownloadUpdateAsync(Updater updater)
@@ -273,11 +232,10 @@ namespace RailworksDownloader
                             Utils.ElevatePrivileges();
                         }
 
-                        SentrySdk.WithScope(scope =>
+                        SentrySdk.CaptureException(ex, scope =>
                         {
                             if (ex is InvalidDataException)
                                 SentrySdk.CaptureMessage($"Package {p.PackageId} uses unsupported compression type!", SentryLevel.Fatal);
-                            SentrySdk.CaptureException(ex);
                         });
                         failedFiles.Add(e.FullName);
                     }

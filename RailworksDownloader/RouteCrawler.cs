@@ -45,7 +45,7 @@ namespace RailworksDownloader
         /// <summary>
         /// Is route from asset pack
         /// </summary>
-        internal bool ContainsAP => Directory.GetFiles(RoutePath, "*.ap", SearchOption.AllDirectories).Any();
+        internal bool ContainsAP;
 
         // Progress updated
         public delegate void ProgressUpdatedEventHandler(float percent);
@@ -88,13 +88,7 @@ namespace RailworksDownloader
             ScenarioDeps = scenarioDeps;
             Adapter = new SqLiteAdapter(Path.Combine(RoutePath, "cache.dls"));
             SavedRoute = Adapter.LoadSavedRoute();
-        }
-
-        public string GetTemporaryDirectory()
-        {
-            string tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            Directory.CreateDirectory(tempDirectory);
-            return tempDirectory;
+            ContainsAP = Directory.GetFiles(RoutePath, "*.ap", SearchOption.AllDirectories).Any();
         }
 
         /// <summary>
@@ -268,10 +262,9 @@ namespace RailworksDownloader
             {
                 if (App.ReportErrors)
                 {
-                    SentrySdk.WithScope(scope =>
+                    SentrySdk.CaptureException(e, scope =>
                     {
                         scope.AddAttachment(stream, debugFname);
-                        SentrySdk.CaptureException(e);
                     });
                 }
                 return;
@@ -300,10 +293,9 @@ namespace RailworksDownloader
             {
                 if (App.ReportErrors)
                 {
-                    SentrySdk.WithScope(scope =>
+                    SentrySdk.CaptureException(e, scope =>
                     {
                         scope.AddAttachment(stream.ToArray(), debugFname);
-                        SentrySdk.CaptureException(e);
                     });
                 }
             }
@@ -372,8 +364,8 @@ namespace RailworksDownloader
             bool rpChanged = GetFileChanged(Path.Combine(RoutePath, "RouteProperties.xml"), ref SavedRoute.RoutePropertiesLastWrite, ref SavedRoute.RoutePropertiesChecksum);
             bool scenariosChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Scenarios"), ref SavedRoute.ScenariosLastWrite, ref SavedRoute.ScenariosChecksum);*/
 
-            lock (Dependencies)
-            {
+            /*lock (Dependencies)
+            {*/
                 if (SavedRoute.Dependencies != null)
                     lock (Dependencies)
                         Dependencies.UnionWith(SavedRoute.Dependencies);
@@ -381,7 +373,7 @@ namespace RailworksDownloader
                 if (SavedRoute.ScenarioDeps != null)
                     lock (ScenarioDeps)
                         ScenarioDeps.UnionWith(SavedRoute.ScenarioDeps);
-            }
+            //}
 
             if (LoftsChanged || RoadsChanged || TracksChanged || SceneryChanged || RPchanged || ScenariosChanged)
             {

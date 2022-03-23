@@ -44,8 +44,9 @@ namespace RailworksDownloader
         {
             App.Window.Dispatcher.Invoke(() =>
             {
-                MainWindow.DownloadDialog.ShowAsync();
-                MainWindow.DownloadDialog.DownloadUpdateAsync(this);
+                DownloadDialog downloadDialog = new DownloadDialog();
+                App.DialogQueue.AddDialog(Environment.TickCount, 1, downloadDialog);
+                downloadDialog.DownloadUpdateAsync(this);
             });
 
             OnDownloadProgressChanged?.Invoke(0);

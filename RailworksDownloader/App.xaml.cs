@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -21,6 +22,8 @@ namespace RailworksDownloader
         internal static SteamManager SteamManager { get; set; }
 
         internal static PackageManager PackageManager { get; set; }
+
+        internal static DialogQueue DialogQueue { get; set; }
 
         internal static Settings Settings { get; set; }
 
@@ -41,6 +44,8 @@ namespace RailworksDownloader
         protected override void OnStartup(StartupEventArgs e)
         {
             Sentry = SentrySdk.Init("https://b3e42d20f2524d6b9e71b51b446929e8@o572516.ingest.sentry.io/5722005");
+
+            DialogQueue = new DialogQueue();
 
             if (!Debugger.IsAttached)
             {
@@ -70,7 +75,7 @@ namespace RailworksDownloader
                         string[] parts = e.Args[i].Split(':');
                         if (parts.Count() == 2 && parts[0].ToLower() == "dls")
                         {
-                            if (int.TryParse(parts[1], out int pkgId))
+                            if (int.TryParse(Regex.Replace(parts[1], "[^0-9.]", ""), out int pkgId))
                             {
                                 string queueFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "DLS.queue");
                                 HashSet<string> queuedPkgs = System.IO.File.Exists(queueFile) ? System.IO.File.ReadAllText(queueFile).Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToHashSet() : new HashSet<string>();

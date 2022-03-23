@@ -855,6 +855,15 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Desired package does not exist!.
+        /// </summary>
+        public static string NoSuchPackageFail {
+            get {
+                return ResourceManager.GetString("NoSuchPackageFail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný OK.
         /// </summary>
         public static string Ok {

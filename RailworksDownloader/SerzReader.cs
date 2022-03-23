@@ -285,10 +285,9 @@ namespace RailworksDownloader
                     {
                         if (App.ReportErrors)
                         {
-                            SentrySdk.WithScope(scope =>
+                            SentrySdk.CaptureException(e, scope =>
                             {
                                 scope.AddAttachment(InputStream.ToArray(), DebugFname);
-                                SentrySdk.CaptureException(e);
                             });
                         }
                         if (e is SerzException)

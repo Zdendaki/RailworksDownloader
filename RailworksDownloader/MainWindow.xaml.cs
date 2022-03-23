@@ -33,10 +33,6 @@ namespace RailworksDownloader
         public static Color Purple { get; } = Color.FromArgb(255, 190, 46, 221); //new SolidColorBrush(Color.FromArgb(255, 190, 46, 221))
         public static Color Gray { get; } = Color.FromArgb(255, 113, 128, 147); //new SolidColorBrush(Color.FromArgb(255, 113, 128, 147))
 
-        internal static DownloadDialog DownloadDialog = new DownloadDialog();
-        internal static ContentDialog ContentDialog = new ContentDialog();
-        internal static ContentDialog ErrorDialog = new ContentDialog();
-
         private readonly EventWaitHandle dlcReportFinishedHandler = new EventWaitHandle(false, EventResetMode.ManualReset);
         private bool Saving = false;
         private bool CheckingDLC = false;
@@ -46,6 +42,7 @@ namespace RailworksDownloader
         private bool crawlingComplete = false;
         private bool loadingComplete = false;
         private bool exitConfirmed = false;
+        private readonly object indexLock = new object();
 
         public MainWindow()
         {
@@ -99,7 +96,7 @@ namespace RailworksDownloader
                     if (string.IsNullOrWhiteSpace(RW.RWPath))
                     {
                         RailworksPathDialog rpd = new RailworksPathDialog();
-                        rpd.ShowAsync();
+                        App.DialogQueue.AddDialog(Environment.TickCount, 3, rpd);
                     }
 
                     if (string.IsNullOrWhiteSpace(App.Settings.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
@@ -115,12 +112,10 @@ namespace RailworksDownloader
 
                     App.Settings.RailworksPathChanged += RailworksPathChanged;
 
-                    DownloadDialog.Owner = this;
-
-                    RegistryKey key = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
-                    key.SetValue("URL Protocol", "");
-                    //key.SetValue("DefaultIcon", "");
-                    key.CreateSubKey(@"shell\open\command").SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
+                    RegistryKey dlsKey = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
+                    dlsKey.SetValue("URL Protocol", "");
+                    RegistryKey shellKey = dlsKey.CreateSubKey(@"shell\open\command");
+                    shellKey.SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
 
                     if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
                     {
@@ -138,8 +133,6 @@ namespace RailworksDownloader
                     SentrySdk.CaptureException(e);
                     Trace.Assert(false, Localization.Strings.UpdaterPanic, e.ToString());
                 }
-
-                
             }
             catch (Exception e)
             {
@@ -195,30 +188,23 @@ namespace RailworksDownloader
             });
         }
 
-        private async void MainWindowDialog_Closing(object sender, CancelEventArgs e)
+        private void MainWindowDialog_Closing(object sender, CancelEventArgs e)
         {
-            if (exitConfirmed == true)
+            if (exitConfirmed)
                 return;
 
             if (Saving || CheckingDLC || App.IsDownloading)
             {
                 e.Cancel = true;
 
-                ContentDialog dialog = new ContentDialog
+                Utils.DisplayYesNo(Localization.Strings.Warning, Localization.Strings.OperationsRunning, Localization.Strings.Yes, Localization.Strings.No, (result) =>
                 {
-                    Title = Localization.Strings.Warning,
-                    Content = Localization.Strings.OperationsRunning,
-                    PrimaryButtonText = Localization.Strings.Yes,
-                    SecondaryButtonText = Localization.Strings.No
-                };
-
-                Task<ContentDialogResult> result = dialog.ShowAsync();
-
-                exitConfirmed = (await result) == ContentDialogResult.Primary;
-                if (exitConfirmed)
-                {
-                    Close();
-                }
+                    if (result)
+                    {
+                        exitConfirmed = true;
+                        Close();
+                    }
+                });
             }
         }
 
@@ -243,7 +229,7 @@ namespace RailworksDownloader
                     RW.AllRequiredDeps.UnionWith(RW.Routes[i].AllDependencies);
                 }
 
-                RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); });
+                //RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); });
 
                 RW.getAllInstalledDepsEvent.WaitOne();
                 RW.AllMissingDeps = RW.AllRequiredDeps.Except(RW.AllInstalledDeps);
@@ -251,11 +237,17 @@ namespace RailworksDownloader
                 dlcReportFinishedHandler.WaitOne();
 
                 int maxThreads = Math.Min(Environment.ProcessorCount, RW.Routes.Count);
+                int lastIndex = 0;
                 Parallel.For(0, maxThreads, workerId =>
                 {
-                    int max = RW.Routes.Count * (workerId + 1) / maxThreads;
-                    for (int i = RW.Routes.Count * workerId / maxThreads; i < max; i++)
+                    while (lastIndex < RW.Routes.Count)
                     {
+                        int i;
+                        lock (indexLock)
+                        {
+                            i = lastIndex;
+                            lastIndex++;
+                        }
                         List<Dependency> deps = new List<Dependency>();
 
                         int _i = ((i & 1) != 0) ? (i - 1) / 2 : (RW.Routes.Count - 1) - i / 2;
@@ -425,7 +417,7 @@ namespace RailworksDownloader
         private void SelectRailworksLocation_Click(object sender, RoutedEventArgs e)
         {
             RailworksPathDialog rpd = new RailworksPathDialog();
-            rpd.ShowAsync();
+            App.DialogQueue.AddDialog(Environment.TickCount, 3, rpd);
         }
 
         private void ScanRailworks_Click(object sender, RoutedEventArgs e)

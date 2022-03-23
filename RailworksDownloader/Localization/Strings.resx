@@ -383,6 +383,9 @@ Do you want to update it?</value>
   <data name="NoRouteName" xml:space="preserve">
     <value>Route {0} has no name entered, using its hash instead!</value>
   </data>
+  <data name="NoSuchPackageFail" xml:space="preserve">
+    <value>Desired package does not exist!</value>
+  </data>
   <data name="Ok" xml:space="preserve">
     <value>OK</value>
   </data>

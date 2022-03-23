@@ -18,7 +18,6 @@ namespace RailworksDownloader
             InitializeComponent();
             ApiUrl = apiUrl;
             Callback = callback;
-            ShowAsync();
         }
 
         private void ContentDialog_SecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)

@@ -318,21 +318,16 @@ namespace RailworksDownloader
                 bool rewrite = false;
                 if (!rewriteAll && !keepAll)
                 {
-                    Task<ContentDialogResult> t = null;
-                    MainWindow.Dispatcher.Invoke(() =>
+                    App.Window.Dispatcher.Invoke(() =>
                     {
-                        MainWindow.ContentDialog?.Hide();
-                        MainWindow.ContentDialog = new ConflictPackageDialog(p.DisplayName);
-                        t = MainWindow.ContentDialog.ShowAsync();
+                        var conflictPackageDialog = new ConflictPackageDialog(p.DisplayName);
+                        App.DialogQueue.AddDialog(Environment.TickCount, 2, conflictPackageDialog, (_) =>
+                        {
+                            rewrite = conflictPackageDialog?.RewriteLocal ?? false;
+                            rewriteAll = conflictPackageDialog?.RewriteAll ?? false;
+                            keepAll = conflictPackageDialog?.KeepAll ?? false;
+                        });
                     });
-
-                    ContentDialogResult result = await t; // BUG: InvalidOperationException - Only one dialog can be opened at any time.
-
-                    ConflictPackageDialog dlg = (ConflictPackageDialog)MainWindow.ContentDialog;
-
-                    rewrite = dlg.RewriteLocal;
-                    rewriteAll = dlg.RewriteAll;
-                    keepAll = dlg.KeepAll;
                 }
 
                 if (rewrite || rewriteAll)
@@ -384,28 +379,18 @@ namespace RailworksDownloader
                 if (PkgsToDownload.Count > 0)
                 {
                     App.IsDownloading = true;
-                    MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); });
-                    MainWindow.DownloadDialog.DownloadPackages(PkgsToDownload, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                    App.Window.Dispatcher.Invoke(() =>
+                    {
+                        DownloadDialog downloadDialog = new DownloadDialog();
+                        App.DialogQueue.AddDialog(Environment.TickCount, 1, downloadDialog);
+                        downloadDialog.DownloadPackages(PkgsToDownload, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                    });
                     App.IsDownloading = false;
                     MainWindow.RW_CrawlingComplete();
                 }
                 else
                 {
-                    new Task(() =>
-                    {
-                        App.Window.Dispatcher.Invoke(() =>
-                        {
-                            MainWindow.ErrorDialog = new ContentDialog()
-                            {
-                                Title = Localization.Strings.CantDownload,
-                                Content = Localization.Strings.AllDownDesc,
-                                SecondaryButtonText = Localization.Strings.Ok,
-                                Owner = App.Window
-                            };
-
-                            MainWindow.ErrorDialog.ShowAsync();
-                        });
-                    }).Start();
+                    Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.AllDownDesc);
                     MainWindow.Dispatcher.Invoke(() =>
                     {
                         MainWindow.DownloadMissing.IsEnabled = false;
@@ -434,23 +419,11 @@ namespace RailworksDownloader
 
                     if (package.Version < ServerVersions[package.PackageId])
                     {
-                        Task<ContentDialogResult> t = null;
-                        MainWindow.Dispatcher.Invoke(() =>
+                        Utils.DisplayYesNo(Localization.Strings.NewerTitle, string.Format(Localization.Strings.NewerDesc, package.DisplayName), Localization.Strings.NewerPrimary, Localization.Strings.NewerSecond, (res) =>
                         {
-                            MainWindow.ContentDialog?.Hide();
-                            MainWindow.ContentDialog.Title = Localization.Strings.NewerTitle;
-                            MainWindow.ContentDialog.Content = string.Format(Localization.Strings.NewerDesc, package.DisplayName);
-                            MainWindow.ContentDialog.PrimaryButtonText = Localization.Strings.NewerPrimary;
-                            MainWindow.ContentDialog.SecondaryButtonText = Localization.Strings.NewerSecond;
-                            MainWindow.ContentDialog.Owner = MainWindow;
-                            t = MainWindow.ContentDialog.ShowAsync();
+                            if (res)
+                                pkgsToUpdate[package.PackageId] = ServerVersions[package.PackageId];
                         });
-
-                        ContentDialogResult result = await t;
-                        if (result == ContentDialogResult.Primary)
-                        {
-                            pkgsToUpdate[package.PackageId] = ServerVersions[package.PackageId];
-                        }
                     }
                 }
 
@@ -458,8 +431,12 @@ namespace RailworksDownloader
                     return;
 
                 App.IsDownloading = true;
-                MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); });
-                MainWindow.DownloadDialog.UpdatePackages(pkgsToUpdate, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                App.Window.Dispatcher.Invoke(() =>
+                {
+                    DownloadDialog downloadDialog = new DownloadDialog();
+                    App.DialogQueue.AddDialog(Environment.TickCount, 1, downloadDialog);
+                    downloadDialog.UpdatePackages(pkgsToUpdate, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                });
                 App.IsDownloading = false;
                 MainWindow.RW_CrawlingComplete();
             });
@@ -537,6 +514,11 @@ namespace RailworksDownloader
                     Task.Run(async () =>
                     {
                         Package packageToDownload = await WebWrapper.GetPackage(idToDownload);
+                        if (packageToDownload == null)
+                        {
+                            Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.NoSuchPackageFail);
+                            return;
+                        }
                         lock (CachedPackages)
                         {
                             if (!CachedPackages.Any(x => x.PackageId == packageToDownload.PackageId))
@@ -545,19 +527,7 @@ namespace RailworksDownloader
 
                         if (packageToDownload.IsPaid)
                         {
-                            App.Window.Dispatcher.Invoke(() =>
-                            {
-                                MainWindow.ErrorDialog = new ContentDialog()
-                                {
-                                    Title = Localization.Strings.CantDownload,
-                                    Content = Localization.Strings.PaidPackageFail,
-                                    SecondaryButtonText = Localization.Strings.Ok,
-                                    Owner = App.Window
-                                };
-
-                                MainWindow.ErrorDialog.ShowAsync();
-                            });
-
+                            Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.PaidPackageFail);
                             return;
                         }
 
@@ -568,44 +538,23 @@ namespace RailworksDownloader
                         if (packageIds.Count > 0)
                         {
                             App.IsDownloading = true;
-                            MainWindow.Dispatcher.Invoke(() => { MainWindow.DownloadDialog.ShowAsync(); });
-                            await MainWindow.DownloadDialog.DownloadPackages(packageIds, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter);
+                            await App.Window.Dispatcher.Invoke(async () =>
+                            {
+                                DownloadDialog downloadDialog = new DownloadDialog();
+                                App.DialogQueue.AddDialog(Environment.TickCount, 1, downloadDialog);
+                                await downloadDialog.DownloadPackages(packageIds, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter);
+                            });
                             App.IsDownloading = false;
                         }
                         else
                         {
-                            new Task(() =>
-                            {
-                                App.Window.Dispatcher.Invoke(() =>
-                                {
-                                    MainWindow.ErrorDialog = new ContentDialog()
-                                    {
-                                        Title = Localization.Strings.CantDownload,
-                                        Content = Localization.Strings.InstalFail,
-                                        SecondaryButtonText = Localization.Strings.Ok,
-                                        Owner = App.Window
-                                    };
-
-                                    MainWindow.ErrorDialog.ShowAsync();
-                                });
-                            }).Start();
+                            Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.InstalFail);
                         }
                     }).Wait();
                 }
                 else
                 {
-                    App.Window.Dispatcher.Invoke(() =>
-                    {
-                        MainWindow.ErrorDialog = new ContentDialog()
-                        {
-                            Title = Localization.Strings.CantDownload,
-                            Content = Localization.Strings.AlreadyInstalFail,
-                            SecondaryButtonText = Localization.Strings.Ok,
-                            Owner = App.Window
-                        };
-
-                        MainWindow.ErrorDialog.ShowAsync();
-                    });
+                    Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.AlreadyInstalFail);
 
                 }
 

@@ -126,10 +126,9 @@ namespace RailworksDownloader
                     catch (Exception e)
                     {
                         if (App.ReportErrors) {
-                            SentrySdk.WithScope(scope =>
+                            SentrySdk.CaptureException(e, scope =>
                             {
                                 scope.AddAttachment(stream.ToArray(), file);
-                                SentrySdk.CaptureException(e);
                             });
                         }
                         MessageBox.Show(string.Format(Localization.Strings.ParseRoutePropFail, file), Localization.Strings.ParseRoutePropFailTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -138,11 +137,10 @@ namespace RailworksDownloader
 
                 if (App.ReportErrors)
                 {
-                    SentrySdk.WithScope(scope =>
+                    SentrySdk.CaptureMessage($"{file} has no route name!", scope =>
                     {
                         scope.AddAttachment(stream.ToArray(), file);
-                        SentrySdk.CaptureMessage($"{file} has no route name!", SentryLevel.Warning);
-                    });
+                    }, SentryLevel.Warning);
                 }
             }
             Debug.Assert(false, Localization.Strings.NoRouteName);

@@ -383,6 +383,9 @@ Czy chcesz go zaktualizować?</value>
   <data name="NoRouteName" xml:space="preserve">
     <value>Mapa {0} nie ma wypelnioną żadną nazwe, używam zamiast tego hash!</value>
   </data>
+  <data name="NoSuchPackageFail" xml:space="preserve">
+    <value>Pobierany pakiet nie istnieje!</value>
+  </data>
   <data name="Ok" xml:space="preserve">
     <value>Niech będzie!</value>
   </data>

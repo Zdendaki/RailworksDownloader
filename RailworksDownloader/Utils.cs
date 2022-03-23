@@ -1,4 +1,5 @@
-﻿using Sentry;
+﻿using ModernWpf.Controls;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,55 +12,14 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Xml;
+using Windows.ApplicationModel.Core;
+using Windows.UI.Core;
+using Windows.UI.Popups;
 
 namespace RailworksDownloader
 {
     public static class Utils
     {
-        public static class MemoryInformation
-        {
-            [DllImport("KERNEL32.DLL")]
-            private static extern int OpenProcess(uint dwDesiredAccess, int bInheritHandle, uint dwProcessId);
-
-            [DllImport("KERNEL32.DLL")]
-            private static extern int CloseHandle(int handle);
-
-            [StructLayout(LayoutKind.Sequential)]
-            private class PROCESS_MEMORY_COUNTERS
-            {
-                public int cb;
-                public int PageFaultCount;
-                public int PeakWorkingSetSize;
-                public int WorkingSetSize;
-                public int QuotaPeakPagedPoolUsage;
-                public int QuotaPagedPoolUsage;
-                public int QuotaPeakNonPagedPoolUsage;
-                public int QuotaNonPagedPoolUsage;
-                public int PagefileUsage;
-                public int PeakPagefileUsage;
-            }
-
-            [DllImport("psapi.dll")]
-            private static extern int GetProcessMemoryInfo(int hProcess, [Out] PROCESS_MEMORY_COUNTERS counters, int size);
-
-            public static long GetMemoryUsageForProcess(long pid)
-            {
-                long mem = 0;
-                int pHandle = OpenProcess(0x0400 | 0x0010, 0, (uint)pid);
-                try
-                {
-                    PROCESS_MEMORY_COUNTERS pmc = new PROCESS_MEMORY_COUNTERS();
-                    if (GetProcessMemoryInfo(pHandle, pmc, 40) != 0)
-                        mem = pmc.WorkingSetSize;
-                }
-                finally
-                {
-                    CloseHandle(pHandle);
-                }
-                return mem;
-            }
-        }
-
         public static class PasswordEncryptor
         {
             public static string Encrypt(string input, string password)
@@ -197,11 +157,10 @@ namespace RailworksDownloader
                 {
                     if (App.ReportErrors)
                     {
-                        SentrySdk.WithScope(scope =>
+                        SentrySdk.CaptureMessage($"Regex replaced over {(buffer.Length - prevSize) / 5} characters from XML file.", scope =>
                         {
                             scope.AddAttachment(buffer, "dump.xml", AttachmentType.Default, "text/xml");
-                            SentrySdk.CaptureMessage($"Regex replaced over {(buffer.Length - prevSize) / 5} characters from XML file.", SentryLevel.Warning);
-                        });
+                        }, SentryLevel.Warning);
                     }
                 }
             }
@@ -215,7 +174,11 @@ namespace RailworksDownloader
             {
                 if (string.IsNullOrWhiteSpace(App.Settings.Username) || string.IsNullOrWhiteSpace(App.Settings.Password))
                 {
-                    mw.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(ApiUrl, callback); });
+                    App.Window.Dispatcher.Invoke(() =>
+                    {
+                        LoginDialog ld = new LoginDialog(ApiUrl, callback);
+                        App.DialogQueue.AddDialog(Environment.TickCount, 2, ld);
+                    });
                     return false;
                 }
 
@@ -226,7 +189,11 @@ namespace RailworksDownloader
 
                 if (result == null || !IsSuccessStatusCode(result.code) || result.content == null || result.content.privileges < 0)
                 {
-                    mw.Dispatcher.Invoke(() => { LoginDialog ld = new LoginDialog(ApiUrl, callback); });
+                    App.Window.Dispatcher.Invoke(() =>
+                    {
+                        LoginDialog ld = new LoginDialog(ApiUrl, callback);
+                        App.DialogQueue.AddDialog(Environment.TickCount, 2, ld);
+                    });
                     return false;
                 }
 
@@ -440,6 +407,60 @@ namespace RailworksDownloader
                 }
                 return ostream.ToArray();
             }
+        }
+
+        public static void DisplayError(string title, string message)
+        {
+            /*App.Window.Dispatcher.Invoke(async () =>
+            {
+                MessageDialog errorDialog = new MessageDialog(message, title);
+                errorDialog.Commands.Add(new UICommand(Localization.Strings.Ok));
+                errorDialog.DefaultCommandIndex = 0;
+                errorDialog.CancelCommandIndex = 0;
+
+                await errorDialog.ShowAsync();
+            });*/
+
+            App.Window.Dispatcher.Invoke(() =>
+            {
+                ContentDialog errorDialog = new ContentDialog()
+                {
+                    Title = title,
+                    Content = message,
+                    PrimaryButtonText = Localization.Strings.Ok,
+                    Owner = App.Window,
+                };
+
+                App.DialogQueue.AddDialog(Environment.TickCount, 99, errorDialog);
+            });
+        }
+
+        public static void DisplayYesNo(string title, string message, string yesLabel, string noLabel, Action<bool> callback)
+        {
+            /*App.Window.Dispatcher.Invoke(async () =>
+            {
+                MessageDialog errorDialog = new MessageDialog(message, title);
+                errorDialog.Commands.Add(new UICommand(Localization.Strings.Ok));
+                errorDialog.DefaultCommandIndex = 0;
+                errorDialog.CancelCommandIndex = 0;
+
+                IUICommand result = await errorDialog.ShowAsync();
+                callback(result.Label == yesLabel);
+            });*/
+
+            App.Window.Dispatcher.Invoke(() =>
+            {
+                ContentDialog yesNoDialog = new ContentDialog()
+                {
+                    Title = title,
+                    Content = message,
+                    PrimaryButtonText = yesLabel,
+                    SecondaryButtonText = noLabel,
+                    Owner = App.Window,
+                };
+
+                App.DialogQueue.AddDialog(Environment.TickCount, 100, yesNoDialog, callback);
+            });
         }
     }
 }

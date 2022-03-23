@@ -30,7 +30,7 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Grid ToolTip="{Binding ID}">
+                                <Grid ToolTip="{Binding PkgID}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="3*" />
                                         <ColumnDefinition Width="*" />
@@ -98,7 +98,7 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Grid ToolTip="{Binding ID}">
+                                <Grid ToolTip="{Binding PkgID}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="3*" />
                                         <ColumnDefinition Width="*" />

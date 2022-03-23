@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Windows;
 
 namespace RailworksDownloader
@@ -23,7 +24,7 @@ namespace RailworksDownloader
 
         private void InstallPackage_Click(object sender, RoutedEventArgs e)
         {
-            IPD.ShowAsync();
+            App.DialogQueue.AddDialog(Environment.TickCount, 2, IPD);
         }
 
         private void RemoveSelectedPackage_Click(object sender, RoutedEventArgs e)
