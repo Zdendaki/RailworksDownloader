@@ -99,11 +99,12 @@ namespace RailworksDownloader
                         foreach (DepotManifest.FileData file in manifest.Files)
                         {
                             if (file.Flags.HasFlag(EDepotFileFlag.Directory))
-                            {
                                 continue;
-                            }
 
                             string fileName = file.FileName.ToLower();
+                            if (string.IsNullOrEmpty(fileName) && fileName.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
+                                continue;
+
                             string extension = Path.GetExtension(fileName).ToLower();
 
                             if (fileName.Contains("assets"))

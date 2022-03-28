@@ -252,14 +252,20 @@ namespace RailworksDownloader
 
         public static string FindFile(string dir, string pattern)
         {
-            DirectoryInfo di = new DirectoryInfo(dir);
-            foreach (FileInfo file in di.GetFiles(pattern))
+            try
             {
-                string fe = file.Extension.ToLower();
-                if (fe == ".xml" || fe == ".bin")
-                    return file.FullName;
+                DirectoryInfo di = new DirectoryInfo(dir);
+                foreach (FileInfo file in di.GetFiles(pattern))
+                {
+                    string fe = file.Extension.ToLower();
+                    if (fe == ".xml" || fe == ".bin")
+                        return file.FullName;
+                }
+                return null;
+            } catch
+            {
+                return null;
             }
-            return null;
         }
 
         private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
