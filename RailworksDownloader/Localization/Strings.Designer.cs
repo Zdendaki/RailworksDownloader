@@ -994,6 +994,15 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Failed to load route {0}!.
+        /// </summary>
+        public static string RouteLoadFailText {
+            get {
+                return ResourceManager.GetString("RouteLoadFailText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný Route name.
         /// </summary>
         public static string RouteName {
@@ -1017,6 +1026,15 @@ namespace RailworksDownloader.Localization {
         public static string RoutesLoadFail {
             get {
                 return ResourceManager.GetString("RoutesLoadFail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Failed to iterate routes folders (corrupted storage?)!.
+        /// </summary>
+        public static string RoutesLoadFailText {
+            get {
+                return ResourceManager.GetString("RoutesLoadFailText", resourceCulture);
             }
         }
         

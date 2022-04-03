@@ -432,6 +432,9 @@ Mapa: {1}</value>
   <data name="Route" xml:space="preserve">
     <value>Mapa</value>
   </data>
+  <data name="RouteLoadFailText" xml:space="preserve">
+    <value>Wystąpił błąd przy wczytywaniu mapy o hashu {0}!</value>
+  </data>
   <data name="RouteName" xml:space="preserve">
     <value>Nazwa mapy</value>
   </data>
@@ -440,6 +443,9 @@ Mapa: {1}</value>
   </data>
   <data name="RoutesLoadFail" xml:space="preserve">
     <value>Wystąpił błąd przy wczytywaniu listy zainstalowanych map!</value>
+  </data>
+  <data name="RoutesLoadFailText" xml:space="preserve">
+    <value>Wystąpił błąd przy wczytywaniu listy zainstalowanych map (uszkodzony dysk)!</value>
   </data>
   <data name="Save" xml:space="preserve">
     <value>Zapisz</value>

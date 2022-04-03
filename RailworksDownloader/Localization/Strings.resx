@@ -432,6 +432,9 @@ Route: {1}</value>
   <data name="Route" xml:space="preserve">
     <value>Route</value>
   </data>
+  <data name="RouteLoadFailText" xml:space="preserve">
+    <value>Failed to load route {0}!</value>
+  </data>
   <data name="RouteName" xml:space="preserve">
     <value>Route name</value>
   </data>
@@ -440,6 +443,9 @@ Route: {1}</value>
   </data>
   <data name="RoutesLoadFail" xml:space="preserve">
     <value>Loading routes failed!</value>
+  </data>
+  <data name="RoutesLoadFailText" xml:space="preserve">
+    <value>Failed to iterate routes folders (corrupted storage?)!</value>
   </data>
   <data name="Save" xml:space="preserve">
     <value>Save</value>

@@ -432,6 +432,9 @@ Trať: {1}</value>
   <data name="Route" xml:space="preserve">
     <value>Trať</value>
   </data>
+  <data name="RouteLoadFailText" xml:space="preserve">
+    <value>Nepovedlo se načíst trať {0}!</value>
+  </data>
   <data name="RouteName" xml:space="preserve">
     <value>Název tratě</value>
   </data>
@@ -440,6 +443,9 @@ Trať: {1}</value>
   </data>
   <data name="RoutesLoadFail" xml:space="preserve">
     <value>Chyba při načítání seznamu tratí!</value>
+  </data>
+  <data name="RoutesLoadFailText" xml:space="preserve">
+    <value>Chyba při procházení složek tratí (poškozené úložiště?)!</value>
   </data>
   <data name="Save" xml:space="preserve">
     <value>Uložit</value>

@@ -159,21 +159,25 @@ namespace RailworksDownloader
         {
             if (Directory.Exists(directory))
             {
-                string[] files = Directory.GetFiles(directory);
-                string[] dirs = Directory.GetDirectories(directory);
-
-                foreach (string file in files)
+                try
                 {
-                    File.SetAttributes(file, FileAttributes.Normal);
-                    File.Delete(file);
-                }
+                    string[] files = Directory.GetFiles(directory);
+                    string[] dirs = Directory.GetDirectories(directory);
 
-                foreach (string dir in dirs)
-                {
-                    DeleteDirectory(dir);
-                }
+                    foreach (string file in files)
+                    {
+                        File.SetAttributes(file, FileAttributes.Normal);
+                        File.Delete(file);
+                    }
 
-                Directory.Delete(directory, true);
+                    foreach (string dir in dirs)
+                    {
+                        DeleteDirectory(dir);
+                    }
+
+                    Directory.Delete(directory, true);
+                }
+                catch { }
             }
         }
 
@@ -190,54 +194,68 @@ namespace RailworksDownloader
             if (!Directory.Exists(path))
                 return list;
 
-            foreach (string dir in Directory.GetDirectories(path))
+            try
             {
-                string rp_path = FindFile(dir, "RouteProperties.*");
-                string routeHash = Path.GetFileName(dir);
+                foreach (string dir in Directory.GetDirectories(path))
+                {
+                    string rp_path = FindFile(dir, "RouteProperties.*");
+                    string routeHash = Path.GetFileName(dir);
 
-                if (File.Exists(rp_path))
-                {
-                    list.Add(
-                        new RouteInfo(
-                            ParseRouteProperties(rp_path, routeHash).Trim(),
-                            routeHash,
-                            dir + Path.DirectorySeparatorChar
-                        )
-                    );
-                }
-                else
-                {
-                    foreach (string file in Directory.GetFiles(dir, "*.ap"))
+                    if (File.Exists(rp_path))
+                    {
+                        list.Add(
+                            new RouteInfo(
+                                ParseRouteProperties(rp_path, routeHash).Trim(),
+                                routeHash,
+                                dir + Path.DirectorySeparatorChar
+                            )
+                        );
+                    }
+                    else
                     {
                         try
                         {
-                            using (ZipArchive archive = System.IO.Compression.ZipFile.OpenRead(file))
+                            foreach (string file in Directory.GetFiles(dir, "*.ap"))
                             {
-                                foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("RouteProperties")))
+                                try
                                 {
-                                    list.Add(
-                                        new RouteInfo(
-                                            ParseRouteProperties(
-                                                entry.Open(),
-                                                Path.Combine(file, entry.FullName),
-                                                routeHash,
-                                                entry.Length
-                                            ).Trim(),
-                                            Path.GetFileName(dir),
-                                            dir + Path.DirectorySeparatorChar
-                                        )
-                                    );
-                                    break;
+                                    using (ZipArchive archive = System.IO.Compression.ZipFile.OpenRead(file))
+                                    {
+                                        foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("RouteProperties")))
+                                        {
+                                            list.Add(
+                                                new RouteInfo(
+                                                    ParseRouteProperties(
+                                                        entry.Open(),
+                                                        Path.Combine(file, entry.FullName),
+                                                        routeHash,
+                                                        entry.Length
+                                                    ).Trim(),
+                                                    Path.GetFileName(dir),
+                                                    dir + Path.DirectorySeparatorChar
+                                                )
+                                            );
+                                            break;
+                                        }
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    SentrySdk.CaptureException(e);
+                                    Trace.Assert(false, string.Format(Localization.Strings.ReadingZipFail, file));
                                 }
                             }
                         }
-                        catch (Exception e)
+                        catch
                         {
-                            SentrySdk.CaptureException(e);
-                            Trace.Assert(false, string.Format(Localization.Strings.ReadingZipFail, file));
+                            DisplayError(Localization.Strings.RoutesLoadFail, string.Format(Localization.Strings.RoutesLoadFailText, routeHash));
                         }
                     }
                 }
+            }
+            catch
+            {
+                DisplayError(Localization.Strings.RoutesLoadFail, Localization.Strings.RoutesLoadFailText);
             }
 
             return list;
@@ -327,26 +345,36 @@ namespace RailworksDownloader
             {
                 if (Directory.Exists(directory))
                 {
-                    foreach (string file in Directory.GetFiles(directory, "*.ap"))
+                    try
                     {
-                        try
+                        foreach (string file in Directory.GetFiles(directory, "*.ap"))
                         {
-                            ZipArchive zipFile = System.IO.Compression.ZipFile.OpenRead(file);
+                            try
+                            {
+                                ZipArchive zipFile = System.IO.Compression.ZipFile.OpenRead(file);
 
-                            lock (APDepsLock)
-                                APDependencies.UnionWith(from x in zipFile.Entries where x.FullName.Contains(".xml") || x.FullName.Contains(".bin") select NormalizePath(GetRelativePath(AssetsPath, Path.Combine(directory, x.FullName))));
+                                lock (APDepsLock)
+                                    APDependencies.UnionWith(from x in zipFile.Entries where x.FullName.Contains(".xml") || x.FullName.Contains(".bin") select NormalizePath(GetRelativePath(AssetsPath, Path.Combine(directory, x.FullName))));
+                            }
+                            catch (Exception e)
+                            {
+                                SentrySdk.CaptureException(e);
+                            }
                         }
-                        catch (Exception e)
+                        if (APDependencies.Contains(fileToFind) || APDependencies.Contains(NormalizePath(fileToFind, "xml")))
                         {
-                            SentrySdk.CaptureException(e);
+                            return true;
                         }
-                    }
-                    if (APDependencies.Contains(fileToFind) || APDependencies.Contains(NormalizePath(fileToFind, "xml")))
-                    {
-                        return true;
-                    }
+                    } catch { }
                 }
-                return CheckForFileInAP(Directory.GetParent(directory).FullName, fileToFind);
+                try
+                {
+                    return CheckForFileInAP(Directory.GetParent(directory).FullName, fileToFind);
+                }
+                catch
+                {
+                    return false;
+                }
             }
         }
 
@@ -420,7 +448,11 @@ namespace RailworksDownloader
                             string relative_path = NormalizePath(GetRelativePath(AssetsPath, path));
                             string relative_path_bin = NormalizePath(relative_path, ".bin");
 
-                            bool exists = APDependencies.Contains(relative_path_bin) || APDependencies.Contains(relative_path) || File.Exists(path_bin) || File.Exists(path) || CheckForFileInAP(Directory.GetParent(path).FullName, relative_path);
+                            bool exists = false;
+                            try
+                            {
+                                exists = APDependencies.Contains(relative_path_bin) || APDependencies.Contains(relative_path) || File.Exists(path_bin) || File.Exists(path) || CheckForFileInAP(Directory.GetParent(path).FullName, relative_path);
+                            } catch { }
 
                             if (exists)
                                 lock (existingDeps)
