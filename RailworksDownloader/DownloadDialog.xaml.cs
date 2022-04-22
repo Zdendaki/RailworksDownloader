@@ -96,7 +96,7 @@ namespace RailworksDownloader
                 }
             }
 
-            App.DialogQueue.RemoveDialog(this);
+            Dispatcher.Invoke(() => App.DialogQueue.RemoveDialog(this));
         }
 
         internal void DownloadPackages(HashSet<int> download, List<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
@@ -170,7 +170,7 @@ namespace RailworksDownloader
                 }
             }
 
-            App.DialogQueue.RemoveDialog(this);
+            Dispatcher.Invoke(() => App.DialogQueue.RemoveDialog(this));
         }
 
         internal void DownloadUpdateAsync(Updater updater)
