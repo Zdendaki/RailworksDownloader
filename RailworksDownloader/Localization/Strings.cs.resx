@@ -246,6 +246,9 @@
   <data name="DLCReportError" xml:space="preserve">
     <value>Nastala neočekávaná chyba při hlášení nainstalovaných DLC!</value>
   </data>
+  <data name="DLCReportWait" xml:space="preserve">
+    <value>Čekám na dokončení DLC reportu...</value>
+  </data>
   <data name="DownloadError" xml:space="preserve">
     <value>Nastala neočekávaná chyba při stahování</value>
   </data>
@@ -287,6 +290,18 @@
   </data>
   <data name="FindFileFail" xml:space="preserve">
     <value>FindFile pro {0} vrátil prázdný výsledek!</value>
+  </data>
+  <data name="GettingAvailable" xml:space="preserve">
+    <value>Hledání dostupných balíčků ke stažení...</value>
+  </data>
+  <data name="GettingInstalled" xml:space="preserve">
+    <value>Procházení nainstalovaných souborů...</value>
+  </data>
+  <data name="GettingRequired" xml:space="preserve">
+    <value>Vytváření seznamu potřebných závislostí...</value>
+  </data>
+  <data name="GettingStates" xml:space="preserve">
+    <value>Procházení stavu závislostí...</value>
   </data>
   <data name="GzipEntryFail" xml:space="preserve">
     <value>Chyba při čtení gzip záznamu v souboru {0}!</value>

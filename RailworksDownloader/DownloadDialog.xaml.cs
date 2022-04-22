@@ -28,10 +28,11 @@ namespace RailworksDownloader
             InitializeComponent();
             Title = Localization.Strings.PrepareTitle;
             CancelButton = cancel;
+            Owner = App.Window;
             //FileName.Content = "";
         }
 
-        internal async Task UpdatePackages(Dictionary<int, int> update, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
+        internal void UpdatePackages(Dictionary<int, int> update, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
         {
             for (int i = 0; i < update.Count; i++)
             {
@@ -49,10 +50,10 @@ namespace RailworksDownloader
 
                 try
                 {
-                    ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
+                    ObjectResult<object> dl_result = wrapper.DownloadPackage(pkgId, App.Token);
 
-                    if (WebWrapper.CancelDownload)
-                        return;
+                    /*if (WebWrapper.CancelDownload)
+                        return;*/
 
                     if (Utils.IsSuccessStatusCode(dl_result.code))
                     {
@@ -74,7 +75,7 @@ namespace RailworksDownloader
                     }
                     else
                     {
-                        if (dl_result.code > 0)
+                        if (dl_result.code > 0 && !WebWrapper.CancelDownload)
                         {
                             if (dl_result.code == 498)
                             {
@@ -82,6 +83,7 @@ namespace RailworksDownloader
                             }
                             Utils.DisplayError(Localization.Strings.DownloadError, dl_result.message);
                         }
+                        File.Delete((string)dl_result.content);
                         break;
                     }
 
@@ -97,7 +99,7 @@ namespace RailworksDownloader
             App.DialogQueue.RemoveDialog(this);
         }
 
-        internal async Task DownloadPackages(HashSet<int> download, List<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
+        internal void DownloadPackages(HashSet<int> download, List<Package> cached, List<Package> installedPackages, WebWrapper wrapper, SqLiteAdapter sqLiteAdapter)
         {
             download.RemoveWhere(x => cached.Any(y => y.PackageId == x && (y.IsPaid || installedPackages.Any(z => z.PackageId == x))));
             int count = download.Count;
@@ -132,7 +134,7 @@ namespace RailworksDownloader
 
                 try
                 {
-                    ObjectResult<object> dl_result = await wrapper.DownloadPackage(pkgId, App.Token);
+                    ObjectResult<object> dl_result = wrapper.DownloadPackage(pkgId, App.Token);
 
                     if (Utils.IsSuccessStatusCode(dl_result.code))
                     {
@@ -147,7 +149,7 @@ namespace RailworksDownloader
                     }
                     else
                     {
-                        if (dl_result.code > 0)
+                        if (dl_result.code > 0 && !WebWrapper.CancelDownload)
                         {
                             if (dl_result.code == 498)
                             {
@@ -155,6 +157,7 @@ namespace RailworksDownloader
                             }
                             Utils.DisplayError(Localization.Strings.DownloadError, dl_result.message);
                         }
+                        File.Delete((string)dl_result.content);
                         break;
                     }
 
@@ -274,13 +277,10 @@ namespace RailworksDownloader
         {
             if (CancelButton)
             {
+                App.Window.ScanRailworks.IsEnabled = true;
+                App.Window.SelectRailworksLocation.IsEnabled = true;
+                App.Window.DownloadMissing.IsEnabled = true;
                 WebWrapper.CancelDownload = true;
-                App.Window.Dispatcher.Invoke(() =>
-                {
-                    App.Window.ScanRailworks.IsEnabled = true;
-                    App.Window.SelectRailworksLocation.IsEnabled = true;
-                    App.Window.DownloadMissing.IsEnabled = true;
-                });
             }
             else
                 args.Cancel = true;

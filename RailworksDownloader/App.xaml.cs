@@ -35,7 +35,11 @@ namespace RailworksDownloader
 
         internal static bool AutoDownload { get; set; } = true;
 
+#if !DEBUG
         internal static bool Debug { get; set; } = false;
+#else
+        internal static bool Debug { get; set; } = true;
+#endif
 
         internal static bool ReportErrors { get; set; } = true;
 

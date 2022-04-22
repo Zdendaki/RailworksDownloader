@@ -383,7 +383,10 @@ namespace RailworksDownloader
             AllInstalledDeps = new HashSet<string>();
 
             if (!Directory.Exists(AssetsPath))
+            {
+                getAllInstalledDepsEvent.Set();
                 return;
+            }
 
             string lastFileName = "";
             try {

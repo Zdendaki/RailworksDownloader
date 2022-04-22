@@ -43,6 +43,7 @@ namespace RailworksDownloader
         private bool loadingComplete = false;
         private bool exitConfirmed = false;
         private readonly object indexLock = new object();
+        private string debugTitle = App.Debug ? " DEBUG!!!" : "";
 
         public MainWindow()
         {
@@ -51,10 +52,6 @@ namespace RailworksDownloader
                 InitializeComponent();
 
                 DataContext = this;
-
-                string debugTitle = "";
-                if (App.Debug)
-                    debugTitle = " DEBUG!!!";
 
                 Title = $"Railworks DLS client v{App.Version}{debugTitle}";
 
@@ -146,23 +143,18 @@ namespace RailworksDownloader
 
         public void ReportDLC()
         {
-            if (string.IsNullOrWhiteSpace(App.Token))
+            if (string.IsNullOrWhiteSpace(App.Token) || App.SteamManager == null)
             {
-                PM.CacheInit.WaitOne();
-                if (string.IsNullOrWhiteSpace(App.Token))
-                    dlcReportFinishedHandler.Set();
+                dlcReportFinishedHandler.Set();
                 return;
             }
 
-            if (App.SteamManager == null)
-                return;
-
             dlcReportFinishedHandler.Reset();
+            RW_CheckingDLC(false);
             Task.Run(async () =>
             {
                 try
                 {
-                    RW_CheckingDLC(false);
                     List<SteamManager.DLC> dlcList = App.SteamManager.GetInstalledDLCFiles();
                     IEnumerable<Package> pkgs = await WebWrapper.ReportDLC(dlcList, App.Token, ApiUrl);
                     PM.InstalledPackages = PM.InstalledPackages.Union(pkgs).ToList();
@@ -208,6 +200,53 @@ namespace RailworksDownloader
             }
         }
 
+        private void IterateDeps(ref List<Dependency> deps, HashSet<string> filesToIterate, bool isRoute = true)
+        {
+            for (int i = 0; i < filesToIterate.Count; i++)
+            {
+                string dep = filesToIterate.ElementAt(i);
+
+                string[] parts = dep.Split(new string[] { "\\"}, 3, StringSplitOptions.None);
+                string provider = parts[0];
+                string product = parts[1];
+                string file = parts[2];
+
+                if (dep != string.Empty)
+                {
+                    int? pkgId = null;
+
+                    DependencyState state;
+                    if (RW.AllInstalledDeps.Contains(dep))
+                    {
+                        state = DependencyState.Downloaded;
+                        if (PM.DownloadableDeps.Contains(dep))
+                        {
+                            pkgId = PM.DownloadableDepsPackages[provider][product][file];
+                        }
+                        else if (PM.DownloadablePaidDeps.Contains(dep))
+                        {
+                            pkgId = PM.DownloadablePaidDepsPackages[provider][product][file];
+                        }
+                        //pkgId = PM.CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(dep))?.PackageId;
+                    }
+                    else if (PM.DownloadableDeps.Contains(dep))
+                    {
+                        state = DependencyState.Available;
+                        pkgId = PM.DownloadableDepsPackages[provider][product][file];
+                    }
+                    else if (PM.DownloadablePaidDeps.Contains(dep))
+                    {
+                        state = DependencyState.Paid;
+                        pkgId = PM.DownloadablePaidDepsPackages[provider][product][file];
+                    }
+                    else
+                        state = DependencyState.Unavailable;
+
+                    deps.Add(new Dependency(dep, state, !isRoute, isRoute, pkgId));
+                }
+            }
+        }
+
         internal void RW_CrawlingComplete()
         {
             crawlingComplete = true;
@@ -219,6 +258,7 @@ namespace RailworksDownloader
                 ScanRailworks.IsEnabled = false;
                 TotalProgress.Value = 100;
                 TotalProgress.IsIndeterminate = true;
+                TotalProgress.ToolTip = Localization.Strings.GettingRequired;
             });
 
             try
@@ -230,11 +270,29 @@ namespace RailworksDownloader
                 }
 
                 //RW.Routes.Sort(delegate (RouteInfo x, RouteInfo y) { return x.AllDependencies.Length.CompareTo(y.AllDependencies.Length); });
+                Dispatcher.Invoke(() =>
+                {
+                    TotalProgress.ToolTip = Localization.Strings.GettingInstalled;
+                });
 
                 RW.getAllInstalledDepsEvent.WaitOne();
                 RW.AllMissingDeps = RW.AllRequiredDeps.Except(RW.AllInstalledDeps);
+                Dispatcher.Invoke(() =>
+                {
+                    TotalProgress.ToolTip = Localization.Strings.GettingAvailable;
+                });
+                PM.CacheInit.WaitOne();
                 PM.GetPackagesToDownload(RW.AllMissingDeps);
+                Dispatcher.Invoke(() =>
+                {
+                    TotalProgress.ToolTip = Localization.Strings.DLCReportWait;
+                });
                 dlcReportFinishedHandler.WaitOne();
+
+                Dispatcher.Invoke(() =>
+                {
+                    TotalProgress.ToolTip = Localization.Strings.GettingStates;
+                });
 
                 int maxThreads = Math.Min(Environment.ProcessorCount, RW.Routes.Count);
                 int lastIndex = 0;
@@ -247,54 +305,18 @@ namespace RailworksDownloader
                         {
                             i = lastIndex;
                             lastIndex++;
+                            if (lastIndex > RW.Routes.Count)
+                                break;
                         }
                         List<Dependency> deps = new List<Dependency>();
 
-                        int _i = ((i & 1) != 0) ? (i - 1) / 2 : (RW.Routes.Count - 1) - i / 2;
-                        for (int j = 0; j < RW.Routes[_i].AllDependencies.Length; j++)
-                        {
-                            string dep = RW.Routes[_i].AllDependencies[j];
+                        //int _i = ((i & 1) != 0) ? (i - 1) / 2 : (RW.Routes.Count - 1) - i / 2;
+                        IterateDeps(ref deps, RW.Routes[i].Dependencies, true);
+                        IterateDeps(ref deps, RW.Routes[i].ScenarioDeps, false);
 
-                            if (dep != string.Empty)
-                            {
-                                bool isRoute = RW.Routes[_i].Dependencies.Contains(dep);
-                                bool isScenario = RW.Routes[_i].ScenarioDeps.Contains(dep);
-                                int? pkgId = null;
-
-                                DependencyState state = DependencyState.Unknown;
-                                if (RW.AllInstalledDeps.Contains(dep))
-                                {
-                                    state = DependencyState.Downloaded;
-                                    if (PM.DownloadableDeps.Contains(dep))
-                                    {
-                                        pkgId = PM.DownloadableDepsPackages[dep];
-                                    }
-                                    else if (PM.DownloadablePaidDeps.Contains(dep))
-                                    {
-                                        pkgId = PM.DownloadablePaidDepsPackages[dep];
-                                    }
-                                    //pkgId = PM.CachedPackages.FirstOrDefault(x => x.FilesContained.Contains(dep))?.PackageId;
-                                }
-                                else if (PM.DownloadableDeps.Contains(dep))
-                                {
-                                    state = DependencyState.Available;
-                                    pkgId = PM.DownloadableDepsPackages[dep];
-                                }
-                                else if (PM.DownloadablePaidDeps.Contains(dep))
-                                {
-                                    state = DependencyState.Paid;
-                                    pkgId = PM.DownloadablePaidDepsPackages[dep];
-                                }
-                                else
-                                    state = DependencyState.Unavailable;
-
-                                deps.Add(new Dependency(dep, state, isScenario, isRoute, pkgId));
-                            }
-                        }
-
-                        RW.Routes[_i].AllDependencies = null;
-                        RW.Routes[_i].ParsedDependencies = new DependenciesList(deps);
-                        RW.Routes[_i].Redraw();
+                        RW.Routes[i].AllDependencies = null;
+                        RW.Routes[i].ParsedDependencies = new DependenciesList(deps);
+                        RW.Routes[i].Redraw();
                     }
                 });
 
@@ -302,6 +324,7 @@ namespace RailworksDownloader
                 Dispatcher.Invoke(() =>
                 {
                     TotalProgress.IsIndeterminate = false;
+                    TotalProgress.ToolTip = null;
 
                     ScanRailworks.IsEnabled = true;
                     ScanRailworks.Content = Localization.Strings.MainRescan;
@@ -388,7 +411,7 @@ namespace RailworksDownloader
                 App.PackageManager = new PackageManager(ApiUrl, this, RW.RWPath);
                 PM = App.PackageManager;
 
-                Title = $"Railworks DLS client v{App.Version} - " + RW.RWPath;
+                Title = $"Railworks DLS client v{App.Version}{debugTitle} - " + RW.RWPath;
 
                 LoadRoutes();
 
@@ -444,10 +467,10 @@ namespace RailworksDownloader
             }
             else
             {
-                new Task(() =>
+                Task.Run(() =>
                 {
                     RW_CrawlingComplete();
-                }).Start();
+                });
             }
         }
 

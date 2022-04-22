@@ -160,11 +160,11 @@ namespace RailworksDownloader
 
         public HashSet<string> DownloadableDeps { get; set; } = new HashSet<string>();
 
-        public Dictionary<string, int> DownloadableDepsPackages { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, Dictionary<string, Dictionary<string, int>>> DownloadableDepsPackages { get; set; } = new Dictionary<string, Dictionary<string, Dictionary<string, int>>>();
 
         public HashSet<string> DownloadablePaidDeps { get; set; } = new HashSet<string>();
 
-        public Dictionary<string, int> DownloadablePaidDepsPackages { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, Dictionary<string, Dictionary<string, int>>> DownloadablePaidDepsPackages { get; set; } = new Dictionary<string, Dictionary<string, Dictionary<string, int>>>();
 
         public EventWaitHandle CacheInit = new EventWaitHandle(false, EventResetMode.ManualReset);
 
@@ -271,22 +271,28 @@ namespace RailworksDownloader
             }
             CachedPackages.ForEach(x =>
             {
-                if (x.IsPaid)
+                var filesList = x.IsPaid ? DownloadablePaidDeps : DownloadableDeps;
+                var packagesList = x.IsPaid ? DownloadablePaidDepsPackages : DownloadableDepsPackages;
+
+                x.FilesContained.ForEach(y =>
                 {
-                    x.FilesContained.ForEach(y =>
+                    string[] parts = y.Split(new string[] { "\\"}, 3, StringSplitOptions.None);
+                    if (parts.Length == 3)
                     {
-                        DownloadablePaidDepsPackages[y] = x.PackageId;
-                        DownloadablePaidDeps.Add(y);
-                    });
-                }
-                else
-                {
-                    x.FilesContained.ForEach(y =>
-                    {
-                        DownloadableDepsPackages[y] = x.PackageId;
-                        DownloadableDeps.Add(y);
-                    });
-                }
+                        string provider = parts[0];
+                        string product = parts[1];
+                        string file = parts[2];
+
+                        if (!packagesList.ContainsKey(provider))
+                            packagesList[provider] = new Dictionary<string, Dictionary<string, int>>();
+
+                        if (!packagesList[provider].ContainsKey(product))
+                            packagesList[provider][product] = new Dictionary<string, int>();
+
+                        packagesList[provider][product][file] = x.PackageId;
+                        filesList.Add(y);
+                    }
+                });
             });
         }
 
@@ -303,8 +309,9 @@ namespace RailworksDownloader
                 conflictDeps.ExceptWith(pkg.FilesContained);
             }
 
-            bool rewriteAll = false;
             bool keepAll = false;
+            bool rewriteAll = false;
+            EventWaitHandle dialogConfirm = new EventWaitHandle(false, EventResetMode.AutoReset);
 
             for (int i = 0; i < conflictPackages.Count; i++)
             {
@@ -313,12 +320,12 @@ namespace RailworksDownloader
                 if (App.Settings.IgnoredPackages?.Contains(id) == true)
                     continue;
 
-                Package p = CachedPackages.FirstOrDefault(x => x.PackageId == id);
-
                 bool rewrite = false;
                 if (!rewriteAll && !keepAll)
                 {
-                    App.Window.Dispatcher.Invoke(() =>
+                    Package p = CachedPackages.FirstOrDefault(x => x.PackageId == id);
+
+                    MainWindow.Dispatcher.Invoke(() =>
                     {
                         var conflictPackageDialog = new ConflictPackageDialog(p.DisplayName);
                         App.DialogQueue.AddDialog(Environment.TickCount, 2, conflictPackageDialog, (_) =>
@@ -326,8 +333,10 @@ namespace RailworksDownloader
                             rewrite = conflictPackageDialog?.RewriteLocal ?? false;
                             rewriteAll = conflictPackageDialog?.RewriteAll ?? false;
                             keepAll = conflictPackageDialog?.KeepAll ?? false;
+                            dialogConfirm.Set();
                         });
                     });
+                    dialogConfirm.WaitOne();
                 }
 
                 if (rewrite || rewriteAll)
@@ -350,7 +359,12 @@ namespace RailworksDownloader
             IEnumerable<string> depsToDownload = allMissing.Intersect(DownloadableDeps);
             while (depsToDownload.Count() > 0)
             {
-                Package pkg = CachedPackages.First(x => x.PackageId == DownloadableDepsPackages[depsToDownload.First()]);
+                string[] parts = depsToDownload.First().Split(new string[] { "\\"}, 3, StringSplitOptions.None);
+                string provider = parts[0];
+                string product = parts[1];
+                string file = parts[2];
+
+                Package pkg = CachedPackages.First(x => x.PackageId == DownloadableDepsPackages[provider][product][file]);
                 PkgsToDownload.Add(pkg.PackageId);
                 depsToDownload = depsToDownload.Except(pkg.FilesContained);
             }
@@ -365,7 +379,7 @@ namespace RailworksDownloader
             {
                 if (!await Utils.CheckLogin(DownloadDependencies, MainWindow, ApiUrl))
                 {
-                    App.Window.Dispatcher.Invoke(() =>
+                    MainWindow.Dispatcher.Invoke(() =>
                     {
                         MainWindow.ScanRailworks.IsEnabled = true;
                         MainWindow.SelectRailworksLocation.IsEnabled = true;
@@ -379,14 +393,20 @@ namespace RailworksDownloader
                 if (PkgsToDownload.Count > 0)
                 {
                     App.IsDownloading = true;
-                    App.Window.Dispatcher.Invoke(() =>
+                    MainWindow.Dispatcher.Invoke(() =>
                     {
                         DownloadDialog downloadDialog = new DownloadDialog();
                         App.DialogQueue.AddDialog(Environment.TickCount, 1, downloadDialog);
-                        downloadDialog.DownloadPackages(PkgsToDownload, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                        Task.Run(() =>
+                        {
+                            downloadDialog.DownloadPackages(PkgsToDownload, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter);
+                            MainWindow.Dispatcher.Invoke(() =>
+                            {
+                                App.IsDownloading = false;
+                            });
+                            MainWindow.RW_CrawlingComplete();
+                        });
                     });
-                    App.IsDownloading = false;
-                    MainWindow.RW_CrawlingComplete();
                 }
                 else
                 {
@@ -431,14 +451,19 @@ namespace RailworksDownloader
                     return;
 
                 App.IsDownloading = true;
-                App.Window.Dispatcher.Invoke(() =>
+                MainWindow.Dispatcher.Invoke(() =>
                 {
                     DownloadDialog downloadDialog = new DownloadDialog();
                     App.DialogQueue.AddDialog(Environment.TickCount, 1, downloadDialog);
-                    downloadDialog.UpdatePackages(pkgsToUpdate, InstalledPackages, WebWrapper, SqLiteAdapter).Wait();
+                    Task.Run(() => {
+                        downloadDialog.UpdatePackages(pkgsToUpdate, InstalledPackages, WebWrapper, SqLiteAdapter);
+                        MainWindow.Dispatcher.Invoke(() =>
+                        {
+                            App.IsDownloading = false;
+                        });
+                        MainWindow.RW_CrawlingComplete();
+                    });
                 });
-                App.IsDownloading = false;
-                MainWindow.RW_CrawlingComplete();
             });
         }
 
@@ -537,14 +562,20 @@ namespace RailworksDownloader
 
                         if (packageIds.Count > 0)
                         {
-                            App.IsDownloading = true;
-                            await App.Window.Dispatcher.Invoke(async () =>
+                            MainWindow.Dispatcher.Invoke(() =>
                             {
+                                App.IsDownloading = true;
                                 DownloadDialog downloadDialog = new DownloadDialog();
                                 App.DialogQueue.AddDialog(Environment.TickCount, 1, downloadDialog);
-                                await downloadDialog.DownloadPackages(packageIds, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter);
+                                Task.Run(() =>
+                                {
+                                    downloadDialog.DownloadPackages(packageIds, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter);
+                                    MainWindow.Dispatcher.Invoke(() =>
+                                    {
+                                        App.IsDownloading = false;
+                                    });
+                                });
                             });
-                            App.IsDownloading = false;
                         }
                         else
                         {

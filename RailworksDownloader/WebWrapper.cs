@@ -130,7 +130,7 @@ namespace RailworksDownloader
             });
         }
 
-        public async Task<ObjectResult<object>> DownloadPackage(int packageId, string token)
+        public ObjectResult<object> DownloadPackage(int packageId, string token)
         {
             CancelDownload = false;
             Uri url = new Uri(ApiUrl + $"download?token={token}&package_id={packageId}");
@@ -147,20 +147,29 @@ namespace RailworksDownloader
                     webClient.CancelAsync();
             };
 
+            ObjectResult<object> result = null;
+            EventWaitHandle downloadComplete = new EventWaitHandle(false, EventResetMode.ManualReset);
             string tempFname = Path.GetTempFileName();
-
-            try
+            webClient.DownloadFileCompleted += (sender, e) =>
             {
-                await webClient.DownloadFileTaskAsync(url, tempFname);
-
-                if (ZipTools.IsCompressedData(tempFname))
+                if (e.Cancelled)
                 {
-                    return new ObjectResult<object>(200, "Package succesfully downloaded!", tempFname);
+                    result = new ObjectResult<object>(500, Localization.Strings.DownloadInterruptError, tempFname);
+                }
+                else if (ZipTools.IsCompressedData(tempFname))
+                {
+                    result = new ObjectResult<object>(200, "Package succesfully downloaded!", tempFname);
                 }
                 else
                 {
-                    return JsonConvert.DeserializeObject<ObjectResult<object>>(File.ReadAllText(tempFname)) ?? new ObjectResult<object>(500, Localization.Strings.ServerEmptyResponse, tempFname);
+                    result = JsonConvert.DeserializeObject<ObjectResult<object>>(File.ReadAllText(tempFname)) ?? new ObjectResult<object>(500, Localization.Strings.ServerEmptyResponse, tempFname);
                 }
+                downloadComplete.Set();
+            };
+
+            try
+            {
+                webClient.DownloadFileAsync(url, tempFname);
             }
             catch (Exception e)
             {
@@ -194,15 +203,16 @@ namespace RailworksDownloader
                         return new ObjectResult<object>((int)webResponse.StatusCode, Localization.Strings.DownloadError, tempFname);
                     }
                     else if (we.Status == WebExceptionStatus.RequestCanceled)
-                        return new ObjectResult<object>(-1, Localization.Strings.DownloadInterruptError);
+                        return new ObjectResult<object>(-1, Localization.Strings.DownloadInterruptError, tempFname);
 
                     return new ObjectResult<object>(500, we.Message, tempFname);
                 }
                 else if (e is OperationAbortedException || e is ThreadAbortException || e is ThreadInterruptedException)
-                    return new ObjectResult<object>(500, Localization.Strings.DownloadInterruptError);
+                    return new ObjectResult<object>(500, Localization.Strings.DownloadInterruptError, tempFname);
             }
+            downloadComplete.WaitOne();
 
-            return new ObjectResult<object>(500, Localization.Strings.UnknownError, tempFname);
+            return result ?? new ObjectResult<object>(500, Localization.Strings.UnknownError, tempFname);
         }
 
         public async Task<Package> GetPackage(int packageId)

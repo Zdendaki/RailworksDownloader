@@ -448,6 +448,15 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Waiting for DLC report to finish....
+        /// </summary>
+        public static string DLCReportWait {
+            get {
+                return ResourceManager.GetString("DLCReportWait", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný Error occured while downloading.
         /// </summary>
         public static string DownloadError {
@@ -570,6 +579,42 @@ namespace RailworksDownloader.Localization {
         public static string FindFileFail {
             get {
                 return ResourceManager.GetString("FindFileFail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Getting available packages to download....
+        /// </summary>
+        public static string GettingAvailable {
+            get {
+                return ResourceManager.GetString("GettingAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Getting all installed files....
+        /// </summary>
+        public static string GettingInstalled {
+            get {
+                return ResourceManager.GetString("GettingInstalled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Gettting all required files....
+        /// </summary>
+        public static string GettingRequired {
+            get {
+                return ResourceManager.GetString("GettingRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Getting dependencies states....
+        /// </summary>
+        public static string GettingStates {
+            get {
+                return ResourceManager.GetString("GettingStates", resourceCulture);
             }
         }
         

@@ -246,6 +246,9 @@
   <data name="DLCReportError" xml:space="preserve">
     <value>There was an error while reporting installed DLS's!</value>
   </data>
+  <data name="DLCReportWait" xml:space="preserve">
+    <value>Waiting for DLC report to finish...</value>
+  </data>
   <data name="DownloadError" xml:space="preserve">
     <value>Error occured while downloading</value>
   </data>
@@ -287,6 +290,18 @@
   </data>
   <data name="FindFileFail" xml:space="preserve">
     <value>FindFile for {0} returned no packages!</value>
+  </data>
+  <data name="GettingAvailable" xml:space="preserve">
+    <value>Getting available packages to download...</value>
+  </data>
+  <data name="GettingInstalled" xml:space="preserve">
+    <value>Getting all installed files...</value>
+  </data>
+  <data name="GettingRequired" xml:space="preserve">
+    <value>Gettting all required files...</value>
+  </data>
+  <data name="GettingStates" xml:space="preserve">
+    <value>Getting dependencies states...</value>
   </data>
   <data name="GzipEntryFail" xml:space="preserve">
     <value>Error when reading gzip entry of file {0}!</value>

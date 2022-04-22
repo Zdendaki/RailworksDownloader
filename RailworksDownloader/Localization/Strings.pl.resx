@@ -246,6 +246,9 @@
   <data name="DLCReportError" xml:space="preserve">
     <value>Podczas raportowania zainstalowanych DLC wystąpil nieoczekiwany błąd!</value>
   </data>
+  <data name="DLCReportWait" xml:space="preserve">
+    <value>Waiting for DLC report to finish...</value>
+  </data>
   <data name="DownloadError" xml:space="preserve">
     <value>Wystąpil nieznany bląd przy pobieraniu</value>
   </data>
@@ -287,6 +290,15 @@
   </data>
   <data name="FindFileFail" xml:space="preserve">
     <value>FindFile dla {0} nie istnieje!</value>
+  </data>
+  <data name="GettingInstalled" xml:space="preserve">
+    <value>Getting all installed files...</value>
+  </data>
+  <data name="GettingRequired" xml:space="preserve">
+    <value>Gettting all required files...</value>
+  </data>
+  <data name="GettingStates" xml:space="preserve">
+    <value>Getting dependencies states...</value>
   </data>
   <data name="GzipEntryFail" xml:space="preserve">
     <value>Wystąpił błąd podczas próby czytania zapisu gzip pliku {0}!</value>
