@@ -88,7 +88,14 @@ namespace RailworksDownloader
             ScenarioDeps = scenarioDeps;
             Adapter = new SqLiteAdapter(Path.Combine(RoutePath, "cache.dls"));
             SavedRoute = Adapter.LoadSavedRoute();
-            ContainsAP = Directory.GetFiles(RoutePath, "*.ap", SearchOption.AllDirectories).Any();
+            try
+            {
+                ContainsAP = Directory.GetFiles(RoutePath, "*.ap", SearchOption.AllDirectories).Any();
+            } 
+            catch
+            {
+                ContainsAP = false;
+            }
         }
 
         /// <summary>
@@ -695,39 +702,42 @@ namespace RailworksDownloader
             if (!Directory.Exists(path))
                 return null;
 
-            int nProcessID = Process.GetCurrentProcess().Id;
-            string[] filePaths = isAP ? Directory.GetFiles(path, "*.ap", SearchOption.AllDirectories).OrderBy(p => p).ToArray() : Directory.GetFiles(path, "*.bin").OrderBy(p => p).ToArray();
-
-            using (MD5 md5 = MD5.Create())
+            try
             {
-                foreach (string filePath in filePaths)
-                {
-                    byte[] pathBytes = Encoding.UTF8.GetBytes(filePath);
-                    md5.TransformBlock(pathBytes, 0, pathBytes.Length, pathBytes, 0);
+                int nProcessID = Process.GetCurrentProcess().Id;
+                string[] filePaths = isAP ? Directory.GetFiles(path, "*.ap", SearchOption.AllDirectories).OrderBy(p => p).ToArray() : Directory.GetFiles(path, "*.bin").OrderBy(p => p).ToArray();
 
-                    try
+                using (MD5 md5 = MD5.Create())
+                {
+                    foreach (string filePath in filePaths)
                     {
-                        byte[] fileBytes = File.ReadAllBytes(filePath);
-                        md5.TransformBlock(fileBytes, 0, fileBytes.Length, fileBytes, 0);
-                    }
-                    catch
-                    {
-                        const int buffSize = 0x402000;
-                        byte[] buffer = new byte[buffSize];
-                        using (FileStream inputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                        byte[] pathBytes = Encoding.UTF8.GetBytes(filePath);
+                        md5.TransformBlock(pathBytes, 0, pathBytes.Length, pathBytes, 0);
+
+                        try
                         {
-                            int read;
-                            while ((read = inputStream.Read(buffer, 0, buffSize)) > 0)
+                            byte[] fileBytes = File.ReadAllBytes(filePath);
+                            md5.TransformBlock(fileBytes, 0, fileBytes.Length, fileBytes, 0);
+                        }
+                        catch
+                        {
+                            const int buffSize = 0x402000;
+                            byte[] buffer = new byte[buffSize];
+                            using (FileStream inputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
                             {
-                                md5.TransformBlock(buffer, 0, read, buffer, 0);
+                                int read;
+                                while ((read = inputStream.Read(buffer, 0, buffSize)) > 0)
+                                {
+                                    md5.TransformBlock(buffer, 0, read, buffer, 0);
+                                }
                             }
                         }
                     }
-                }
 
-                md5.TransformFinalBlock(new byte[0], 0, 0);
-                return BitConverter.ToString(md5.Hash).Replace("-", "").ToLower();
-            }
+                    md5.TransformFinalBlock(new byte[0], 0, 0);
+                    return BitConverter.ToString(md5.Hash).Replace("-", "").ToLower();
+                }
+            } catch { return null; }
         }
 
         private DateTime GetPathLastWriteTime(string path)

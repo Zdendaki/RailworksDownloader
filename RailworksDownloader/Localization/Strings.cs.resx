@@ -375,6 +375,12 @@
   <data name="MainSelectFolder" xml:space="preserve">
     <value>Vyberte složku s RailWorks</value>
   </data>
+  <data name="ManualElevateContent" xml:space="preserve">
+    <value>Prosím restartujte aplikaci se zvýšenými oprávněními (správce)!</value>
+  </data>
+  <data name="ManualElevateTitle" xml:space="preserve">
+    <value>Nedostatečné oprávnění</value>
+  </data>
   <data name="NewerDesc" xml:space="preserve">
     <value>Na serveru byla nalezena novější verze následujícího balíčku:
 {0}

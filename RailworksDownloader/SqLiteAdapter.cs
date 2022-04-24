@@ -190,14 +190,20 @@ namespace RailworksDownloader
 
             if (permissionSet.IsSubsetOf(AppDomain.CurrentDomain.PermissionSet))
             {
-                lock (DBLock)
+                try
                 {
-                    FileConn = new SQLiteConnection(ConnectionString);
-                    FileConn.Open();
-                    MemoryConn.BackupDatabase(FileConn, "main", "main", -1, null, 0);
-                    FileConn.Close();
-                    if (!keepOpen)
-                        MemoryConn.Close();
+                    lock (DBLock)
+                    {
+                        FileConn = new SQLiteConnection(ConnectionString);
+                        FileConn.Open();
+                        MemoryConn.BackupDatabase(FileConn, "main", "main", -1, null, 0);
+                        FileConn.Close();
+                        if (!keepOpen)
+                            MemoryConn.Close();
+                    }
+                } catch
+                {
+                    ElevatePrivileges();
                 }
             }
             else if (!IsAdministrator())

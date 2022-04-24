@@ -102,7 +102,7 @@ namespace RailworksDownloader
                                 continue;
 
                             string fileName = file.FileName.ToLower();
-                            if (string.IsNullOrEmpty(fileName) && fileName.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
+                            if (string.IsNullOrEmpty(fileName) || fileName.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
                                 continue;
 
                             string extension = Path.GetExtension(fileName).ToLower();

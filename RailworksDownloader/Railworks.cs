@@ -415,9 +415,9 @@ namespace RailworksDownloader
                                 }
                             }
                         }
-                        catch (Exception e)
+                        catch //(Exception e)
                         {
-                            SentrySdk.CaptureException(e);
+                            //SentrySdk.CaptureException(e);
                             Debug.Assert(false, string.Format(Localization.Strings.ReadingZipFail, fileInfo.FullName));
                         }
                     }

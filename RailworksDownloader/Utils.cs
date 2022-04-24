@@ -382,12 +382,17 @@ namespace RailworksDownloader
 
         public static void ElevatePrivileges()
         {
-            var exeName = Process.GetCurrentProcess().MainModule.FileName;
-            ProcessStartInfo startInfo = new ProcessStartInfo(exeName);
-            startInfo.Verb = "runas";
-            Process.Start(startInfo);
-            Application.Current.Shutdown();
-            return;
+            try
+            {
+                var exeName = Process.GetCurrentProcess().MainModule.FileName;
+                ProcessStartInfo startInfo = new ProcessStartInfo(exeName);
+                startInfo.Verb = "runas";
+                Process.Start(startInfo);
+                Application.Current.Shutdown();
+            } catch
+            {
+                DisplayError(Localization.Strings.ManualElevateTitle, Localization.Strings.ManualElevateContent, (_) => Application.Current.Shutdown());
+            }
         }
 
         private static bool AnyPathHasWildCardCharacters(string path, int startIndex = 0)
@@ -415,18 +420,8 @@ namespace RailworksDownloader
             }
         }
 
-        public static void DisplayError(string title, string message)
+        public static void DisplayError(string title, string message, Action<bool> callback = null)
         {
-            /*App.Window.Dispatcher.Invoke(async () =>
-            {
-                MessageDialog errorDialog = new MessageDialog(message, title);
-                errorDialog.Commands.Add(new UICommand(Localization.Strings.Ok));
-                errorDialog.DefaultCommandIndex = 0;
-                errorDialog.CancelCommandIndex = 0;
-
-                await errorDialog.ShowAsync();
-            });*/
-
             App.Window.Dispatcher.Invoke(() =>
             {
                 ContentDialog errorDialog = new ContentDialog()
@@ -437,23 +432,12 @@ namespace RailworksDownloader
                     Owner = App.Window,
                 };
 
-                App.DialogQueue.AddDialog(Environment.TickCount, 99, errorDialog);
+                App.DialogQueue.AddDialog(Environment.TickCount, 99, errorDialog, callback);
             });
         }
 
         public static void DisplayYesNo(string title, string message, string yesLabel, string noLabel, Action<bool> callback)
         {
-            /*App.Window.Dispatcher.Invoke(async () =>
-            {
-                MessageDialog errorDialog = new MessageDialog(message, title);
-                errorDialog.Commands.Add(new UICommand(Localization.Strings.Ok));
-                errorDialog.DefaultCommandIndex = 0;
-                errorDialog.CancelCommandIndex = 0;
-
-                IUICommand result = await errorDialog.ShowAsync();
-                callback(result.Label == yesLabel);
-            });*/
-
             App.Window.Dispatcher.Invoke(() =>
             {
                 ContentDialog yesNoDialog = new ContentDialog()

@@ -835,6 +835,24 @@ namespace RailworksDownloader.Localization {
         }
         
         /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Please rerun the application with elevated privileges (administrator)!.
+        /// </summary>
+        public static string ManualElevateContent {
+            get {
+                return ResourceManager.GetString("ManualElevateContent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Not enough privileges.
+        /// </summary>
+        public static string ManualElevateTitle {
+            get {
+                return ResourceManager.GetString("ManualElevateTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný Newer version of following package was found on server:
         ///{0}
         ///Do you want to update it?.

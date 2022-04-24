@@ -291,14 +291,17 @@
   <data name="FindFileFail" xml:space="preserve">
     <value>FindFile dla {0} nie istnieje!</value>
   </data>
+  <data name="GettingAvailable" xml:space="preserve">
+    <value>Trwa uzyskywanie pakietów dostępnych do pobrania...</value>
+  </data>
   <data name="GettingInstalled" xml:space="preserve">
-    <value>Getting all installed files...</value>
+    <value>Trwa uzyskywanie zainstalowanych plików...</value>
   </data>
   <data name="GettingRequired" xml:space="preserve">
-    <value>Gettting all required files...</value>
+    <value>Trwa uzyskywanie potrzebnych plików...</value>
   </data>
   <data name="GettingStates" xml:space="preserve">
-    <value>Getting dependencies states...</value>
+    <value>Trwa sprawdzanie stanu potrzebnych plików...</value>
   </data>
   <data name="GzipEntryFail" xml:space="preserve">
     <value>Wystąpił błąd podczas próby czytania zapisu gzip pliku {0}!</value>
@@ -371,6 +374,12 @@
   </data>
   <data name="MainSelectFolder" xml:space="preserve">
     <value>Wybierz lokalizację z folderem RailWorks</value>
+  </data>
+  <data name="ManualElevateContent" xml:space="preserve">
+    <value>Proszę ponownie uruchomić aplikację z podwyższonymi uprawnieniami (administrator)!</value>
+  </data>
+  <data name="ManualElevateTitle" xml:space="preserve">
+    <value>Nie wystarczające uprawnienia</value>
   </data>
   <data name="NewerDesc" xml:space="preserve">
     <value>Znaleziono nową wersje dodatku:

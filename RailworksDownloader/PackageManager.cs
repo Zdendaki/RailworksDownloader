@@ -532,61 +532,62 @@ namespace RailworksDownloader
                     return;
                 }
 
-                int idToDownload = Convert.ToInt32(queuedPkgs.PopOne());
-
-                if (!InstalledPackages.Exists(x => x.PackageId == idToDownload))
+                if (int.TryParse(queuedPkgs.PopOne(), out int idToDownload))
                 {
-                    Task.Run(async () =>
+                    if (!InstalledPackages.Exists(x => x.PackageId == idToDownload))
                     {
-                        Package packageToDownload = await WebWrapper.GetPackage(idToDownload);
-                        if (packageToDownload == null)
+                        Task.Run(async () =>
                         {
-                            Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.NoSuchPackageFail);
-                            return;
-                        }
-                        lock (CachedPackages)
-                        {
-                            if (!CachedPackages.Any(x => x.PackageId == packageToDownload.PackageId))
-                                CachedPackages.Add(packageToDownload);
-                        }
-
-                        if (packageToDownload.IsPaid)
-                        {
-                            Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.PaidPackageFail);
-                            return;
-                        }
-
-                        HashSet<int> depsPkgs = new HashSet<int>();
-                        await GetDependencies(new HashSet<int>() { packageToDownload.PackageId }, depsPkgs);
-                        HashSet<int> packageIds = new HashSet<int>() { packageToDownload.PackageId }.Union(depsPkgs).ToHashSet();
-
-                        if (packageIds.Count > 0)
-                        {
-                            MainWindow.Dispatcher.Invoke(() =>
+                            Package packageToDownload = await WebWrapper.GetPackage(idToDownload);
+                            if (packageToDownload == null)
                             {
-                                App.IsDownloading = true;
-                                DownloadDialog downloadDialog = new DownloadDialog();
-                                App.DialogQueue.AddDialog(Environment.TickCount, 1, downloadDialog);
-                                Task.Run(() =>
+                                Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.NoSuchPackageFail);
+                                return;
+                            }
+                            lock (CachedPackages)
+                            {
+                                if (!CachedPackages.Any(x => x.PackageId == packageToDownload.PackageId))
+                                    CachedPackages.Add(packageToDownload);
+                            }
+
+                            if (packageToDownload.IsPaid)
+                            {
+                                Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.PaidPackageFail);
+                                return;
+                            }
+
+                            HashSet<int> depsPkgs = new HashSet<int>();
+                            await GetDependencies(new HashSet<int>() { packageToDownload.PackageId }, depsPkgs);
+                            HashSet<int> packageIds = new HashSet<int>() { packageToDownload.PackageId }.Union(depsPkgs).ToHashSet();
+
+                            if (packageIds.Count > 0)
+                            {
+                                MainWindow.Dispatcher.Invoke(() =>
                                 {
-                                    downloadDialog.DownloadPackages(packageIds, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter);
-                                    MainWindow.Dispatcher.Invoke(() =>
+                                    App.IsDownloading = true;
+                                    DownloadDialog downloadDialog = new DownloadDialog();
+                                    App.DialogQueue.AddDialog(Environment.TickCount, 1, downloadDialog);
+                                    Task.Run(() =>
                                     {
-                                        App.IsDownloading = false;
+                                        downloadDialog.DownloadPackages(packageIds, CachedPackages, InstalledPackages, WebWrapper, SqLiteAdapter);
+                                        MainWindow.Dispatcher.Invoke(() =>
+                                        {
+                                            App.IsDownloading = false;
+                                        });
                                     });
                                 });
-                            });
-                        }
-                        else
-                        {
-                            Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.InstalFail);
-                        }
-                    }).Wait();
-                }
-                else
-                {
-                    Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.AlreadyInstalFail);
+                            }
+                            else
+                            {
+                                Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.InstalFail);
+                            }
+                        }).Wait();
+                    }
+                    else
+                    {
+                        Utils.DisplayError(Localization.Strings.CantDownload, Localization.Strings.AlreadyInstalFail);
 
+                    }
                 }
 
                 File.WriteAllText(queueFile, string.Join(",", queuedPkgs));

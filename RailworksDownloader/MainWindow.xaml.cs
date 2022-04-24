@@ -20,11 +20,7 @@ namespace RailworksDownloader
     /// </summary>
     public partial class MainWindow : Window
     {
-#if DEBUG
-        public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/api/");
-#else
-        public Uri ApiUrl = new Uri("https://dls.rw.jachyhm.cz/api/");
-#endif
+        public Uri ApiUrl = App.Debug ? new Uri("https://dls.rw.jachyhm.cz/api/") : new Uri("https://dls.rw.jachyhm.cz/api/");
 
         public static Color Blue { get; } = Color.FromArgb(255, 0, 151, 230); //new SolidColorBrush(Color.FromArgb(255, 0, 151, 230));
         public static Color Green { get; } = Color.FromArgb(255, 76, 209, 55); //new SolidColorBrush(Color.FromArgb(255, 76, 209, 55));
@@ -79,8 +75,7 @@ namespace RailworksDownloader
                 try
                 {
                     Updater updater = new Updater();
-#if !DEBUG
-                    if (updater.CheckUpdates(ApiUrl))
+                    if (updater.CheckUpdates(ApiUrl) && !App.Debug)
                     {
                         Task.Run(async () =>
                         {
@@ -89,41 +84,38 @@ namespace RailworksDownloader
                     }
                     else
                     {
-#endif
-                    if (string.IsNullOrWhiteSpace(RW.RWPath))
-                    {
-                        RailworksPathDialog rpd = new RailworksPathDialog();
-                        App.DialogQueue.AddDialog(Environment.TickCount, 3, rpd);
-                    }
-
-                    if (string.IsNullOrWhiteSpace(App.Settings.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
-                    {
-                        App.Settings.RailworksLocation = RW.RWPath;
-                        App.Settings.Save();
-                    }
-
-                    Cleanup c = new Cleanup();
-                    c.PerformCleanup();
-
-                    PathChanged();
-
-                    App.Settings.RailworksPathChanged += RailworksPathChanged;
-
-                    RegistryKey dlsKey = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
-                    dlsKey.SetValue("URL Protocol", "");
-                    RegistryKey shellKey = dlsKey.CreateSubKey(@"shell\open\command");
-                    shellKey.SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
-
-                    if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
-                    {
-                        Task.Run(async () =>
+                        if (string.IsNullOrWhiteSpace(RW.RWPath))
                         {
-                            await Utils.CheckLogin(ReportDLC, this, ApiUrl);
-                        });
+                            RailworksPathDialog rpd = new RailworksPathDialog();
+                            App.DialogQueue.AddDialog(Environment.TickCount, 3, rpd);
+                        }
+
+                        if (string.IsNullOrWhiteSpace(App.Settings.RailworksLocation) && !string.IsNullOrWhiteSpace(RW.RWPath))
+                        {
+                            App.Settings.RailworksLocation = RW.RWPath;
+                            App.Settings.Save();
+                        }
+
+                        Cleanup c = new Cleanup();
+                        c.PerformCleanup();
+
+                        PathChanged();
+
+                        App.Settings.RailworksPathChanged += RailworksPathChanged;
+
+                        RegistryKey dlsKey = Registry.CurrentUser.OpenSubKey("Software", true).OpenSubKey("Classes", true).CreateSubKey("dls");
+                        dlsKey.SetValue("URL Protocol", "");
+                        RegistryKey shellKey = dlsKey.CreateSubKey(@"shell\open\command");
+                        shellKey.SetValue("", $"\"{System.Reflection.Assembly.GetEntryAssembly().Location}\" \"%1\"");
+
+                        if (RW.RWPath != null && System.IO.Directory.Exists(RW.RWPath))
+                        {
+                            Task.Run(async () =>
+                            {
+                                await Utils.CheckLogin(ReportDLC, this, ApiUrl);
+                            });
+                        }
                     }
-#if !DEBUG
-                    }
-#endif
                 }
                 catch (Exception e)
                 {
@@ -143,13 +135,16 @@ namespace RailworksDownloader
 
         public void ReportDLC()
         {
+            dlcReportFinishedHandler.Reset();
+
             if (string.IsNullOrWhiteSpace(App.Token) || App.SteamManager == null)
             {
+                PM.CacheInit.WaitOne();
+                PM.CachedPackages = PM.CachedPackages.Union(PM.InstalledPackages).ToList();
                 dlcReportFinishedHandler.Set();
                 return;
             }
 
-            dlcReportFinishedHandler.Reset();
             RW_CheckingDLC(false);
             Task.Run(async () =>
             {
@@ -166,13 +161,16 @@ namespace RailworksDownloader
                         }
                         PM.SqLiteAdapter.FlushToFile(true);
                     }).Start();
-                    PM.CacheInit.WaitOne();
-                    PM.CachedPackages = PM.CachedPackages.Union(PM.InstalledPackages).ToList();
                 } 
                 catch (Exception e)
                 {
                     SentrySdk.CaptureException(e);
                     Trace.Assert(false, Localization.Strings.DLCReportError, e.Message);
+                }
+                finally
+                {
+                    PM.CacheInit.WaitOne();
+                    PM.CachedPackages = PM.CachedPackages.Union(PM.InstalledPackages).ToList();
                 }
                 dlcReportFinishedHandler.Set();
                 ReportedDLC = true;
@@ -207,6 +205,9 @@ namespace RailworksDownloader
                 string dep = filesToIterate.ElementAt(i);
 
                 string[] parts = dep.Split(new string[] { "\\"}, 3, StringSplitOptions.None);
+                if (parts.Length != 3)
+                    continue;
+
                 string provider = parts[0];
                 string product = parts[1];
                 string file = parts[2];

@@ -70,7 +70,7 @@ namespace RailworksDownloader
                                 AutoDownload = false;
                                 break;
                             case "-debug":
-                                Debug = false;
+                                Debug = true;
                                 break;
                         }
                     }
