@@ -17,6 +17,7 @@
     <Authors>Zdendaki, JachyHm</Authors>
     <Version>2.0.0</Version>
     <Title>Railworks Download Station client</Title>
+	<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
