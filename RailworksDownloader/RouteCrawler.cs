@@ -1,5 +1,5 @@
 ﻿using ICSharpCode.SharpZipLib.Zip;
-using Sentry;
+using Microsoft.AppCenter.Crashes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -91,7 +91,7 @@ namespace RailworksDownloader
             try
             {
                 ContainsAP = Directory.GetFiles(RoutePath, "*.ap", SearchOption.AllDirectories).Any();
-            } 
+            }
             catch
             {
                 ContainsAP = false;
@@ -121,7 +121,7 @@ namespace RailworksDownloader
                     {
                         if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
                         {
-                            SentrySdk.CaptureException(e);
+                            Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                             Trace.Assert(false, string.Format(Localization.Strings.CrawlingRouteFail, RoutePath), e.ToString());
                         }
                     }
@@ -269,10 +269,9 @@ namespace RailworksDownloader
             {
                 if (App.ReportErrors)
                 {
-                    SentrySdk.CaptureException(e, scope =>
-                    {
-                        scope.AddAttachment(stream, debugFname);
-                    });
+                    Crashes.TrackError(e,
+                        new Dictionary<string, string>() { { "Type", "Exception" } },
+                        new ErrorAttachmentLog() { ContentType = "application/x-binary", Data = stream.ToArray(), FileName = debugFname });
                 }
                 return;
             }
@@ -300,10 +299,9 @@ namespace RailworksDownloader
             {
                 if (App.ReportErrors)
                 {
-                    SentrySdk.CaptureException(e, scope =>
-                    {
-                        scope.AddAttachment(stream.ToArray(), debugFname);
-                    });
+                    Crashes.TrackError(e,
+                        new Dictionary<string, string>() { { "Type", "Exception" } },
+                        new ErrorAttachmentLog() { ContentType = "application/x-binary", Data = stream.ToArray(), FileName = debugFname });
                 }
             }
         }
@@ -373,13 +371,13 @@ namespace RailworksDownloader
 
             /*lock (Dependencies)
             {*/
-                if (SavedRoute.Dependencies != null)
-                    lock (Dependencies)
-                        Dependencies.UnionWith(SavedRoute.Dependencies);
+            if (SavedRoute.Dependencies != null)
+                lock (Dependencies)
+                    Dependencies.UnionWith(SavedRoute.Dependencies);
 
-                if (SavedRoute.ScenarioDeps != null)
-                    lock (ScenarioDeps)
-                        ScenarioDeps.UnionWith(SavedRoute.ScenarioDeps);
+            if (SavedRoute.ScenarioDeps != null)
+                lock (ScenarioDeps)
+                    ScenarioDeps.UnionWith(SavedRoute.ScenarioDeps);
             //}
 
             if (LoftsChanged || RoadsChanged || TracksChanged || SceneryChanged || RPchanged || ScenariosChanged)
@@ -476,7 +474,7 @@ namespace RailworksDownloader
             {
                 if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
                 {
-                    SentrySdk.CaptureException(e);
+                    Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                     Trace.Assert(false, string.Format(Localization.Strings.GzipEntryFail, file.Name), e.ToString());
                 }
             }
@@ -536,7 +534,7 @@ namespace RailworksDownloader
                     {
                         if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
                         {
-                            SentrySdk.CaptureException(e);
+                            Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                             Trace.Assert(false, string.Format(Localization.Strings.GzipReadFail, file), e.ToString());
                         }
                     }
@@ -639,7 +637,7 @@ namespace RailworksDownloader
                     }
                     catch (Exception e)
                     {
-                        SentrySdk.CaptureException(e);
+                        Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                         Trace.Assert(false, string.Format(Localization.Strings.CountSizeFail, file));
                     }
                 }
@@ -737,7 +735,8 @@ namespace RailworksDownloader
                     md5.TransformFinalBlock(new byte[0], 0, 0);
                     return BitConverter.ToString(md5.Hash).Replace("-", "").ToLower();
                 }
-            } catch { return null; }
+            }
+            catch { return null; }
         }
 
         private DateTime GetPathLastWriteTime(string path)

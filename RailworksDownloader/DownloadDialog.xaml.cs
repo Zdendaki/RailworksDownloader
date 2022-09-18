@@ -1,5 +1,6 @@
-﻿using ModernWpf.Controls;
-using Sentry;
+﻿using Microsoft.AppCenter.Analytics;
+using Microsoft.AppCenter.Crashes;
+using ModernWpf.Controls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -91,7 +92,7 @@ namespace RailworksDownloader
                 }
                 catch (Exception e)
                 {
-                    SentrySdk.CaptureException(e);
+                    Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                     break;
                 }
             }
@@ -165,7 +166,7 @@ namespace RailworksDownloader
                 }
                 catch (Exception e)
                 {
-                    SentrySdk.CaptureException(e);
+                    Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                     break;
                 }
             }
@@ -231,15 +232,15 @@ namespace RailworksDownloader
                     }
                     catch (Exception ex)
                     {
-                        if (ex is UnauthorizedAccessException) {
+                        if (ex is UnauthorizedAccessException)
+                        {
                             Utils.ElevatePrivileges();
                         }
 
-                        SentrySdk.CaptureException(ex, scope =>
-                        {
-                            if (ex is InvalidDataException)
-                                SentrySdk.CaptureMessage($"Package {p.PackageId} uses unsupported compression type!", SentryLevel.Fatal);
-                        });
+                        Crashes.TrackError(ex, new Dictionary<string, string>() { { "Type", "Exception" } });
+                        if (ex is InvalidDataException)
+                            Analytics.TrackEvent($"Package {p.PackageId} uses unsupported compression type!", new Dictionary<string, string> { { "Type", "Critical" } });
+
                         failedFiles.Add(e.FullName);
                     }
                 }

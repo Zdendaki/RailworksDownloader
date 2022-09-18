@@ -1,6 +1,6 @@
 ﻿namespace RailworksDownloader
 {
-    public class DependencyPackage: BaseDependency
+    public class DependencyPackage : BaseDependency
     {
         public DependencyPackage(string name) : this(name, DependencyState.Unknown) { }
 

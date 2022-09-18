@@ -201,7 +201,8 @@ namespace RailworksDownloader
                         if (!keepOpen)
                             MemoryConn.Close();
                     }
-                } catch
+                }
+                catch
                 {
                     ElevatePrivileges();
                 }

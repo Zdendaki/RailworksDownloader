@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 
 namespace RailworksDownloader
 {
@@ -32,8 +31,7 @@ namespace RailworksDownloader
         public delegate void PropertyChangedEventHandler();
 
         private static readonly string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DLS", "settings.bin");
-
-        object l = new object();
+        private readonly object l = new object();
 
         public Settings()
         {
@@ -75,7 +73,7 @@ namespace RailworksDownloader
             if (!Directory.Exists(Path.GetDirectoryName(path)))
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
 
-            lock(l)
+            lock (l)
             {
                 using (FileStream fs = new FileStream(path, FileMode.Create))
                 {

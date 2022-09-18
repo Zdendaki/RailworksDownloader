@@ -1,4 +1,6 @@
-﻿using Sentry;
+﻿using Microsoft.AppCenter;
+using Microsoft.AppCenter.Analytics;
+using Microsoft.AppCenter.Crashes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -36,18 +38,21 @@ namespace RailworksDownloader
         internal static bool AutoDownload { get; set; } = true;
 
 #if !DEBUG
-        internal static bool Debug { get; set; } = false;
-#else
         internal static bool Debug { get; set; } = true;
+#else
+        internal static bool Debug { get; set; } = false;
 #endif
 
         internal static bool ReportErrors { get; set; } = true;
 
-        internal static IDisposable Sentry { get; set; }
-
         protected override void OnStartup(StartupEventArgs e)
         {
-            Sentry = SentrySdk.Init("https://b3e42d20f2524d6b9e71b51b446929e8@o572516.ingest.sentry.io/5722005");
+            Dispatcher.UnhandledException += (sender, ex) =>
+            {
+                Crashes.TrackError(ex.Exception, new Dictionary<string, string> { { "Type", "Unhandled exception" }, { "Stack trace", ex.Exception.StackTrace } });
+            };
+
+            AppCenter.Start("1096b9c7-0f46-4ee2-96ad-b6bbba57d3fb", typeof(Analytics), typeof(Crashes));
 
             DialogQueue = new DialogQueue();
 
@@ -56,7 +61,7 @@ namespace RailworksDownloader
                 DispatcherUnhandledException += App_DispatcherUnhandledException;
             }
 
-            Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            Version = Assembly.GetExecutingAssembly().GetName().Version!.ToString();
 
             if (e.Args.Length > 0)
             {
@@ -102,8 +107,6 @@ namespace RailworksDownloader
         protected override void OnExit(ExitEventArgs e)
         {
             Settings.Save();
-
-            Sentry.Dispose();
             base.OnExit(e);
         }
 

@@ -1,8 +1,7 @@
-﻿using Newtonsoft.Json;
-using Sentry;
+﻿using Microsoft.AppCenter.Crashes;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -139,7 +138,9 @@ namespace RailworksDownloader
 
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+#pragma warning disable SYSLIB0014
             WebClient webClient = new WebClient();
+#pragma warning restore SYSLIB0014
             webClient.DownloadProgressChanged += (sender, e) =>
             {
                 OnDownloadProgressChanged?.Invoke(e.ProgressPercentage);
@@ -173,7 +174,7 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
-                SentrySdk.CaptureException(e);
+                Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                 if (e is HttpRequestException)
                     return new ObjectResult<object>(500, Localization.Strings.ServerUnreachable);
                 else if (e is JsonException)
@@ -207,7 +208,7 @@ namespace RailworksDownloader
 
                     return new ObjectResult<object>(500, we.Message, tempFname);
                 }
-                else if (e is OperationAbortedException || e is ThreadAbortException || e is ThreadInterruptedException)
+                else if (e is ThreadAbortException || e is ThreadInterruptedException)
                     return new ObjectResult<object>(500, Localization.Strings.DownloadInterruptError, tempFname);
             }
             downloadComplete.WaitOne();
@@ -251,7 +252,7 @@ namespace RailworksDownloader
                 if (response.IsSuccessStatusCode)
                 {
                     return JsonConvert.DeserializeObject<ObjectResult<LoginContent>>(await response.Content.ReadAsStringAsync()) ?? new ObjectResult<LoginContent>(500, Localization.Strings.ServerEmptyResponse);
-                } 
+                }
                 else
                 {
                     string strResponse = await response.Content.ReadAsStringAsync();
@@ -267,7 +268,7 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
-                SentrySdk.CaptureException(e);
+                Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                 if (e is HttpRequestException)
                     return new ObjectResult<LoginContent>(500, Localization.Strings.ServerUnreachable);
                 else if (e is JsonException)

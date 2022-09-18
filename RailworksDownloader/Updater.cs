@@ -1,6 +1,7 @@
-﻿using RailworksDownloader.Properties;
-using Sentry;
+﻿using Microsoft.AppCenter.Crashes;
+using RailworksDownloader.Properties;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -26,7 +27,8 @@ namespace RailworksDownloader
             Task.Run(async () =>
             {
                 ObjectResult<AppVersionContent> jsonResult = await WebWrapper.GetAppVersion(apiUrl);
-                if (jsonResult != null && Utils.IsSuccessStatusCode(jsonResult.code)) {
+                if (jsonResult != null && Utils.IsSuccessStatusCode(jsonResult.code))
+                {
                     App.ReportErrors = jsonResult.content.report_errors;
 
                     if (jsonResult.content.version_name != App.Version)
@@ -51,7 +53,10 @@ namespace RailworksDownloader
 
             OnDownloadProgressChanged?.Invoke(0);
 
+#pragma warning disable SYSLIB0014
             WebClient webClient = new WebClient();
+#pragma warning restore SYSLIB0014
+
             webClient.DownloadProgressChanged += (sender, e) =>
             {
                 OnDownloadProgressChanged?.Invoke(e.ProgressPercentage);
@@ -61,6 +66,7 @@ namespace RailworksDownloader
             {
                 string tempFname = Path.GetTempFileName();
                 await webClient.DownloadFileTaskAsync(UpdateUrl, tempFname);
+
                 OnDownloaded?.Invoke();
 
                 Thread.Sleep(3000);
@@ -73,7 +79,7 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
-                SentrySdk.CaptureException(e);
+                Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                 MessageBox.Show(Localization.Strings.UpdaterAdminDesc, Localization.Strings.ClientUpdateError, MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
         }

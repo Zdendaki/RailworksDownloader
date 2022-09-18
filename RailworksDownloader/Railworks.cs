@@ -1,6 +1,6 @@
 ﻿using ICSharpCode.SharpZipLib.Zip;
+using Microsoft.AppCenter.Crashes;
 using Microsoft.Win32;
-using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -26,7 +26,7 @@ namespace RailworksDownloader
                 rwPath = value;
 
                 if (rwPath != null)
-                    AssetsPath = NormalizePath(Path.Combine(RWPath, "Assets"));
+                    AssetsPath = NormalizePath(Path.Combine(rwPath, "Assets"));
             }
         }
 
@@ -78,22 +78,24 @@ namespace RailworksDownloader
 
         public static string GetRWPath()
         {
-            string path = (string)Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\RailSimulator.com\RailWorks", false)?.GetValue("install_path");
+            string path = (string)Registry.LocalMachine?.OpenSubKey(@"SOFTWARE\WOW6432Node\RailSimulator.com\RailWorks", false)?.GetValue("install_path");
 
-            if (path != null)
+            if (path is not null)
                 return path;
             else
-                return (string)Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 24010", false)?.GetValue("InstallLocation");
+                return (string)Registry.LocalMachine?.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 24010", false)?.GetValue("InstallLocation");
         }
 
         private string ParseDisplayNameNode(XmlNode displayNameNode)
         {
-            foreach (XmlNode n in displayNameNode.FirstChild)
+            if (displayNameNode?.FirstChild is not null)
             {
-                if (!string.IsNullOrEmpty(n.InnerText))
-                    return n.InnerText;
+                foreach (XmlNode n in displayNameNode.FirstChild)
+                {
+                    if (!string.IsNullOrEmpty(n.InnerText))
+                        return n.InnerText;
+                }
             }
-
             return null;
         }
 
@@ -119,17 +121,17 @@ namespace RailworksDownloader
                         XmlDocument doc = new XmlDocument();
                         doc.Load(XmlReader.Create(RemoveInvalidXmlChars(stream), new XmlReaderSettings() { CheckCharacters = false }));
 
-                        string routeName = ParseDisplayNameNode(doc.DocumentElement.SelectSingleNode("DisplayName"));
+                        string routeName = ParseDisplayNameNode(doc.DocumentElement?.SelectSingleNode("DisplayName"));
                         Trace.Assert(routeName != null, Localization.Strings.NoRouteName);
                         return routeName ?? routeHash;
                     }
                     catch (Exception e)
                     {
-                        if (App.ReportErrors) {
-                            SentrySdk.CaptureException(e, scope =>
-                            {
-                                scope.AddAttachment(stream.ToArray(), file);
-                            });
+                        if (App.ReportErrors)
+                        {
+                            Crashes.TrackError(e,
+                                new Dictionary<string, string>() { { "Type", "Exception" } },
+                                new ErrorAttachmentLog() { ContentType = "application/x-binary", Data = stream.ToArray(), FileName = file });
                         }
                         MessageBox.Show(string.Format(Localization.Strings.ParseRoutePropFail, file), Localization.Strings.ParseRoutePropFailTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
@@ -137,10 +139,10 @@ namespace RailworksDownloader
 
                 if (App.ReportErrors)
                 {
-                    SentrySdk.CaptureMessage($"{file} has no route name!", scope =>
-                    {
-                        scope.AddAttachment(stream.ToArray(), file);
-                    }, SentryLevel.Warning);
+                    Crashes.TrackError(
+                        new Exception($"{file} has no route name!"),
+                        new Dictionary<string, string>() { { "Type", "Warning" } },
+                        new ErrorAttachmentLog() { ContentType = "application/x-binary", Data = stream.ToArray(), FileName = file });
                 }
             }
             Debug.Assert(false, Localization.Strings.NoRouteName);
@@ -241,7 +243,7 @@ namespace RailworksDownloader
                                 }
                                 catch (Exception e)
                                 {
-                                    SentrySdk.CaptureException(e);
+                                    Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                                     Trace.Assert(false, string.Format(Localization.Strings.ReadingZipFail, file));
                                 }
                             }
@@ -358,14 +360,15 @@ namespace RailworksDownloader
                             }
                             catch (Exception e)
                             {
-                                SentrySdk.CaptureException(e);
+                                Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                             }
                         }
                         if (APDependencies.Contains(fileToFind) || APDependencies.Contains(NormalizePath(fileToFind, "xml")))
                         {
                             return true;
                         }
-                    } catch { }
+                    }
+                    catch { }
                 }
                 try
                 {
@@ -389,7 +392,8 @@ namespace RailworksDownloader
             }
 
             string lastFileName = "";
-            try {
+            try
+            {
                 //string[] files = Directory.GetFiles(AssetsPath, "*.*", SearchOption.AllDirectories);
                 foreach (FileInfo fileInfo in new DirectoryInfo(AssetsPath).EnumerateFiles("*.*", SearchOption.AllDirectories))
                 {
@@ -425,7 +429,7 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
-                SentrySdk.CaptureException(e);
+                Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                 Trace.Assert(false, string.Format(Localization.Strings.LoadingInstalledFilesError, lastFileName), e.Message);
             }
             getAllInstalledDepsEvent.Set();
@@ -455,7 +459,8 @@ namespace RailworksDownloader
                             try
                             {
                                 exists = APDependencies.Contains(relative_path_bin) || APDependencies.Contains(relative_path) || File.Exists(path_bin) || File.Exists(path) || CheckForFileInAP(Directory.GetParent(path).FullName, relative_path);
-                            } catch { }
+                            }
+                            catch { }
 
                             if (exists)
                                 lock (existingDeps)

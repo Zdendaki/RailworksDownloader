@@ -39,10 +39,9 @@ namespace RailworksDownloader
         public DependencyState State { get; set; }
 
         public int? PkgID { get; set; }
-
     }
 
-    public class Dependency: BaseDependency
+    public class Dependency : BaseDependency
     {
         public bool IsScenario { get; set; }
 

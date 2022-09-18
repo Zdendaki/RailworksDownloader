@@ -1,4 +1,5 @@
-using Sentry;
+using Microsoft.AppCenter.Analytics;
+using Microsoft.AppCenter.Crashes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -285,14 +286,14 @@ namespace RailworksDownloader
                     {
                         if (App.ReportErrors)
                         {
-                            SentrySdk.CaptureException(e, scope =>
-                            {
-                                scope.AddAttachment(InputStream.ToArray(), DebugFname);
-                            });
+                            Crashes.TrackError(e,
+                                new Dictionary<string, string>() { { "Type", "Exception" } },
+                                new ErrorAttachmentLog() { ContentType = "application/x-binary", Data = InputStream.ToArray(), FileName = DebugFname });
                         }
                         if (e is SerzException)
                         {
                             Debug.Assert(false, e.Message);
+                            Analytics.TrackEvent(e.Message, new Dictionary<string, string>() { { "Type", "SerzException" } });
                         }
                         else
                         {

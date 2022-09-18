@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -163,7 +162,7 @@ namespace RailworksDownloader
 
             string type = isPackage ? Localization.Strings.ClipboardBuilderPackages : Localization.Strings.ClipboardBuilderItems;
             string placement = listView.ItemsSource == ScenarioDeps || listView.ItemsSource == ScenarioPkgs ? Localization.Strings.ClipboardBuilderScenarios : Localization.Strings.ClipboardBuilderRoutes;
-            builder.AppendLine(String.Format(Localization.Strings.ClipboarBuilderMainString, selectedItems.Count, listView.Items.Count, type, placement, RouteInfo.Name));
+            builder.AppendLine(string.Format(Localization.Strings.ClipboarBuilderMainString, selectedItems.Count, listView.Items.Count, type, placement, RouteInfo.Name));
             builder.AppendLine($"     -----{firstItem.PrettyState.ToUpper()}-----");
 
             foreach (BaseDependency dep in selectedItems)

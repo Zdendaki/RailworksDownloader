@@ -1,6 +1,5 @@
-﻿using ModernWpf.Controls;
+﻿using Microsoft.AppCenter.Crashes;
 using Newtonsoft.Json;
-using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -198,7 +197,7 @@ namespace RailworksDownloader
                 }
                 catch (Exception e)
                 {
-                    SentrySdk.CaptureException(e);
+                    Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                     Trace.Assert(false, Localization.Strings.VerifyCacheFailed);
                 }
                 //CachedPackages = CachedPackages.Union(InstalledPackages).ToList();
@@ -271,12 +270,12 @@ namespace RailworksDownloader
             }
             CachedPackages.ForEach(x =>
             {
-                var filesList = x.IsPaid ? DownloadablePaidDeps : DownloadableDeps;
-                var packagesList = x.IsPaid ? DownloadablePaidDepsPackages : DownloadableDepsPackages;
+                HashSet<string> filesList = x.IsPaid ? DownloadablePaidDeps : DownloadableDeps;
+                Dictionary<string, Dictionary<string, Dictionary<string, int>>> packagesList = x.IsPaid ? DownloadablePaidDepsPackages : DownloadableDepsPackages;
 
                 x.FilesContained.ForEach(y =>
                 {
-                    string[] parts = y.Split(new string[] { "\\"}, 3, StringSplitOptions.None);
+                    string[] parts = y.Split(new string[] { "\\" }, 3, StringSplitOptions.None);
                     if (parts.Length == 3)
                     {
                         string provider = parts[0];
@@ -327,7 +326,7 @@ namespace RailworksDownloader
 
                     MainWindow.Dispatcher.Invoke(() =>
                     {
-                        var conflictPackageDialog = new ConflictPackageDialog(p.DisplayName);
+                        ConflictPackageDialog conflictPackageDialog = new ConflictPackageDialog(p.DisplayName);
                         App.DialogQueue.AddDialog(Environment.TickCount, 2, conflictPackageDialog, (_) =>
                         {
                             rewrite = conflictPackageDialog?.RewriteLocal ?? false;
@@ -359,7 +358,7 @@ namespace RailworksDownloader
             IEnumerable<string> depsToDownload = allMissing.Intersect(DownloadableDeps);
             while (depsToDownload.Count() > 0)
             {
-                string[] parts = depsToDownload.First().Split(new string[] { "\\"}, 3, StringSplitOptions.None);
+                string[] parts = depsToDownload.First().Split(new string[] { "\\" }, 3, StringSplitOptions.None);
                 string provider = parts[0];
                 string product = parts[1];
                 string file = parts[2];
@@ -455,7 +454,8 @@ namespace RailworksDownloader
                 {
                     DownloadDialog downloadDialog = new DownloadDialog();
                     App.DialogQueue.AddDialog(Environment.TickCount, 1, downloadDialog);
-                    Task.Run(() => {
+                    Task.Run(() =>
+                    {
                         downloadDialog.UpdatePackages(pkgsToUpdate, InstalledPackages, WebWrapper, SqLiteAdapter);
                         MainWindow.Dispatcher.Invoke(() =>
                         {

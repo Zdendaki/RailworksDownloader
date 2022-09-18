@@ -1,10 +1,10 @@
-﻿using Microsoft.Win32;
-using ModernWpf.Controls;
-using Sentry;
+﻿using Microsoft.AppCenter.Crashes;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,7 +39,7 @@ namespace RailworksDownloader
         private bool loadingComplete = false;
         private bool exitConfirmed = false;
         private readonly object indexLock = new object();
-        private string debugTitle = App.Debug ? " DEBUG!!!" : "";
+        private readonly string debugTitle = App.Debug ? " DEBUG!!!" : "";
 
         public MainWindow()
         {
@@ -59,7 +59,7 @@ namespace RailworksDownloader
                 }
                 catch (Exception e)
                 {
-                    SentrySdk.CaptureException(e);
+                    Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                     Debug.Assert(false, Localization.Strings.SteamInitFail);
                 }
 
@@ -119,7 +119,7 @@ namespace RailworksDownloader
                 }
                 catch (Exception e)
                 {
-                    SentrySdk.CaptureException(e);
+                    Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                     Trace.Assert(false, Localization.Strings.UpdaterPanic, e.ToString());
                 }
             }
@@ -127,7 +127,7 @@ namespace RailworksDownloader
             {
                 if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
                 {
-                    SentrySdk.CaptureException(e);
+                    Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                     Trace.Assert(false, e.ToString());
                 }
             }
@@ -161,10 +161,10 @@ namespace RailworksDownloader
                         }
                         PM.SqLiteAdapter.FlushToFile(true);
                     }).Start();
-                } 
+                }
                 catch (Exception e)
                 {
-                    SentrySdk.CaptureException(e);
+                    Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                     Trace.Assert(false, Localization.Strings.DLCReportError, e.Message);
                 }
                 finally
@@ -204,7 +204,7 @@ namespace RailworksDownloader
             {
                 string dep = filesToIterate.ElementAt(i);
 
-                string[] parts = dep.Split(new string[] { "\\"}, 3, StringSplitOptions.None);
+                string[] parts = dep.Split(new string[] { "\\" }, 3, StringSplitOptions.None);
                 if (parts.Length != 3)
                     continue;
 
@@ -335,7 +335,7 @@ namespace RailworksDownloader
             {
                 if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
                 {
-                    SentrySdk.CaptureException(e);
+                    Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                     Trace.Assert(false, e.ToString());
                 }
             }
@@ -433,7 +433,7 @@ namespace RailworksDownloader
             }
             catch (Exception e)
             {
-                SentrySdk.CaptureException(e);
+                Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                 Trace.Assert(false, Localization.Strings.RoutesLoadFail, e.ToString());
             }
         }
@@ -489,7 +489,7 @@ namespace RailworksDownloader
         private void ManagePackages_Click(object sender, RoutedEventArgs e)
         {
             if (PM == null)
-                return; 
+                return;
 
             PackageManagerWindow pmw = new PackageManagerWindow(PM);
             pmw.ShowDialog();
@@ -501,14 +501,14 @@ namespace RailworksDownloader
             {
                 try
                 {
-                    if (System.IO.Directory.Exists(RW.RWPath) && App.AutoDownload)
+                    if (Directory.Exists(RW.RWPath) && App.AutoDownload)
                         ScanRailworks_Click(this, null);
                 }
                 catch (Exception e)
                 {
                     if (e.GetType() != typeof(ThreadInterruptedException) && e.GetType() != typeof(ThreadAbortException))
                     {
-                        SentrySdk.CaptureException(e);
+                        Crashes.TrackError(e, new Dictionary<string, string>() { { "Type", "Exception" } });
                         Trace.Assert(false, e.ToString());
                     }
                 }

@@ -5,15 +5,14 @@ using System.Reflection;
 
 namespace RailworksDownloader
 {
-    class Cleanup
+    internal class Cleanup
     {
-        static readonly string[] versions = new string[] { "1.2.0.0" };
+        private static readonly string[] versions = new string[] { "1.2.0.0" };
+        private readonly string version;
 
-        string version;
-        
         public Cleanup()
         {
-            version = Assembly.GetEntryAssembly().GetName().Version.ToString();
+            version = Assembly.GetEntryAssembly()!.GetName().Version!.ToString();
         }
 
         public void PerformCleanup()
@@ -23,7 +22,7 @@ namespace RailworksDownloader
 
             if (versions.Contains(version) && !App.Settings.PerformedCleanups.Contains(version))
             {
-                foreach (var route in Directory.GetDirectories(Path.Combine(App.Railworks.RWPath, "Content", "Routes")))
+                foreach (string route in Directory.GetDirectories(Path.Combine(App.Railworks.RWPath, "Content", "Routes")))
                 {
                     try
                     {
@@ -31,7 +30,7 @@ namespace RailworksDownloader
                     }
                     catch { }
                 }
-                    
+
                 App.Settings.PerformedCleanups.Add(version);
                 App.Settings.Save();
             }

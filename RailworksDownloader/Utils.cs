@@ -1,5 +1,5 @@
-﻿using ModernWpf.Controls;
-using Sentry;
+﻿using Microsoft.AppCenter.Crashes;
+using ModernWpf.Controls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,9 +12,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Xml;
-using Windows.ApplicationModel.Core;
-using Windows.UI.Core;
-using Windows.UI.Popups;
 
 namespace RailworksDownloader
 {
@@ -136,7 +133,7 @@ namespace RailworksDownloader
             string rel = Uri.UnescapeDataString(uri.MakeRelativeUri(new Uri(path)).ToString()).Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             if (rel.Contains(Path.DirectorySeparatorChar.ToString()) == false)
             {
-                rel = $".{ Path.DirectorySeparatorChar }{ rel }";
+                rel = $".{Path.DirectorySeparatorChar}{rel}";
             }
             return rel;
         }
@@ -157,10 +154,9 @@ namespace RailworksDownloader
                 {
                     if (App.ReportErrors)
                     {
-                        SentrySdk.CaptureMessage($"Regex replaced over {(buffer.Length - prevSize) / 5} characters from XML file.", scope =>
-                        {
-                            scope.AddAttachment(buffer, "dump.xml", AttachmentType.Default, "text/xml");
-                        }, SentryLevel.Warning);
+                        Crashes.TrackError(new($"Regex replaced over {(buffer.Length - prevSize) / 5} characters from XML file."),
+                            new Dictionary<string, string>() { { "Type", "Warning" } },
+                            new ErrorAttachmentLog() { ContentType = "text/xml", Data = buffer, FileName = "dump.xml" });
                     }
                 }
             }
@@ -262,7 +258,8 @@ namespace RailworksDownloader
                         return file.FullName;
                 }
                 return null;
-            } catch
+            }
+            catch
             {
                 return null;
             }
@@ -384,12 +381,15 @@ namespace RailworksDownloader
         {
             try
             {
-                var exeName = Process.GetCurrentProcess().MainModule.FileName;
-                ProcessStartInfo startInfo = new ProcessStartInfo(exeName);
-                startInfo.Verb = "runas";
+                string exeName = Process.GetCurrentProcess().MainModule.FileName;
+                ProcessStartInfo startInfo = new ProcessStartInfo(exeName)
+                {
+                    Verb = "runas"
+                };
                 Process.Start(startInfo);
                 Application.Current.Shutdown();
-            } catch
+            }
+            catch
             {
                 DisplayError(Localization.Strings.ManualElevateTitle, Localization.Strings.ManualElevateContent, (_) => Application.Current.Shutdown());
             }

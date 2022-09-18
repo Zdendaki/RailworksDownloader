@@ -2,18 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RailworksDownloader
 {
-    class DialogQueueItem
+    internal class DialogQueueItem
     {
-        public readonly int             TimeCreated;
-        public readonly byte            Importance;
-        public bool                     Hidden = false;
-        public readonly Action<bool>    Callback;
-        public readonly ContentDialog   ContentDialog;
+        public readonly int TimeCreated;
+        public readonly byte Importance;
+        public bool Hidden = false;
+        public readonly Action<bool> Callback;
+        public readonly ContentDialog ContentDialog;
 
         public DialogQueueItem(int timeCreated, byte importance, ContentDialog contentDialog, Action<bool> callback = null)
         {
@@ -24,7 +22,7 @@ namespace RailworksDownloader
         }
     }
 
-    class DialogQueue
+    internal class DialogQueue
     {
         private List<DialogQueueItem> items = new List<DialogQueueItem>();
         private DialogQueueItem oldItem;
@@ -65,8 +63,8 @@ namespace RailworksDownloader
             if (newItem?.ContentDialog != null)
             {
                 newItem.Hidden = false;
-                var result = await newItem?.ContentDialog.ShowAsync();
-                var callback = newItem?.Callback;
+                ContentDialogResult result = await newItem?.ContentDialog.ShowAsync();
+                Action<bool> callback = newItem?.Callback;
                 if (!newItem.Hidden)
                 {
                     if (callback != null)
