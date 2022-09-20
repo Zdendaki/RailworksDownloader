@@ -558,7 +558,7 @@ namespace RailworksDownloader
             }
 
             LoftsChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Loft Tiles"), ref SavedRoute.LoftLastWrite, ref SavedRoute.LoftChecksum);
-            RoadsChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Road Tiles"), ref SavedRoute.RoadLastWrite, ref SavedRoute.LoftChecksum);
+            RoadsChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Road Tiles"), ref SavedRoute.RoadLastWrite, ref SavedRoute.RoadChecksum);
             TracksChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Networks", "Track Tiles"), ref SavedRoute.TrackLastWrite, ref SavedRoute.TrackChecksum);
             SceneryChanged = GetDirectoryChanged(Path.Combine(RoutePath, "Scenery"), ref SavedRoute.SceneryLastWrite, ref SavedRoute.SceneryChecksum);
             RPchanged = GetFileChanged(Path.Combine(RoutePath, "RouteProperties.xml"), ref SavedRoute.RoutePropertiesLastWrite, ref SavedRoute.RoutePropertiesChecksum);
