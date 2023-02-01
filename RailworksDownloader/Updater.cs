@@ -23,6 +23,7 @@ namespace RailworksDownloader
 
         internal bool CheckUpdates(Uri apiUrl)
         {
+#if !DEBUG
             bool isThereNewer = false;
             Task.Run(async () =>
             {
@@ -40,6 +41,9 @@ namespace RailworksDownloader
             }).Wait();
 
             return isThereNewer;
+#else
+            return false;
+#endif
         }
 
         internal async Task UpdateAsync()
