@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AllDownDesc" xml:space="preserve">
+    <value>Alle verfügbaren Pakete sind bereits heruntergeladen.</value>
+  </data>
+  <data name="AlreadyInstalFail" xml:space="preserve">
+    <value>Dieses Paket ist bereits installiert.</value>
+  </data>
+  <data name="ApplicationRestart" xml:space="preserve">
+    <value>Die Anwendung wird neu gestartet.</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="CantDownload" xml:space="preserve">
+    <value>Paket kann nicht heruntergeladen werden.</value>
+  </data>
+  <data name="CatDLC" xml:space="preserve">
+    <value>Steam DLC</value>
+  </data>
+  <data name="CatEnv" xml:space="preserve">
+    <value>Umgebung</value>
+  </data>
+  <data name="CatLoco" xml:space="preserve">
+    <value>Lokomotiven</value>
+  </data>
+  <data name="CatOther" xml:space="preserve">
+    <value>Sonstige/ohne Kategorie</value>
+  </data>
+  <data name="CatRVDep" xml:space="preserve">
+    <value>Fahrzeugabhängigkeiten</value>
+  </data>
+  <data name="CatScenery" xml:space="preserve">
+    <value>Szenerie</value>
+  </data>
+  <data name="CatSystem" xml:space="preserve">
+    <value>SYSTEMPAKET</value>
+  </data>
+  <data name="CatTrackObj" xml:space="preserve">
+    <value>Streckenobjekte</value>
+  </data>
+  <data name="CatWag" xml:space="preserve">
+    <value>Wagen</value>
+  </data>
+  <data name="CheckingDLC" xml:space="preserve">
+    <value>Suche installierte DLCs</value>
+  </data>
+  <data name="ClientUpdateError" xml:space="preserve">
+    <value>Fehler beim Installieren des Updates aufgetreten! Bitte die neueste Version der Anwendung manuell herunterladen!</value>
+  </data>
+  <data name="ClientUpdateErrorTitle" xml:space="preserve">
+    <value>Fehler beim Installieren des Updates</value>
+  </data>
+  <data name="ClipboarBuilderMainString" xml:space="preserve">
+    <value>Liste der {0}/{1} {2}, die in {3} {4} verwendet werden:</value>
+  </data>
+  <data name="ClipboardBuilderItems" xml:space="preserve">
+    <value>Dateien</value>
+  </data>
+  <data name="ClipboardBuilderPackages" xml:space="preserve">
+    <value>Paketen</value>
+  </data>
+  <data name="ClipboardBuilderRoutes" xml:space="preserve">
+    <value>Strecke</value>
+  </data>
+  <data name="ClipboardBuilderScenarios" xml:space="preserve">
+    <value>Szenarien der Strecke</value>
+  </data>
+  <data name="ColorHintBlue" xml:space="preserve">
+    <value>Unbekannt</value>
+  </data>
+  <data name="ColorHintGreen" xml:space="preserve">
+    <value>Abgeschlossen</value>
+  </data>
+  <data name="ColorHintPurple" xml:space="preserve">
+    <value>Herunterladbar</value>
+  </data>
+  <data name="ColorHintRed" xml:space="preserve">
+    <value>Fehlt</value>
+  </data>
+  <data name="ColorHintYellow" xml:space="preserve">
+    <value>Bezahlt</value>
+  </data>
+  <data name="ConflictFileDesc1" xml:space="preserve">
+    <value>Folgende Pakete wurden bereits heruntergeladen, jedoch nicht von dieser Anwendung:</value>
+    <comment>Následující balíčky jsou již staženy, ale ne prostřednictvím této aplikace:</comment>
+  </data>
+  <data name="ConflictFileDesc2" xml:space="preserve">
+    <value>Bitte entscheiden Sie, wie Sie fortfahren möchten!</value>
+  </data>
+  <data name="ConflictFileTitle" xml:space="preserve">
+    <value>Konfliktdatei gefunden!</value>
+  </data>
+  <data name="CountryNon" xml:space="preserve">
+    <value>Nicht definiert</value>
+  </data>
+  <data name="CountSizeFail" xml:space="preserve">
+    <value>Fehler bei der Berechnung der Dateigröße von {0}!</value>
+  </data>
+  <data name="CrawlingRouteFail" xml:space="preserve">
+    <value>Fehler beim Parsen der Strecke "{0}"!</value>
+  </data>
+  <data name="CriticalError" xml:space="preserve">
+    <value>Kritischer Fehler!</value>
+  </data>
+  <data name="DepsDetailsWindowTitle" xml:space="preserve">
+    <value>Dateien aus Paket {0} in Strecke {1}:</value>
+  </data>
+  <data name="DepStateAvail" xml:space="preserve">
+    <value>Verfügbar</value>
+  </data>
+  <data name="DepStateDown" xml:space="preserve">
+    <value>Heruntergeladen</value>
+  </data>
+  <data name="DepStatePaid" xml:space="preserve">
+    <value>kostenpflichtiges DLC</value>
+  </data>
+  <data name="DepStateUnav" xml:space="preserve">
+    <value>Nicht verfügbar</value>
+  </data>
+  <data name="DepStateUnk" xml:space="preserve">
+    <value>Unbekannt</value>
+  </data>
+  <data name="DepWindowTitle1" xml:space="preserve">
+    <value>Abhängigkeiten der Strecke</value>
+  </data>
+  <data name="DepWindowTitle2" xml:space="preserve">
+    <value>Abhängigkeiten des Szenarios</value>
+  </data>
+  <data name="DLCReportError" xml:space="preserve">
+    <value>There was an error while reporting installed DLS's!</value>
+  </data>
+  <data name="DownloadError" xml:space="preserve">
+    <value>Unerwarteter Fehler beim Herunterladen</value>
+  </data>
+  <data name="Downloading" xml:space="preserve">
+    <value>Herunterladen...</value>
+  </data>
+  <data name="DownloadingUpdate" xml:space="preserve">
+    <value>Client-Update herunterladen...</value>
+  </data>
+  <data name="DownloadInterruptError" xml:space="preserve">
+    <value>Download unterbrochen!</value>
+  </data>
+  <data name="DownloadTitle" xml:space="preserve">
+    <value>Herunterladen der Pakete {0}/{1}</value>
+  </data>
+  <data name="Era1" xml:space="preserve">
+    <value>I.</value>
+  </data>
+  <data name="Era2" xml:space="preserve">
+    <value>II.</value>
+  </data>
+  <data name="Era3" xml:space="preserve">
+    <value>III.</value>
+  </data>
+  <data name="Era4" xml:space="preserve">
+    <value>IV.</value>
+  </data>
+  <data name="Era5" xml:space="preserve">
+    <value>V.</value>
+  </data>
+  <data name="Era6" xml:space="preserve">
+    <value>VI.</value>
+  </data>
+  <data name="EraNon" xml:space="preserve">
+    <value>nicht datiert</value>
+  </data>
+  <data name="FailedCopyFiles" xml:space="preserve">
+    <value>Die folgenden Dateien konnten nicht kopiert werden!</value>
+  </data>
+  <data name="FindFileFail" xml:space="preserve">
+    <value>FindFile für {0} hat keine Pakete gefunden!</value>
+  </data>
+  <data name="GettingAvailable" xml:space="preserve">
+    <value>Verfügbare Pakete zum Herunterladen erhalten...</value>
+  </data>
+  <data name="GettingInstalled" xml:space="preserve">
+    <value>Alle installierten Dateien abrufen...</value>
+  </data>
+  <data name="GettingRequired" xml:space="preserve">
+    <value>Alle erforderlichen Dateien abrufen...</value>
+  </data>
+  <data name="GettingStates" xml:space="preserve">
+    <value>Abhängigkeitsstatus erhalten...</value>
+  </data>
+  <data name="GzipEntryFail" xml:space="preserve">
+    <value>Fehler beim Lesen des gzip-Eintrags in der Datei {0}!</value>
+  </data>
+  <data name="GzipFileFail" xml:space="preserve">
+    <value>Gzip-Datei {0} ist beschädigt!</value>
+  </data>
+  <data name="GzipReadFail" xml:space="preserve">
+    <value>Fehler beim Lesen der gzip-Datei {0}!</value>
+  </data>
+  <data name="InstalFail" xml:space="preserve">
+    <value>Beim Installieren des Pakets ist ein Fehler aufgetreten!</value>
+  </data>
+  <data name="Installing" xml:space="preserve">
+    <value>Installieren...</value>
+  </data>
+  <data name="InstallingUpdate" xml:space="preserve">
+    <value>Das Update wird installiert...</value>
+  </data>
+  <data name="InvalidFileName" xml:space="preserve">
+    <value>#UNGÜLTIGER DATEINAME</value>
+  </data>
+  <data name="KeepAll" xml:space="preserve">
+    <value>Alles behalten!</value>
+  </data>
+  <data name="KeepLocal" xml:space="preserve">
+    <value>Verlassen!</value>
+  </data>
+  <data name="LoadingInstalledFilesError" xml:space="preserve">
+    <value>An unexpected error occured while getting installed files immediately after file "{0}"!</value>
+  </data>
+  <data name="LoginCheckbox" xml:space="preserve">
+    <value>Angemeldet bleiben</value>
+  </data>
+  <data name="LoginDesc" xml:space="preserve">
+    <value>Bitte melden Sie sich mit Ihrem RailWorks DLS-Konto an!</value>
+  </data>
+  <data name="LoginEmailHint" xml:space="preserve">
+    <value>E-Mail Adresse...</value>
+  </data>
+  <data name="LoginForgot" xml:space="preserve">
+    <value>Passwort vergessen</value>
+  </data>
+  <data name="LoginMissingField" xml:space="preserve">
+    <value>Nicht alle erforderlichen Felder wurden ausgefüllt!</value>
+  </data>
+  <data name="LoginPasswordHint" xml:space="preserve">
+    <value>Passwort...</value>
+  </data>
+  <data name="LoginPrimary" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="LoginSecondary" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="LoginTitle" xml:space="preserve">
+    <value>Anmeldung</value>
+  </data>
+  <data name="MainDown" xml:space="preserve">
+    <value>Pakete herunterladen</value>
+  </data>
+  <data name="MainManage" xml:space="preserve">
+    <value>Pakete verwalten</value>
+  </data>
+  <data name="MainRescan" xml:space="preserve">
+    <value>Assets erneut durchsuchen...</value>
+  </data>
+  <data name="MainScan" xml:space="preserve">
+    <value>Nach fehlenden Assets suchen</value>
+  </data>
+  <data name="MainSelectFolder" xml:space="preserve">
+    <value>Wählen Sie den RailWorks-Ordner aus</value>
+  </data>
+  <data name="ManualElevateContent" xml:space="preserve">
+    <value>Bitte führen Sie die Anwendung erneut mit erweiterten Rechten (Administrator) aus!</value>
+  </data>
+  <data name="ManualElevateTitle" xml:space="preserve">
+    <value>Unzureichende Berechtigungen</value>
+  </data>
+  <data name="NewerDesc" xml:space="preserve">
+    <value>Auf dem Server wurde eine neuere Version des folgenden Pakets gefunden:
+{0}
+Möchten Sie es aktualisieren?</value>
+  </data>
+  <data name="NewerPrimary" xml:space="preserve">
+    <value>Ja, aktualisieren</value>
+  </data>
+  <data name="NewerSecond" xml:space="preserve">
+    <value>Nein, ich möchte meine lokale Version behalten</value>
+  </data>
+  <data name="NewerTitle" xml:space="preserve">
+    <value>Eine neuere Version des Pakets wurde gefunden!</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>Nein</value>
+  </data>
+  <data name="NonCached" xml:space="preserve">
+    <value>Es wurde versucht auf ein Paket außerhalb des Cache zuzugreifen!</value>
+  </data>
+  <data name="NoRouteName" xml:space="preserve">
+    <value>Strecke {0} hat keinen eingegebenen Namen, stattdessen wird der Hash verwendet!</value>
+  </data>
+  <data name="NoSuchPackageFail" xml:space="preserve">
+    <value>Es gibt kein solches Paket!</value>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>Jawohl!</value>
+    <comment>Jawohl, Chef!</comment>
+  </data>
+  <data name="OperationsRunning" xml:space="preserve">
+    <value>Es sind noch nicht alle Vorgänge abgeschlossen.
+Möchten Sie die Anwendung wirklich schließen?</value>
+  </data>
+  <data name="OverAll" xml:space="preserve">
+    <value>Alles überschreiben!</value>
+  </data>
+  <data name="OverLocal" xml:space="preserve">
+    <value>Lokale Dateien überschreiben!</value>
+  </data>
+  <data name="PackManInstall" xml:space="preserve">
+    <value>Pakete installieren</value>
+  </data>
+  <data name="PackManRemove" xml:space="preserve">
+    <value>Pakete deinstallieren</value>
+  </data>
+  <data name="PackManTitle" xml:space="preserve">
+    <value>Package Manager</value>
+  </data>
+  <data name="PaidPackageFail" xml:space="preserve">
+    <value>Das ist ein kostenpflichtiges Paket. Kostenpflichtige Pakete können nicht über diese Anwendung heruntergeladen werden.</value>
+  </data>
+  <data name="ParseRoutePropFail" xml:space="preserve">
+    <value>Ein unerwarteter Fehler ist beim Parsen dieser Datei aufgetreten:
+{0}
+In der Regel heißt das, dass die Datei beschädigt ist. Bitte melden Sie diese Fehlermeldung inklusive der beschädigten Datei.</value>
+  </data>
+  <data name="ParseRoutePropFailTitle" xml:space="preserve">
+    <value>Fehler beim Parsen der RouteProperties</value>
+  </data>
+  <data name="PrepareTitle" xml:space="preserve">
+    <value>Download wird vorbereitet!</value>
+  </data>
+  <data name="ProgressFail" xml:space="preserve">
+    <value>Fehler! Der Prozess ist größer als alle Dateigrößen zusammen! {0}:{1}
+Route: {1}</value>
+  </data>
+  <data name="ReadingZipFail" xml:space="preserve">
+    <value>Fehler beim Lesen der zip-Datei {0}!</value>
+  </data>
+  <data name="Route" xml:space="preserve">
+    <value>Strecke</value>
+  </data>
+  <data name="RouteName" xml:space="preserve">
+    <value>Streckenname</value>
+  </data>
+  <data name="RoutesCountLabel" xml:space="preserve">
+    <value>Anzahl der Strecken: {0}</value>
+  </data>
+  <data name="RoutesLoadFail" xml:space="preserve">
+    <value>Fehler beim Laden der Strecken</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="Saving" xml:space="preserve">
+    <value>Speichern...</value>
+  </data>
+  <data name="Scenario" xml:space="preserve">
+    <value>Szenarios</value>
+  </data>
+  <data name="SelectRWDlgAuto" xml:space="preserve">
+    <value>Railworks-Hauptordner automatische finden</value>
+  </data>
+  <data name="SelectRWDlgBrowse" xml:space="preserve">
+    <value>Suchen</value>
+  </data>
+  <data name="SelectRWDlgDesc" xml:space="preserve">
+    <value>Bitte wählen Sie Ihr RailWorks-Hauptverzeichnis aus.</value>
+  </data>
+  <data name="SelectRWDlgTitle" xml:space="preserve">
+    <value>Wähle RailWorks-Ordner aus</value>
+  </data>
+  <data name="SelectRWPathTitle" xml:space="preserve">
+    <value>Wähle RailWorks-Installationspfad aus</value>
+  </data>
+  <data name="ServerEmptyResponse" xml:space="preserve">
+    <value>Der Server hat eine leere Antwort gegeben!</value>
+  </data>
+  <data name="ServerInvalidResponse" xml:space="preserve">
+    <value>Der Server hat eine ungültige Antwort gegeben!</value>
+  </data>
+  <data name="ServerUnreachable" xml:space="preserve">
+    <value>Verbindung zum Server fehlgeschlagen!</value>
+  </data>
+  <data name="SerzCommonFail" xml:space="preserve">
+    <value>Fehler beim Parsen der bin-Datei {0}!</value>
+  </data>
+  <data name="SerzFlushNStringFail" xml:space="preserve">
+    <value>SERZ-Innenfehler! Versuch, den ungelesen String zu schreiben {0}, Schritt {1} in Datei {2}!</value>
+  </data>
+  <data name="SerzNLoadStringFail" xml:space="preserve">
+    <value>SERZ-Innenfehler! Ungeladenen String hinzugefügt {0} an Stelle {1}, Schritt {2} in Datei {3}!</value>
+  </data>
+  <data name="SerzParseExTagFail" xml:space="preserve">
+    <value>SERZ-Innenfehler! Fehler beim Parsen des vorhandenen Tags {0}, Schritt {1} in Datei {2}!</value>
+  </data>
+  <data name="SerzParseNewTagFail" xml:space="preserve">
+    <value>SERZ-Innenfehler! Fehler beim Parsen des neues Tags {0}, Schritt {1} in Datei {2}!</value>
+  </data>
+  <data name="SerzUnkFormatFail" xml:space="preserve">
+    <value>SERZ-Innenfehler! Unbekanntes Format {0} an Stelle {1}, Schritt {2} in Datei {3}!</value>
+  </data>
+  <data name="SerzUnkTagFormFail" xml:space="preserve">
+    <value>SERZ-Innenfehler! Unbekanntes Tag-Format {0} an Stelle {1}, Schritt {2}, in Datei {3}!</value>
+  </data>
+  <data name="SerzUnkTypeFail" xml:space="preserve">
+    <value>SERZ-Innenfehler! Unbekannter Dateityp {0} an Stelle {1}, Schritt {2} in Datei {3}!</value>
+  </data>
+  <data name="SteamInitFail" xml:space="preserve">
+    <value>Initialisieren des SteamManager ist fehlgeschlagen!</value>
+  </data>
+  <data name="UnknownError" xml:space="preserve">
+    <value>Unbekannter Fehler</value>
+  </data>
+  <data name="UnknownFiles" xml:space="preserve">
+    <value>Dateien nicht in bekannten Paketen enthalten</value>
+  </data>
+  <data name="UpdaterAdminDesc" xml:space="preserve">
+    <value>Für das Updaten der RailWorks Download Station sind Administratorenrechte erforderlich.</value>
+  </data>
+  <data name="UpdaterAdminTitle" xml:space="preserve">
+    <value>Benutzerkontensteuerung erfordert!</value>
+  </data>
+  <data name="UpdaterPanic" xml:space="preserve">
+    <value>Updater panic!</value>
+  </data>
+  <data name="UpdateTitle" xml:space="preserve">
+    <value>Pakete {0}/{1} werden geupdatet</value>
+  </data>
+  <data name="VerifyCacheFailed" xml:space="preserve">
+    <value>Aktualisieren des Caches fehlgeschlagen!</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>Warnung</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+</root>

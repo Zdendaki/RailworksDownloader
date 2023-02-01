@@ -130,7 +130,7 @@ namespace RailworksDownloader
             });
         }
 
-        public ObjectResult<object> DownloadPackage(int packageId, string token)
+        public ObjectResult<string> DownloadPackage(int packageId, string token)
         {
             CancelDownload = false;
             Uri url = new Uri(ApiUrl + $"download?token={token}&package_id={packageId}");
@@ -147,22 +147,22 @@ namespace RailworksDownloader
                     webClient.CancelAsync();
             };
 
-            ObjectResult<object> result = null;
+            ObjectResult<string> result = null;
             EventWaitHandle downloadComplete = new EventWaitHandle(false, EventResetMode.ManualReset);
             string tempFname = Path.GetTempFileName();
             webClient.DownloadFileCompleted += (sender, e) =>
             {
                 if (e.Cancelled)
                 {
-                    result = new ObjectResult<object>(500, Localization.Strings.DownloadInterruptError, tempFname);
+                    result = new ObjectResult<string>(500, Localization.Strings.DownloadInterruptError, tempFname);
                 }
                 else if (ZipTools.IsCompressedData(tempFname))
                 {
-                    result = new ObjectResult<object>(200, "Package succesfully downloaded!", tempFname);
+                    result = new ObjectResult<string>(200, "Package succesfully downloaded!", tempFname);
                 }
                 else
                 {
-                    result = JsonConvert.DeserializeObject<ObjectResult<object>>(File.ReadAllText(tempFname)) ?? new ObjectResult<object>(500, Localization.Strings.ServerEmptyResponse, tempFname);
+                    result = JsonConvert.DeserializeObject<ObjectResult<string>>(File.ReadAllText(tempFname)) ?? new ObjectResult<string>(500, Localization.Strings.ServerEmptyResponse, tempFname);
                 }
                 downloadComplete.Set();
             };
@@ -175,9 +175,9 @@ namespace RailworksDownloader
             {
                 SentrySdk.CaptureException(e);
                 if (e is HttpRequestException)
-                    return new ObjectResult<object>(500, Localization.Strings.ServerUnreachable);
+                    return new ObjectResult<string>(500, Localization.Strings.ServerUnreachable);
                 else if (e is JsonException)
-                    return new ObjectResult<object>(500, Localization.Strings.ServerInvalidResponse);
+                    return new ObjectResult<string>(500, Localization.Strings.ServerInvalidResponse);
                 else if (e is WebException)
                 {
                     WebException we = (WebException)e;
@@ -192,27 +192,27 @@ namespace RailworksDownloader
                             {
                                 string responseMessage = responseJson.message;
                                 int responseCode = responseJson.code;
-                                return new ObjectResult<object>(responseCode, responseMessage, tempFname);
+                                return new ObjectResult<string>(responseCode, responseMessage, tempFname);
                             }
                         }
                         catch
                         {
-                            return new ObjectResult<object>(-1, Localization.Strings.DownloadError, tempFname);
+                            return new ObjectResult<string>(-1, Localization.Strings.DownloadError, tempFname);
                         }
 
-                        return new ObjectResult<object>((int)webResponse.StatusCode, Localization.Strings.DownloadError, tempFname);
+                        return new ObjectResult<string>((int)webResponse.StatusCode, Localization.Strings.DownloadError, tempFname);
                     }
                     else if (we.Status == WebExceptionStatus.RequestCanceled)
-                        return new ObjectResult<object>(-1, Localization.Strings.DownloadInterruptError, tempFname);
+                        return new ObjectResult<string>(-1, Localization.Strings.DownloadInterruptError, tempFname);
 
-                    return new ObjectResult<object>(500, we.Message, tempFname);
+                    return new ObjectResult<string>(500, we.Message, tempFname);
                 }
                 else if (e is OperationAbortedException || e is ThreadAbortException || e is ThreadInterruptedException)
-                    return new ObjectResult<object>(500, Localization.Strings.DownloadInterruptError, tempFname);
+                    return new ObjectResult<string>(500, Localization.Strings.DownloadInterruptError, tempFname);
             }
             downloadComplete.WaitOne();
 
-            return result ?? new ObjectResult<object>(500, Localization.Strings.UnknownError, tempFname);
+            return result ?? new ObjectResult<string>(500, Localization.Strings.UnknownError, tempFname);
         }
 
         public async Task<Package> GetPackage(int packageId)
