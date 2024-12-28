@@ -2,7 +2,6 @@
 using Sentry;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -207,7 +206,7 @@ namespace RailworksDownloader
 
                     return new ObjectResult<object>(500, we.Message, tempFname);
                 }
-                else if (e is OperationAbortedException || e is ThreadAbortException || e is ThreadInterruptedException)
+                else if (e is ThreadAbortException || e is ThreadInterruptedException)
                     return new ObjectResult<object>(500, Localization.Strings.DownloadInterruptError, tempFname);
             }
             downloadComplete.WaitOne();
@@ -251,7 +250,7 @@ namespace RailworksDownloader
                 if (response.IsSuccessStatusCode)
                 {
                     return JsonConvert.DeserializeObject<ObjectResult<LoginContent>>(await response.Content.ReadAsStringAsync()) ?? new ObjectResult<LoginContent>(500, Localization.Strings.ServerEmptyResponse);
-                } 
+                }
                 else
                 {
                     string strResponse = await response.Content.ReadAsStringAsync();

@@ -384,8 +384,8 @@ namespace RailworksDownloader
                         switch (Strings[tagName_id])
                         {
                             case "Provider":
-                                Dependencies.Add(new SerzDependency());
-                                Dependencies.Last().Provider = elemContent;
+                                Dependencies.Add(new SerzDependency() { Provider = elemContent });
+                                //Dependencies.Last().Provider = elemContent;
                                 break;
                             case "Product":
                                 if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Product))
@@ -469,8 +469,8 @@ namespace RailworksDownloader
                         switch (Strings[tagName_id])
                         {
                             case "Provider":
-                                Dependencies.Add(new SerzDependency());
-                                Dependencies.Last().Provider = elemContent;
+                                Dependencies.Add(new SerzDependency() { Provider = elemContent });
+                                //Dependencies.Last().Provider = elemContent;
                                 break;
                             case "Product":
                                 if (Dependencies.Count > 0 && string.IsNullOrWhiteSpace(Dependencies.Last().Product))

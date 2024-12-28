@@ -140,6 +140,7 @@ namespace RailworksDownloader
                 new Column("paid", "INTEGER"),
                 new Column("steamappid", "INTEGER"),
                 new Column("steam_dev", "VARCHAR(1024)")
+                // isDownloaded
             }),
             new TableScheme("remote_file_list", new List<Column>
             {

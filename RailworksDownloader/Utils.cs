@@ -12,9 +12,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Xml;
-using Windows.ApplicationModel.Core;
-using Windows.UI.Core;
-using Windows.UI.Popups;
 
 namespace RailworksDownloader
 {
@@ -136,7 +133,7 @@ namespace RailworksDownloader
             string rel = Uri.UnescapeDataString(uri.MakeRelativeUri(new Uri(path)).ToString()).Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             if (rel.Contains(Path.DirectorySeparatorChar.ToString()) == false)
             {
-                rel = $".{ Path.DirectorySeparatorChar }{ rel }";
+                rel = $".{Path.DirectorySeparatorChar}{rel}";
             }
             return rel;
         }
@@ -262,7 +259,8 @@ namespace RailworksDownloader
                         return file.FullName;
                 }
                 return null;
-            } catch
+            }
+            catch
             {
                 return null;
             }
@@ -389,7 +387,8 @@ namespace RailworksDownloader
                 startInfo.Verb = "runas";
                 Process.Start(startInfo);
                 Application.Current.Shutdown();
-            } catch
+            }
+            catch
             {
                 DisplayError(Localization.Strings.ManualElevateTitle, Localization.Strings.ManualElevateContent, (_) => Application.Current.Shutdown());
             }
